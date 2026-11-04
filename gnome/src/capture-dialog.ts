@@ -2,7 +2,7 @@ import Adw from 'gi://Adw';
 import Gdk from 'gi://Gdk?version=4.0';
 import Gtk from 'gi://Gtk?version=4.0';
 import { schemaShortName, type GnomeBinding } from './gnome-conflicts.ts';
-import { hasCommandModifier } from './shortcuts.ts';
+import { hasCommandModifier, prettyAccelLabel } from './shortcuts.ts';
 
 export interface CaptureRequest {
   readonly actionTitle: string;
@@ -17,14 +17,29 @@ export interface CaptureRequest {
   readonly onSave: (accelerator: string) => void;
 }
 
-/** The text that GTK shows for an accelerator, or "Disabled". */
+/** The modifier names in the order that GTK uses. */
+const modifierLabels: readonly (readonly [Gdk.ModifierType, string])[] = [
+  [Gdk.ModifierType.SHIFT_MASK, 'Shift'],
+  [Gdk.ModifierType.CONTROL_MASK, 'Ctrl'],
+  [Gdk.ModifierType.ALT_MASK, 'Alt'],
+  [Gdk.ModifierType.SUPER_MASK, 'Super'],
+  [Gdk.ModifierType.HYPER_MASK, 'Hyper'],
+  [Gdk.ModifierType.META_MASK, 'Meta'],
+];
+
+/** The display text of an accelerator, for example "Super Left", or "Disabled". */
 export function acceleratorLabel(accelerator: string): string {
   if (accelerator === '') {
     return 'Disabled';
   }
   const [ok, key, modifiers] = Gtk.accelerator_parse(accelerator);
-  return ok && modifiers !== null ? Gtk.accelerator_get_label(key, modifiers) : accelerator;
+  if (!ok || modifiers === null) {
+    return accelerator;
+  }
+  const names = modifierLabels.filter(([mask]) => (modifiers & mask) !== 0).map(([, name]) => name);
+  return prettyAccelLabel([...names, Gtk.accelerator_get_label(key, 0)]);
 }
+
 
 function inhibitStateText(inhibited: boolean): string {
   return inhibited

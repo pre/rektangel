@@ -95,3 +95,14 @@ export function findConflict(
   }
   return null;
 }
+
+/** GTK shows the keysym name for these keys. */
+const keyLabelFixes: Readonly<Record<string, string>> = { BackSpace: 'Backspace' };
+
+/**
+ * The display text of an accelerator from its modifier names and the GTK
+ * label of its key, for example "Super Backspace".
+ */
+export function prettyAccelLabel(parts: readonly string[]): string {
+  return parts.map((part) => keyLabelFixes[part] ?? part).join(' ');
+}

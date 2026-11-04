@@ -5,6 +5,7 @@ import {
   findConflict,
   hasCommandModifier,
   normalizeAccelerator,
+  prettyAccelLabel,
   shortcutGroups,
   shortcutLayout,
 } from '../src/shortcuts.ts';
@@ -98,5 +99,26 @@ describe('shortcutLayout', () => {
       [['Thirds'], ['Size']],
       [['Move'], ['Displays', 'Other']],
     ]);
+  });
+});
+
+describe('prettyAccelLabel', () => {
+  test('separates the parts with a space', () => {
+    assert.equal(prettyAccelLabel(['Super', 'Left']), 'Super Left');
+    assert.equal(prettyAccelLabel(['Shift', 'Super', "'"]), "Shift Super '");
+  });
+
+  test('keeps the plus and minus keys as parts', () => {
+    assert.equal(prettyAccelLabel(['Super', '+']), 'Super +');
+    assert.equal(prettyAccelLabel(['Super', '-']), 'Super -');
+  });
+
+  test('writes BackSpace as Backspace', () => {
+    assert.equal(prettyAccelLabel(['Super', 'BackSpace']), 'Super Backspace');
+  });
+
+  test('keeps the other key names', () => {
+    assert.equal(prettyAccelLabel(['Alt', 'Super', 'Page Up']), 'Alt Super Page Up');
+    assert.equal(prettyAccelLabel(['Super', 'Return']), 'Super Return');
   });
 });
