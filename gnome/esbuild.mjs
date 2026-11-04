@@ -14,12 +14,16 @@ rmSync('dist', { recursive: true, force: true });
 rmSync('build', { recursive: true, force: true });
 mkdirSync('dist/schemas', { recursive: true });
 
-await build({
-  ...shared,
-  entryPoints: ['src/extension.ts'],
-  outfile: 'dist/extension.js',
-  external: ['gi://*', 'resource:///*'],
-});
+// Two bundles: gnome-shell loads extension.js, and a separate gjs process
+// loads prefs.js. Neither process can load the modules of the other.
+for (const name of ['extension', 'prefs']) {
+  await build({
+    ...shared,
+    entryPoints: [`src/${name}.ts`],
+    outfile: `dist/${name}.js`,
+    external: ['gi://*', 'resource:///*'],
+  });
+}
 
 // The GJS smoke test runs these bundles outside gnome-shell, so they must
 // not import resource:///org/gnome/shell/*.
