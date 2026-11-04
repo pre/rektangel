@@ -1,0 +1,20 @@
+{
+  "name": "rektangel",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Keyboard window management for Linux desktops, ported from Rectangle",
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "core",
+    "gnome"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace core --workspace gnome",
+    "test": "npm test --workspace core --workspace gnome",
+    "pack": "bash gnome/pack.sh"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
