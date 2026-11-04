@@ -28,6 +28,21 @@ describe('restore', () => {
     assert.deepEqual(result.change, { frame: rect(2208, 100, 800, 600), monitorIndex: singleMonitor.index });
   });
 
+  test('moves a fullscreen restore frame into the work area', () => {
+    const nestedMonitor = {
+      index: 0,
+      geometry: rect(0, 0, 1280, 800),
+      workArea: rect(66, 32, 1214, 768),
+    };
+    const history = { restoreRect: rect(0, 0, 1280, 800) };
+
+    const result = execute(
+      input({ action: 'restore', frame: rect(66, 32, 607, 768), monitors: [nestedMonitor], history }),
+    );
+
+    assert.deepEqual(result.change, { frame: rect(66, 32, 1214, 768), monitorIndex: 0 });
+  });
+
   test('a second restore does nothing', () => {
     const frames = press(['maximize', 'restore', 'restore']);
 

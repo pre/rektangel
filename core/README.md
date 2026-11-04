@@ -45,7 +45,7 @@ Other exported names:
 
 ## How execute works
 
-1. `restore` moves the window to `history.restoreRect` and drops `lastAction`. The monitor is the monitor that contains the center of the restore frame. When no monitor contains that center, for example after a monitor was unplugged, the restore frame moves into the work area of the current monitor. Without history, restore does nothing.
+1. `restore` moves the window to `history.restoreRect` and drops `lastAction`. The target monitor is the monitor that contains the center of the restore frame. When no monitor contains that center, for example after a monitor was unplugged, the target monitor is the current monitor. The restore frame moves into the work area of the target monitor. It shrinks only on a side that is larger than the work area, for example when the restore frame is a fullscreen frame. Without history, restore does nothing.
 2. For other actions, a frame that differs from `history.lastAction.rect` means that the user moved the window by hand. Then `lastAction` is dropped and the current frame becomes `restoreRect`.
 3. `execute` calls the calculation for the action from the registry in `src/calculations/index.ts`. A calculation returns null when the action does not apply, for example `next-display` with one monitor.
 4. `execute` rounds the frame to integer pixels (see below).
