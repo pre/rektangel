@@ -26,7 +26,7 @@ You do not need Node.js. GNOME Shell runs the extension.
    gnome-extensions enable rektangel@repo.pet
    ```
 
-Some default shortcuts are also GNOME shortcuts, for example Super+Alt+Left. To remove only the conflicting GNOME entries, run the script that is in the zip. It needs `gsettings` and `jq`, and it saves the old values to `~/.config/rektangel/gnome-keys-backup.json`.
+Some default shortcuts are also GNOME shortcuts, for example Super+Alt+Left. To remove only the conflicting GNOME entries, run the script that is in the zip. It needs `gsettings`, `dconf` and `jq`. It saves the old values to `~/.config/rektangel/gnome-keys-backup.json` before it changes them. `--undo` sets the old values again, or resets a key that had the GNOME default.
 
 ```sh
 dir=~/.local/share/gnome-shell/extensions/rektangel@repo.pet

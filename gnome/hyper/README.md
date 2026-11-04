@@ -43,7 +43,7 @@ bash "$dir/uninstall.sh"
 3. It adds `rektangel:caps_hyper` to `xkb-options`. It keeps the other options. It stops if a `caps:` option is already set, because two options for one key conflict.
 4. It sets the Rektangel bindings in the table below.
 
-`uninstall.sh` writes back the saved bindings, removes `rektangel:caps_hyper` from `xkb-options` (other options stay), and removes the XKB files if they are not changed.
+`uninstall.sh` writes back the saved bindings, or resets a binding that had the default, removes `rektangel:caps_hyper` from `xkb-options` (other options stay), and removes the XKB files if they are not changed.
 
 ## Bindings in Caps Lock mode
 

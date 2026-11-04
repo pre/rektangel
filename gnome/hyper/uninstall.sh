@@ -18,9 +18,13 @@ if [[ ! -e "$backup_file" ]]; then
   exit 1
 fi
 
-while IFS=$'\t' read -r key value; do
-  run gsettings --schemadir "$schema_dir" set "$rektangel_schema" "$key" "$(json_to_gvariant <<<"$value")"
-done < <(jq -r '.bindings | to_entries[] | [.key, (.value | tojson)] | @tsv' "$backup_file")
+while IFS=$'\t' read -r key user_set value; do
+  if [[ "$user_set" == true ]]; then
+    run gsettings --schemadir "$schema_dir" set "$rektangel_schema" "$key" "$(json_to_gvariant <<<"$value")"
+  else
+    run gsettings --schemadir "$schema_dir" reset "$rektangel_schema" "$key"
+  fi
+done < <(jq -r '.bindings | to_entries[] | [.key, .value.user_set, (.value.value | tojson)] | @tsv' "$backup_file")
 
 options=$(gsettings get "$input_schema" xkb-options | gvariant_to_json)
 if jq -e --arg option "$xkb_option" 'index($option) != null' <<<"$options" >/dev/null; then

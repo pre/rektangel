@@ -8,7 +8,7 @@
 # uninstall.sh reverses the three steps.
 #
 # Usage: install.sh [--dry-run]
-# Needs: gsettings, jq. No root.
+# Needs: gsettings, dconf, jq. No root.
 set -euo pipefail
 # shellcheck source=common.sh
 source "$(dirname "$0")/common.sh"
@@ -39,7 +39,9 @@ backup=$(jq -n --argjson options "$options" '{"xkb-options": $options, bindings:
 for entry in "${hyper_bindings[@]}"; do
   read -r key accel <<<"$entry"
   current=$(gsettings --schemadir "$schema_dir" get "$rektangel_schema" "$key" | gvariant_to_json)
-  backup=$(jq -c --arg key "$key" --argjson value "$current" '.bindings[$key] = $value' <<<"$backup")
+  backup=$(jq -c --arg key "$key" --argjson value "$current" \
+    --argjson user_set "$(user_set "$rektangel_path" "$key")" \
+    '.bindings[$key] = {value: $value, user_set: $user_set}' <<<"$backup")
 done
 
 if $dry_run; then

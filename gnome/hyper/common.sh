@@ -9,6 +9,7 @@ backup_file="$config_home/rektangel/hyper-backup.json"
 xkb_files=(rules/evdev rules/evdev.lst symbols/rektangel)
 xkb_option="rektangel:caps_hyper"
 rektangel_schema="org.gnome.shell.extensions.rektangel"
+rektangel_path="/org/gnome/shell/extensions/rektangel/"
 input_schema="org.gnome.desktop.input-sources"
 
 # The Caps Lock mode bindings. Caps Lock sets Mod3. The bindings use
@@ -74,4 +75,10 @@ gvariant_to_json() {
 
 json_to_gvariant() {
   jq -r '"[" + (map("'"'"'" + . + "'"'"'") | join(", ")) + "]"'
+}
+
+# Prints true when the user set the key. Empty dconf output means that the
+# schema default applies.
+user_set() {
+  if [[ -n "$(dconf read "$1$2")" ]]; then echo true; else echo false; fi
 }

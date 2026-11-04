@@ -4,7 +4,7 @@
 # The old values go to a backup file, and --undo writes them back.
 #
 # Usage: gnome-keys.sh [--dry-run] [--undo]
-# Needs: gsettings, jq
+# Needs: gsettings, dconf, jq
 set -euo pipefail
 
 backup_dir="${XDG_CONFIG_HOME:-$HOME/.config}/rektangel"
@@ -56,6 +56,12 @@ json_to_gvariant() {
   jq -r '"[" + (map("'"'"'" + . + "'"'"'") | join(", ")) + "]"'
 }
 
+# Prints true when the user set the key. Empty dconf output means that the
+# schema default applies.
+user_set() {
+  if [[ -n "$(dconf read "/${1//.//}/$2")" ]]; then echo true; else echo false; fi
+}
+
 # The canonical form ignores case and modifier order, and <Primary> or
 # <Ctrl> is the same as <Control>.
 normalize_jq='
@@ -83,7 +89,8 @@ remove_conflicts() {
       continue
     fi
     backup=$(jq -c --arg schema "$schema" --arg key "$key" --argjson value "$current" \
-      '.[$schema][$key] = $value' <<<"$backup")
+      --argjson user_set "$(user_set "$schema" "$key")" \
+      '.[$schema][$key] = {value: $value, user_set: $user_set}' <<<"$backup")
     changes+=("$schema" "$key" "$(json_to_gvariant <<<"$updated")")
   done
 
@@ -113,11 +120,15 @@ restore_backup() {
     exit 1
   fi
 
-  local schema key value
-  while IFS=$'\t' read -r schema key value; do
-    run gsettings set "$schema" "$key" "$(json_to_gvariant <<<"$value")"
+  local schema key user_set value
+  while IFS=$'\t' read -r schema key user_set value; do
+    if [[ "$user_set" == true ]]; then
+      run gsettings set "$schema" "$key" "$(json_to_gvariant <<<"$value")"
+    else
+      run gsettings reset "$schema" "$key"
+    fi
   done < <(jq -r 'to_entries[] | .key as $schema | .value | to_entries[]
-    | [$schema, .key, (.value | tojson)] | @tsv' "$backup_file")
+    | [$schema, .key, .value.user_set, (.value.value | tojson)] | @tsv' "$backup_file")
 
   run rm "$backup_file"
 }
