@@ -29,7 +29,12 @@ for (const name of ['extension', 'prefs']) {
 // not import resource:///org/gnome/shell/*.
 await build({
   ...shared,
-  entryPoints: { core: '@rektangel/core', 'config-file': 'src/config-file.ts' },
+  entryPoints: {
+    core: '@rektangel/core',
+    'config-file': 'src/config-file.ts',
+    'translated-settings': 'src/translated-settings.ts',
+    'capslock-mode': 'src/capslock-mode.ts',
+  },
   outdir: 'build',
   external: ['gi://*'],
 });
@@ -40,3 +45,11 @@ execFileSync('glib-compile-schemas', ['--strict', 'dist/schemas'], { stdio: 'inh
 copyFileSync('../LICENSE', 'dist/LICENSE');
 copyFileSync('gnome-keys.sh', 'dist/gnome-keys.sh');
 cpSync('hyper', 'dist/hyper', { recursive: true });
+
+// hyper/install.sh and uninstall.sh run this with gjs.
+await build({
+  ...shared,
+  entryPoints: ['src/capslock-cli.ts'],
+  outfile: 'dist/hyper/capslock-mode.js',
+  external: ['gi://*'],
+});
