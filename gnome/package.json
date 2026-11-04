@@ -6,10 +6,11 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "build": "tsc --noEmit -p tsconfig.json && node esbuild.mjs",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "node esbuild.mjs && gjs -m test/gjs-smoke.js",
-    "pack": "bash pack.sh"
+    "build": "npm run typecheck && node esbuild.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
+    "test": "node --test \"test/**/*.test.ts\" && node esbuild.mjs && XDG_CONFIG_HOME=test/fixtures/config gjs -m test/gjs-smoke.js",
+    "pack": "bash pack.sh",
+    "test:coverage": "node --test --experimental-test-coverage --test-coverage-include=\"src/**\" \"test/**/*.test.ts\""
   },
   "dependencies": {
     "@rektangel/core": "0.1.0"
@@ -18,6 +19,7 @@
     "@girs/gjs": "4.0.0-beta.12",
     "@girs/gnome-shell": "46.0.2",
     "esbuild": "0.28.2",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "@types/node": "22.20.5"
   }
 }
