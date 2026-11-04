@@ -1,11 +1,11 @@
 import { Action } from '../actions.js';
-import { bottomLeft, bottomRight, topLeft, topRight } from './corners.js';
-import { bottomHalf, leftHalf, rightHalf, topHalf } from './halves.js';
 import { center } from './center.js';
-import { nextDisplay, previousDisplay } from './display.js';
 import { larger, smaller } from './change-size.js';
-import { moveDown, moveLeft, moveRight, moveUp } from './move.js';
+import { bottomLeft, bottomRight, topLeft, topRight } from './corners.js';
+import { nextDisplay, previousDisplay } from './display.js';
+import { bottomHalf, leftHalf, rightHalf, topHalf } from './halves.js';
 import { almostMaximize, maximize, maximizeHeight } from './maximize.js';
+import { moveDown, moveLeft, moveRight, moveUp } from './move.js';
 import { centerThird, firstThird, firstTwoThirds, lastThird, lastTwoThirds } from './thirds.js';
 import type { Calculation } from './types.js';
 
