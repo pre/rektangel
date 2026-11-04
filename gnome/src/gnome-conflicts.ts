@@ -1,3 +1,4 @@
+import type { Action } from '@rektangel/core';
 import { normalizeAccelerator } from './shortcuts.ts';
 
 /** Schema id -> key -> accelerators. Only keys of type `as`. */
@@ -22,6 +23,43 @@ export const gnomeKeybindingSchemas: ReadonlyMap<string, string> = new Map([
 
 export function schemaShortName(schema: string): string {
   return gnomeKeybindingSchemas.get(schema) ?? schema;
+}
+
+/** The schema name for the preferences window, for example "Mutter keybindings". */
+export function schemaTitle(schema: string): string {
+  if (!gnomeKeybindingSchemas.has(schema) || !schema.endsWith('.keybindings')) {
+    return schemaShortName(schema);
+  }
+  return `${schemaShortName(schema)} keybindings`;
+}
+
+/** A shortcut that the action shares with a GNOME key or another Rektangel action. */
+export type RowConflict =
+  | { readonly kind: 'gnome'; readonly schema: string; readonly key: string; readonly accelerator: string }
+  | { readonly kind: 'rektangel'; readonly action: Action; readonly accelerator: string };
+
+/**
+ * The conflicts of each accelerator of the action: first the GNOME keys,
+ * then the other Rektangel actions that use it.
+ */
+export function rowConflicts(
+  action: Action,
+  bindings: ReadonlyMap<Action, readonly string[]>,
+  gnome: KeybindingTables,
+): RowConflict[] {
+  const conflicts: RowConflict[] = [];
+  for (const accelerator of bindings.get(action) ?? []) {
+    for (const binding of findGnomeConflicts(accelerator, gnome)) {
+      conflicts.push({ kind: 'gnome', ...binding, accelerator });
+    }
+    const wanted = normalizeAccelerator(accelerator);
+    for (const [other, accelerators] of bindings) {
+      if (other !== action && accelerators.some((value) => normalizeAccelerator(value) === wanted)) {
+        conflicts.push({ kind: 'rektangel', action: other, accelerator });
+      }
+    }
+  }
+  return conflicts;
 }
 
 /** The GNOME keys that have the accelerator as one of their entries. */

@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
+import { Action } from '@rektangel/core';
 import {
   addBackupRecord,
   findGnomeConflicts,
+  rowConflicts,
   schemaShortName,
+  schemaTitle,
   withoutAccelerator,
   type KeybindingTables,
 } from '../src/gnome-conflicts.ts';
@@ -81,5 +84,65 @@ describe('schemaShortName', () => {
     assert.equal(schemaShortName('org.gnome.shell.keybindings'), 'Shell');
     assert.equal(schemaShortName('org.gnome.settings-daemon.plugins.media-keys'), 'Media Keys');
     assert.equal(schemaShortName('org.example.other'), 'org.example.other');
+  });
+});
+
+describe('schemaTitle', () => {
+  test('names a keybindings schema with the word keybindings', () => {
+    assert.equal(schemaTitle('org.gnome.mutter.keybindings'), 'Mutter keybindings');
+    assert.equal(schemaTitle('org.gnome.desktop.wm.keybindings'), 'Window Manager keybindings');
+  });
+
+  test('uses the short name for the media keys schema', () => {
+    assert.equal(schemaTitle('org.gnome.settings-daemon.plugins.media-keys'), 'Media Keys');
+  });
+
+  test('keeps an unknown schema id', () => {
+    assert.equal(schemaTitle('org.example.keybindings'), 'org.example.keybindings');
+  });
+});
+
+describe('rowConflicts', () => {
+  const gnome: KeybindingTables = new Map([
+    ['org.gnome.mutter.keybindings', new Map([['toggle-tiled-left', ['<Super>Left']]])],
+    ['org.gnome.shell.keybindings', new Map([['toggle-overview', ['<Super>Left', '<Super>s']]])],
+  ]);
+
+  test('lists every GNOME key that uses the accelerator of the action', () => {
+    const bindings = new Map([[Action.LeftHalf, ['<super>left']]]);
+    assert.deepEqual(rowConflicts(Action.LeftHalf, bindings, gnome), [
+      { kind: 'gnome', schema: 'org.gnome.mutter.keybindings', key: 'toggle-tiled-left', accelerator: '<super>left' },
+      { kind: 'gnome', schema: 'org.gnome.shell.keybindings', key: 'toggle-overview', accelerator: '<super>left' },
+    ]);
+  });
+
+  test('lists the other Rektangel actions with the same accelerator', () => {
+    const bindings = new Map([
+      [Action.Center, ['<Super>Return']],
+      [Action.Maximize, ['<Super>Up']],
+      [Action.MaximizeHeight, ['<Shift><Super>Up', '<Super>return']],
+    ]);
+    assert.deepEqual(rowConflicts(Action.Center, bindings, new Map()), [
+      { kind: 'rektangel', action: Action.MaximizeHeight, accelerator: '<Super>Return' },
+    ]);
+    assert.deepEqual(rowConflicts(Action.MaximizeHeight, bindings, new Map()), [
+      { kind: 'rektangel', action: Action.Center, accelerator: '<Super>return' },
+    ]);
+  });
+
+  test('returns nothing for a disabled action', () => {
+    const bindings = new Map([
+      [Action.LeftHalf, []],
+      [Action.RightHalf, []],
+    ]);
+    assert.deepEqual(rowConflicts(Action.LeftHalf, bindings, gnome), []);
+  });
+
+  test('returns nothing for a free accelerator', () => {
+    const bindings = new Map([
+      [Action.LeftHalf, ['<Super><Alt>Left']],
+      [Action.RightHalf, ['<Super>Right']],
+    ]);
+    assert.deepEqual(rowConflicts(Action.LeftHalf, bindings, gnome), []);
   });
 });
