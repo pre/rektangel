@@ -94,8 +94,9 @@ function currentMonitors(): Monitor[] {
 
 /**
  * Leaves fullscreen and GNOME maximized state first, because Mutter
- * ignores a frame change on a window in those states. A window that
- * cannot change size is only moved.
+ * ignores a frame change on a window in those states. The frame is in
+ * absolute coordinates, so it also moves the window to the target
+ * monitor. A window that cannot change size is only moved.
  */
 function applyChange(window: Meta.Window, change: WindowChange, canResize: boolean): void {
   if (window.is_fullscreen()) {
@@ -103,9 +104,6 @@ function applyChange(window: Meta.Window, change: WindowChange, canResize: boole
   }
   if (window.get_maximized() !== 0) {
     window.unmaximize(Meta.MaximizeFlags.BOTH);
-  }
-  if (change.monitorIndex !== window.get_monitor()) {
-    window.move_to_monitor(change.monitorIndex);
   }
   const { x, y, width, height } = change.frame;
   if (canResize) {
