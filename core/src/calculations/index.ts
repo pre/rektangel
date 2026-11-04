@@ -2,6 +2,7 @@ import { Action } from '../actions.js';
 import { bottomLeft, bottomRight, topLeft, topRight } from './corners.js';
 import { bottomHalf, leftHalf, rightHalf, topHalf } from './halves.js';
 import { center } from './center.js';
+import { larger, smaller } from './change-size.js';
 import { almostMaximize, maximize, maximizeHeight } from './maximize.js';
 import { centerThird, firstThird, firstTwoThirds, lastThird, lastTwoThirds } from './thirds.js';
 import type { Calculation } from './types.js';
@@ -18,6 +19,8 @@ export const calculations: Partial<Record<Action, Calculation>> = {
   [Action.AlmostMaximize]: almostMaximize,
   [Action.MaximizeHeight]: maximizeHeight,
   [Action.Center]: center,
+  [Action.Larger]: larger,
+  [Action.Smaller]: smaller,
   [Action.TopLeft]: topLeft,
   [Action.TopRight]: topRight,
   [Action.BottomLeft]: bottomLeft,
