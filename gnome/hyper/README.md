@@ -1,18 +1,20 @@
 # Caps Lock mode
 
-Caps Lock mode makes Caps Lock the Rektangel key. Hold Caps Lock and press an arrow key to move a window. Super keeps its GNOME function. See ADR 0008.
+Caps Lock mode makes Caps Lock the Super key of the Rektangel shortcuts. Hold Caps Lock instead of Super: Super+Alt+Left becomes Caps+Alt+Left. Super keeps its GNOME function. See ADR 0008 and ADR 0009.
 
 The mode is optional. The default shortcuts do not need it.
 
 ## How it works
 
+- The shortcuts are always stored with `<Super>`. The setting `super-key` tells Rektangel which key that is: `super` (the default) or `capslock`.
+- With `capslock`, Rektangel registers each stored shortcut with `<Mod3>` in place of `<Super>`. The stored values do not change. When you set `super-key` back to `super`, the Super shortcuts work again, and you do not edit a shortcut.
 - A user XKB option, `rektangel:caps_hyper`, gives the Caps Lock key two levels: `[ Hyper_L, Caps_Lock ]` with type `TWO_LEVEL`.
 - Caps Lock alone (level 1) is `Hyper_L` on the real modifier Mod3 while you hold it.
 - Shift+Caps Lock (level 2) toggles caps lock. The Caps Lock LED shows the real caps lock state.
 - If you press and release Caps Lock alone, it also turns caps lock off. This is the XKB `clearLocks` behavior of a modifier key.
 - GNOME (Mutter) loads the option from `org.gnome.desktop.input-sources xkb-options`. libxkbcommon reads the option files from `$XDG_CONFIG_HOME/xkb` (normally `~/.config/xkb`). There is no extra process and no root step.
 
-The bindings use `<Mod3>`, not `<Hyper>`. Mutter changes `<Hyper>` to all real modifiers that the Hyper virtual modifier maps to. With this keymap that is Lock, Mod3 and Mod4: Lock because the key also has the `Caps_Lock` symbol, and Mod4 because the standard `pc` symbols put `Hyper_L` on Mod4. Mutter ignores Lock in key events, so a `<Hyper>` binding never matches. `<Mod3>` matches only Mod3.
+Rektangel registers `<Mod3>`, not `<Hyper>`. Mutter changes `<Hyper>` to all real modifiers that the Hyper virtual modifier maps to. With this keymap that is Lock, Mod3 and Mod4: Lock because the key also has the `Caps_Lock` symbol, and Mod4 because the standard `pc` symbols put `Hyper_L` on Mod4. Mutter ignores Lock in key events, so a `<Hyper>` binding never matches. `<Mod3>` matches only Mod3.
 
 ## Files
 
@@ -21,14 +23,17 @@ The bindings use `<Mod3>`, not `<Hyper>`. Mutter changes `<Hyper>` to all real m
 | `xkb/rules/evdev` | `~/.config/xkb/rules/evdev`: includes the system rules and adds the option |
 | `xkb/rules/evdev.lst` | `~/.config/xkb/rules/evdev.lst`: the option description |
 | `xkb/symbols/rektangel` | `~/.config/xkb/symbols/rektangel`: the Caps Lock key |
+| `capslock-mode.js` | not installed: the XKB step, run with `gjs` by the scripts |
 | `install.sh` | not installed, run it from the extension directory |
 | `uninstall.sh` | not installed, run it from the extension directory |
 
+If `~/.config/xkb/rules/evdev` or `evdev.lst` exists already, the XKB step does not replace it. It adds the Rektangel lines at the end, if they are not there. The remove step removes only these lines. It removes a file only if the file is the Rektangel file.
+
 ## Install and uninstall
 
-Install the extension first. Then run the scripts from the extension directory. Both scripts run as the normal user and need `gsettings`, `dconf` and `jq`. Use `--dry-run` first: it shows the commands and changes nothing.
+Install the extension first. Then run the scripts from the extension directory. Both scripts run as the normal user and need `gsettings`, `dconf` and `gjs`. Use `--dry-run` first: it shows the changes and changes nothing.
 
-The scripts use `/usr/bin/gsettings` and `/usr/bin/dconf` when they exist. A `gsettings` from Homebrew or linuxbrew GLib often has no dconf backend. It then writes to a keyfile, and GNOME Shell does not see the change. Before a script changes a value, it compares `gsettings` with `dconf` and stops if they do not agree.
+The scripts use `/usr/bin/gsettings`, `/usr/bin/dconf` and `/usr/bin/gjs` when they exist. A `gsettings` from Homebrew or linuxbrew GLib often has no dconf backend. It then writes to a keyfile, and GNOME Shell does not see the change. Before a script changes a value, it compares `gsettings` with `dconf` and stops if they do not agree.
 
 ```sh
 dir=~/.local/share/gnome-shell/extensions/rektangel@repo.pet/hyper
@@ -40,37 +45,33 @@ bash "$dir/uninstall.sh"
 
 `install.sh` does these steps:
 
-1. It saves the current Rektangel bindings to `~/.config/rektangel/hyper-backup.json`.
-2. It copies the three XKB files to `~/.config/xkb`. It stops if a file with other content is already there, because then you have your own XKB configuration. Merge the files by hand in that case.
-3. It adds `rektangel:caps_hyper` to `xkb-options`. It keeps the other options. It stops if a `caps:` option is already set, because two options for one key conflict.
-4. It sets the Rektangel bindings in the table below.
+1. It copies the three XKB files to `~/.config/xkb`, or adds the Rektangel lines to the user files that are there.
+2. It adds `rektangel:caps_hyper` to `xkb-options`. It keeps the other options. It stops before step 1 if a `caps:` option is set, because two options for one key conflict.
+3. It sets `super-key` to `capslock`.
 
-`uninstall.sh` writes back the saved bindings, or resets a binding that had the default, removes `rektangel:caps_hyper` from `xkb-options` (other options stay), and removes the XKB files if they are not changed.
+`uninstall.sh` sets `super-key` to `super`, removes `rektangel:caps_hyper` from `xkb-options` (other options stay), and removes the Rektangel XKB files and lines. You can run each script again: a step that is done already does nothing.
 
-## Bindings in Caps Lock mode
+To change only the Rektangel side, set the key yourself:
 
-Caps Lock replaces Super, and also the Alt or Ctrl+Alt that the default shortcuts need only to prevent conflicts with GNOME.
+```sh
+schemas=~/.local/share/gnome-shell/extensions/rektangel@repo.pet/schemas
+/usr/bin/gsettings --schemadir "$schemas" set org.gnome.shell.extensions.rektangel super-key capslock
+```
 
-| Action           | Default                  | Caps Lock mode         | gsettings value                |
-|------------------|--------------------------|------------------------|--------------------------------|
-| Left half        | Super+Alt+Left           | Caps+Left              | `<Mod3>Left`                   |
-| Right half       | Super+Alt+Right          | Caps+Right             | `<Mod3>Right`                  |
-| Top half         | Super+Alt+Up             | Caps+Up                | `<Mod3>Up`                     |
-| Bottom half      | Super+Alt+Down           | Caps+Down              | `<Mod3>Down`                   |
-| Maximize         | Super+Alt+F              | Caps+F                 | `<Mod3>f`                      |
-| Center           | Super+Alt+C              | Caps+C                 | `<Mod3>c`                      |
-| Maximize height  | Ctrl+Alt+Shift+Up        | Caps+Shift+Up          | `<Mod3><Shift>Up`              |
-| Larger           | Ctrl+Alt+Shift+Right     | Caps+Shift+Right       | `<Mod3><Shift>Right`           |
-| Smaller          | Ctrl+Alt+Shift+Left      | Caps+Shift+Left        | `<Mod3><Shift>Left`            |
-| Previous display | Ctrl+Alt+Super+Left      | Caps+Alt+Left          | `<Mod3><Alt>Left`              |
-| Next display     | Ctrl+Alt+Super+Right     | Caps+Alt+Right         | `<Mod3><Alt>Right`             |
-| Top left         | Ctrl+Super+Left          | Caps+Ctrl+Left         | `<Mod3><Control>Left`          |
-| Top right        | Ctrl+Super+Right         | Caps+Ctrl+Right        | `<Mod3><Control>Right`         |
-| Bottom left      | Ctrl+Shift+Super+Left    | Caps+Ctrl+Shift+Left   | `<Mod3><Control><Shift>Left`   |
-| Bottom right     | Ctrl+Shift+Super+Right   | Caps+Ctrl+Shift+Right  | `<Mod3><Control><Shift>Right`  |
-| Restore          | Ctrl+Alt+BackSpace       | Caps+BackSpace         | `<Mod3>BackSpace`              |
+Without the XKB option, Caps Lock does not set Mod3, so the shortcuts then do not work.
 
-Thirds, almost maximize and move to edge have no default shortcut, so `install.sh` does not change them. To give one a Caps Lock shortcut, set it with `gsettings`, for example `['<Mod3>e']`.
+## Shortcuts in Caps Lock mode
+
+Each shortcut is the stored shortcut with Caps Lock in place of Super. A shortcut without Super does not change. With the defaults:
+
+| Action           | Default                  | Caps Lock mode           |
+|------------------|--------------------------|--------------------------|
+| Left half        | Super+Alt+Left           | Caps+Alt+Left            |
+| Maximize         | Super+Alt+F              | Caps+Alt+F               |
+| Top left         | Ctrl+Super+Left          | Ctrl+Caps+Left           |
+| Restore          | Ctrl+Alt+BackSpace       | Ctrl+Alt+BackSpace       |
+
+The defaults have Alt only to prevent conflicts with GNOME. For shorter shortcuts, store them without Alt, for example `['<Super>Left']` for left half: Caps Lock mode then gives Caps+Left. `gnome-keys.sh` compares the stored form, so it also removes the GNOME Super+Left (tile the window to the left). It does this also in Caps Lock mode, where the two do not conflict, so that you need no new run when you set `super-key` back to `super`.
 
 ## Known limits
 

@@ -3,14 +3,7 @@
 
 hyper_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 schema_dir="$hyper_dir/../schemas"
-config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
-xkb_dir="$config_home/xkb"
-backup_file="$config_home/rektangel/hyper-backup.json"
-xkb_files=(rules/evdev rules/evdev.lst symbols/rektangel)
-xkb_option="rektangel:caps_hyper"
 rektangel_schema="org.gnome.shell.extensions.rektangel"
-rektangel_path="/org/gnome/shell/extensions/rektangel/"
-input_schema="org.gnome.desktop.input-sources"
 
 # Prefer the system tools. A gsettings from Homebrew or linuxbrew often has
 # no dconf module, so it writes to a keyfile that GNOME Shell does not read.
@@ -19,6 +12,7 @@ system_tool() {
 }
 gsettings=$(system_tool gsettings)
 dconf=$(system_tool dconf)
+gjs=$(system_tool gjs)
 
 # With the dconf backend, gsettings shows the dconf value, or the schema
 # default (the memory backend value) when dconf has no value for the key.
@@ -36,28 +30,6 @@ check_backend() {
     exit 1
   fi
 }
-
-# The Caps Lock mode bindings. Caps Lock sets Mod3. The bindings use
-# <Mod3> and not <Hyper>, because Mutter resolves <Hyper> to every real
-# modifier that the Hyper virtual modifier maps to (Lock and Mod4 too).
-hyper_bindings=(
-  "left-half <Mod3>Left"
-  "right-half <Mod3>Right"
-  "top-half <Mod3>Up"
-  "bottom-half <Mod3>Down"
-  "maximize-window <Mod3>f"
-  "center <Mod3>c"
-  "maximize-height <Mod3><Shift>Up"
-  "larger <Mod3><Shift>Right"
-  "smaller <Mod3><Shift>Left"
-  "previous-display <Mod3><Alt>Left"
-  "next-display <Mod3><Alt>Right"
-  "top-left <Mod3><Control>Left"
-  "top-right <Mod3><Control>Right"
-  "bottom-left <Mod3><Control><Shift>Left"
-  "bottom-right <Mod3><Control><Shift>Right"
-  "restore <Mod3>BackSpace"
-)
 
 dry_run=false
 parse_args() {
@@ -93,17 +65,14 @@ check_schema() {
   fi
 }
 
-# GVariant text such as ['a', 'b'] or @as [] to a JSON array, and back.
-gvariant_to_json() {
-  sed -e 's/^@as //' -e "s/'/\"/g" | jq -c .
+# Runs the XKB option step of capslock-mode.js: install or remove. With
+# --dry-run it shows the changes and does not do them.
+xkb_option() {
+  local flags=()
+  if $dry_run; then flags=(--dry-run); fi
+  "$gjs" -m "$hyper_dir/capslock-mode.js" "$1" "${flags[@]}"
 }
 
-json_to_gvariant() {
-  jq -r '"[" + (map("'"'"'" + . + "'"'"'") | join(", ")) + "]"'
-}
-
-# Prints true when the user set the key. Empty dconf output means that the
-# schema default applies.
-user_set() {
-  if [[ -n "$("$dconf" read "$1$2")" ]]; then echo true; else echo false; fi
+set_super_key() {
+  run "$gsettings" --schemadir "$schema_dir" set "$rektangel_schema" super-key "$1"
 }

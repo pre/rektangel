@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 # Turns on the Rektangel Caps Lock mode for the current user:
-#  1. copies the XKB option files to $XDG_CONFIG_HOME/xkb,
+#  1. copies the XKB option files to $XDG_CONFIG_HOME/xkb, or adds the
+#     Rektangel lines to the user XKB files that are there,
 #  2. adds the option rektangel:caps_hyper to
 #     org.gnome.desktop.input-sources xkb-options,
-#  3. sets the Rektangel bindings to the Caps Lock variants.
-# The old bindings go to ~/.config/rektangel/hyper-backup.json.
-# uninstall.sh reverses the three steps.
+#  3. sets the Rektangel setting super-key to capslock.
+# The shortcuts do not change: Rektangel registers each <Super> shortcut
+# with Caps Lock. uninstall.sh reverses the three steps.
 #
 # Usage: install.sh [--dry-run]
-# Needs: gsettings, dconf, jq. No root. Uses /usr/bin/gsettings and
-# /usr/bin/dconf when they exist, see common.sh.
+# Needs: gsettings, dconf, gjs. No root. Uses /usr/bin/gsettings,
+# /usr/bin/dconf and /usr/bin/gjs when they exist, see common.sh.
 set -euo pipefail
 # shellcheck source=common.sh
 source "$(dirname "$0")/common.sh"
@@ -17,61 +18,12 @@ parse_args "$@"
 check_schema
 check_backend
 
-if [[ -e "$backup_file" ]]; then
-  echo "Caps Lock mode is already on: $backup_file exists. Run uninstall.sh first." >&2
-  exit 1
-fi
-
-for file in "${xkb_files[@]}"; do
-  target="$xkb_dir/$file"
-  if [[ -e "$target" ]] && ! cmp -s "$hyper_dir/xkb/$file" "$target"; then
-    echo "$target exists and is not the Rektangel file. Merge it by hand." >&2
-    exit 1
-  fi
-done
-
-options=$("$gsettings" get "$input_schema" xkb-options | gvariant_to_json)
-if jq -e 'any(startswith("caps:"))' <<<"$options" >/dev/null; then
-  echo "xkb-options has a caps: option that also changes Caps Lock: $options" >&2
-  echo "Remove it first, for example in GNOME Tweaks." >&2
-  exit 1
-fi
-
-backup='{"bindings": {}}'
-for entry in "${hyper_bindings[@]}"; do
-  read -r key accel <<<"$entry"
-  current=$("$gsettings" --schemadir "$schema_dir" get "$rektangel_schema" "$key" | gvariant_to_json)
-  backup=$(jq -c --arg key "$key" --argjson value "$current" \
-    --argjson user_set "$(user_set "$rektangel_path" "$key")" \
-    '.bindings[$key] = {value: $value, user_set: $user_set}' <<<"$backup")
-done
-
-if $dry_run; then
-  echo "Would write $backup_file:"
-  jq . <<<"$backup"
-else
-  mkdir -p "$(dirname "$backup_file")"
-  jq . <<<"$backup" >"$backup_file"
-fi
-
-for file in "${xkb_files[@]}"; do
-  run mkdir -p "$(dirname "$xkb_dir/$file")"
-  run cp "$hyper_dir/xkb/$file" "$xkb_dir/$file"
-done
-
-if jq -e --arg option "$xkb_option" 'index($option) == null' <<<"$options" >/dev/null; then
-  run "$gsettings" set "$input_schema" xkb-options \
-    "$(jq -c --arg option "$xkb_option" '. + [$option]' <<<"$options" | json_to_gvariant)"
-fi
-
-for entry in "${hyper_bindings[@]}"; do
-  read -r key accel <<<"$entry"
-  run "$gsettings" --schemadir "$schema_dir" set "$rektangel_schema" "$key" "['$accel']"
-done
+xkb_option install
+set_super_key capslock
 
 if $dry_run; then
   echo "Dry run: nothing changed."
 else
-  echo "Caps Lock mode is on. Hold Caps Lock and press an arrow key."
+  echo "Caps Lock mode is on. Hold Caps Lock instead of Super."
   echo "Shift+Caps Lock toggles caps lock."
 fi
