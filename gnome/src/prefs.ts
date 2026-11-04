@@ -121,10 +121,10 @@ function superKeyGroup(settings: Gio.Settings, extensionDir: Gio.File): Adw.Pref
     }
     try {
       if (value === 'capslock') {
-        installXkbOption(extensionDir);
+        installXkbOption(extensionDir.get_path() ?? "");
         showNote('Caps Lock becomes a modifier after you log out and in. Shift+Caps Lock toggles caps lock.', false);
       } else {
-        removeXkbOption(extensionDir);
+        removeXkbOption(extensionDir.get_path() ?? "");
         showNote('Caps Lock is a normal key again after you log out and in.', false);
       }
       settings.set_string('super-key', value);
