@@ -4,7 +4,7 @@ Rektangel moves and resizes windows with keyboard shortcuts on Linux. It is a po
 
 ## Status
 
-Early development. The extension binds the keys, but the actions only write a log line. The window calculations come in the next phase.
+Early development. The extension binds all keys and moves the focused window. Some window calculations are not ready yet: an action without a calculation does nothing.
 
 Actions in scope: halves, corners, thirds, maximize, almost maximize, maximize height, center, larger, smaller, move to edge, next and previous display, and restore. Rektangel is keyboard only: there are no snap areas, no mouse actions and no animations.
 
@@ -56,7 +56,37 @@ bash "$dir/gnome-keys.sh" --undo      # restore the old values
 | Bottom right     | Ctrl+Shift+Super+Right   |
 | Restore          | Ctrl+Alt+BackSpace       |
 
-Thirds, almost maximize and move to edge have no default shortcut. Each shortcut is a gsettings key in `org.gnome.shell.extensions.rektangel`. To change one, use `gsettings` or dconf-editor.
+Thirds, almost maximize and move to edge have no default shortcut. Each shortcut is a gsettings key in `org.gnome.shell.extensions.rektangel`. To change one, use `gsettings` or dconf-editor. The schema is in the extension directory, so give `gsettings` the schema directory:
+
+```sh
+schemas=~/.local/share/gnome-shell/extensions/rektangel@repo.pet/schemas
+gsettings --schemadir "$schemas" set org.gnome.shell.extensions.rektangel first-third "['<Super><Alt>e']"
+```
+
+## Settings file
+
+Rektangel reads `~/.config/rektangel/config.toml` when the extension is enabled. If you change the file, disable and enable the extension, or log out and in. All keys are optional. A missing file gives the defaults. If the file has an error, Rektangel uses the defaults for all keys and writes one warning to the journal (`journalctl --user -o cat /usr/bin/gnome-shell | grep Rektangel`).
+
+```toml
+# Fractions of the work area that halves and corners cycle through when
+# you press the same shortcut again.
+cycle_sizes = [0.5, 0.6667, 0.3333]
+
+# Pixels that larger and smaller add or remove on each side.
+step_size = 30
+
+# The axis along which a repeated corner action expands: "horizontal" or "vertical".
+corner_axis = "horizontal"
+
+# Fraction of the work area for almost maximize.
+almost_maximize_ratio = 0.9
+```
+
+The file uses a subset of TOML: `key = value` lines, numbers, quoted strings, one-line lists of numbers and `#` comments.
+
+## Caps Lock mode
+
+Caps Lock mode is optional. It makes Caps Lock the Rektangel key: hold Caps Lock and press an arrow key. Shift+Caps Lock toggles caps lock. The scripts for it are in the `hyper` directory of the extension. See `gnome/hyper/README.md`.
 
 ## Build from source
 
@@ -65,9 +95,11 @@ You need Node.js 22, npm, `glib-compile-schemas`, `gjs` and `zip`.
 ```sh
 npm install
 npm run build   # core with tsc, extension with esbuild, to gnome/dist/
-npm test        # core unit tests and the GJS smoke test
+npm test        # core and config.toml unit tests, and the GJS smoke test
 npm run pack    # writes rektangel@repo.pet.zip
 ```
+
+To check the Caps Lock mode XKB files offline, run `npm run test:xkb --workspace gnome`. It needs `xkbcomp`.
 
 `gnome/install.sh` builds the extension and copies it to `~/.local/share/gnome-shell/extensions/`. Use it for development only.
 
