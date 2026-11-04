@@ -168,7 +168,7 @@ function gnomeConflictsOf(settings: Gio.Settings, accelerator: string): GnomeBin
 
 function conflictText(settings: Gio.Settings, conflict: RowConflict): string {
   return conflict.kind === 'gnome'
-    ? `${schemaTitle(conflict.schema)} âº ${conflict.key} (${acceleratorLabel(conflict.accelerator)})`
+    ? `${schemaTitle(conflict.schema)} › ${conflict.key} (${acceleratorLabel(conflict.accelerator)})`
     : `Also used by Rektangel: ${actionTitle(settings, conflict.action)}`;
 }
 
