@@ -11,7 +11,8 @@
     "test": "node --test \"test/**/*.test.ts\" && node esbuild.mjs && XDG_CONFIG_HOME=test/fixtures/config gjs -m test/gjs-smoke.js && gjs -m test/gjs-capslock.js",
     "pack": "bash pack.sh",
     "test:coverage": "node --test --experimental-test-coverage --test-coverage-include=\"src/**\" \"test/**/*.test.ts\"",
-    "test:xkb": "bash test/xkb-check.sh"
+    "test:xkb": "bash test/xkb-check.sh",
+    "prefs": "bash prefs-dev.sh"
   },
   "dependencies": {
     "@rektangel/core": "0.1.0"
