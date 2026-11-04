@@ -1,0 +1,23 @@
+{
+  "name": "@rektangel/core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Window calculations ported from Rectangle, with no runtime dependencies",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test \"dist/test/**/*.test.js\"",
+    "test:coverage": "npm run build && node --test --experimental-test-coverage --test-coverage-include=\"dist/src/**\" \"dist/test/**/*.test.js\""
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "typescript": "5.9.3"
+  }
+}
