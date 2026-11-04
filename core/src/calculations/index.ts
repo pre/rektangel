@@ -2,6 +2,7 @@ import { Action } from '../actions.js';
 import { bottomLeft, bottomRight, topLeft, topRight } from './corners.js';
 import { bottomHalf, leftHalf, rightHalf, topHalf } from './halves.js';
 import { center } from './center.js';
+import { nextDisplay, previousDisplay } from './display.js';
 import { larger, smaller } from './change-size.js';
 import { moveDown, moveLeft, moveRight, moveUp } from './move.js';
 import { almostMaximize, maximize, maximizeHeight } from './maximize.js';
@@ -22,6 +23,8 @@ export const calculations: Partial<Record<Action, Calculation>> = {
   [Action.Center]: center,
   [Action.Larger]: larger,
   [Action.Smaller]: smaller,
+  [Action.PreviousDisplay]: previousDisplay,
+  [Action.NextDisplay]: nextDisplay,
   [Action.TopLeft]: topLeft,
   [Action.TopRight]: topRight,
   [Action.BottomLeft]: bottomLeft,
