@@ -2,23 +2,23 @@
 <schemalist>
   <schema id="org.gnome.shell.extensions.rektangel" path="/org/gnome/shell/extensions/rektangel/">
     <key name="left-half" type="as">
-      <default><![CDATA[['<Super><Alt>Left']]]></default>
+      <default><![CDATA[['<Super>Left']]]></default>
       <summary>Left half</summary>
     </key>
     <key name="right-half" type="as">
-      <default><![CDATA[['<Super><Alt>Right']]]></default>
+      <default><![CDATA[['<Super>Right']]]></default>
       <summary>Right half</summary>
     </key>
     <key name="top-half" type="as">
-      <default><![CDATA[['<Super><Alt>Up']]]></default>
+      <default><![CDATA[['<Super>Up']]]></default>
       <summary>Top half</summary>
     </key>
     <key name="bottom-half" type="as">
-      <default><![CDATA[['<Super><Alt>Down']]]></default>
+      <default><![CDATA[['<Super>Down']]]></default>
       <summary>Bottom half</summary>
     </key>
     <key name="maximize-window" type="as">
-      <default><![CDATA[['<Super><Alt>f']]]></default>
+      <default><![CDATA[['<Super>space']]]></default>
       <summary>Maximize</summary>
     </key>
     <key name="almost-maximize" type="as">
@@ -26,47 +26,47 @@
       <summary>Almost maximize</summary>
     </key>
     <key name="center" type="as">
-      <default><![CDATA[['<Super><Alt>c']]]></default>
+      <default><![CDATA[['<Super>period']]]></default>
       <summary>Center</summary>
     </key>
     <key name="maximize-height" type="as">
-      <default><![CDATA[['<Control><Alt><Shift>Up']]]></default>
+      <default><![CDATA[['<Super>Return']]]></default>
       <summary>Maximize height</summary>
     </key>
     <key name="larger" type="as">
-      <default><![CDATA[['<Control><Alt><Shift>Right']]]></default>
+      <default><![CDATA[['<Super>plus']]]></default>
       <summary>Make larger</summary>
     </key>
     <key name="smaller" type="as">
-      <default><![CDATA[['<Control><Alt><Shift>Left']]]></default>
+      <default><![CDATA[['<Super>minus']]]></default>
       <summary>Make smaller</summary>
     </key>
     <key name="previous-display" type="as">
-      <default><![CDATA[['<Control><Alt><Super>Left']]]></default>
+      <default><![CDATA[['<Super><Shift>apostrophe']]]></default>
       <summary>Move to previous display</summary>
     </key>
     <key name="next-display" type="as">
-      <default><![CDATA[['<Control><Alt><Super>Right']]]></default>
+      <default><![CDATA[['<Super>apostrophe']]]></default>
       <summary>Move to next display</summary>
     </key>
     <key name="top-left" type="as">
-      <default><![CDATA[['<Control><Super>Left']]]></default>
+      <default><![CDATA[['<Super><Shift>Left']]]></default>
       <summary>Top left corner</summary>
     </key>
     <key name="top-right" type="as">
-      <default><![CDATA[['<Control><Super>Right']]]></default>
+      <default><![CDATA[['<Super><Shift>Up']]]></default>
       <summary>Top right corner</summary>
     </key>
     <key name="bottom-left" type="as">
-      <default><![CDATA[['<Control><Shift><Super>Left']]]></default>
+      <default><![CDATA[['<Super><Shift>Down']]]></default>
       <summary>Bottom left corner</summary>
     </key>
     <key name="bottom-right" type="as">
-      <default><![CDATA[['<Control><Shift><Super>Right']]]></default>
+      <default><![CDATA[['<Super><Shift>Right']]]></default>
       <summary>Bottom right corner</summary>
     </key>
     <key name="restore" type="as">
-      <default><![CDATA[['<Control><Alt>BackSpace']]]></default>
+      <default><![CDATA[['<Super>BackSpace']]]></default>
       <summary>Restore</summary>
     </key>
     <key name="first-third" type="as">
