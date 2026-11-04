@@ -60,7 +60,12 @@ export default class RektangelExtension extends Extension {
         return;
       }
 
-      const canResize = window.allows_resize();
+      // Mutter allows_resize() is false for maximized, fullscreen and tiled
+      // windows, but applyChange leaves those states before the resize.
+      const canResize = window.allows_resize() || window.get_maximized() !== 0 || window.is_fullscreen();
+      // Read the frame before applyChange unmaximizes the window: the restore
+      // frame must be the frame that the user saw. On Wayland the frame does
+      // not change until the client acknowledges the unmaximize.
       const result = execute({
         action,
         windowId: String(window.get_id()),
