@@ -17,7 +17,7 @@
       <default><![CDATA[['<Super><Alt>Down']]]></default>
       <summary>Bottom half</summary>
     </key>
-    <key name="maximize" type="as">
+    <key name="maximize-window" type="as">
       <default><![CDATA[['<Super><Alt>f']]]></default>
       <summary>Maximize</summary>
     </key>

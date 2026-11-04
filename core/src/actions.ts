@@ -1,6 +1,6 @@
 /**
- * The window actions in scope. Each value is also the gsettings key name
- * of the action's keybinding.
+ * The window actions in scope. The gnome extension uses each value as the
+ * gsettings key name of the keybinding, except for maximize (see keyName).
  */
 export const Action = {
   LeftHalf: 'left-half',

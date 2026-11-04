@@ -15,6 +15,7 @@ import {
 } from '@rektangel/core';
 import { loadConfig } from './config-file.ts';
 import { HistoryStore } from './history-store.ts';
+import { keyName } from './key-names.ts';
 
 const supportedWindowTypes = [Meta.WindowType.NORMAL, Meta.WindowType.DIALOG];
 
@@ -27,7 +28,7 @@ export default class RektangelExtension extends Extension {
     this.config = loadConfig();
     this.settings = this.getSettings();
     for (const action of allActions) {
-      Main.wm.addKeybinding(action, this.settings, Meta.KeyBindingFlags.NONE, Shell.ActionMode.NORMAL, () =>
+      Main.wm.addKeybinding(keyName(action), this.settings, Meta.KeyBindingFlags.NONE, Shell.ActionMode.NORMAL, () =>
         this.onAction(action),
       );
     }
@@ -36,7 +37,7 @@ export default class RektangelExtension extends Extension {
 
   override disable(): void {
     for (const action of allActions) {
-      Main.wm.removeKeybinding(action);
+      Main.wm.removeKeybinding(keyName(action));
     }
     this.history.clear();
     this.settings = null;

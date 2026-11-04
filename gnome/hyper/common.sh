@@ -20,7 +20,7 @@ hyper_bindings=(
   "right-half <Mod3>Right"
   "top-half <Mod3>Up"
   "bottom-half <Mod3>Down"
-  "maximize <Mod3>f"
+  "maximize-window <Mod3>f"
   "center <Mod3>c"
   "maximize-height <Mod3><Shift>Up"
   "larger <Mod3><Shift>Right"
