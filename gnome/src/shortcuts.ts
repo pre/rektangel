@@ -22,6 +22,28 @@ export const shortcutGroups: readonly ShortcutGroup[] = [
   { title: 'Other', actions: [Action.Restore] },
 ];
 
+const columnCost = (groups: readonly ShortcutGroup[]): number =>
+  groups.reduce((sum, group) => sum + group.actions.length + 1, 0);
+
+/**
+ * Splits the groups into a left and a right column of about the same
+ * height. A group costs its rows plus one for its title. The left column
+ * gets the first groups and the right column the rest, so that the display
+ * order reads down the left column first. On a tie the left column is the
+ * taller one.
+ */
+export function splitIntoColumns<T extends ShortcutGroup>(groups: readonly T[]): [T[], T[]] {
+  const total = columnCost(groups);
+  const difference = (split: number): number => Math.abs(total - 2 * columnCost(groups.slice(0, split)));
+  let best = 0;
+  for (let split = 1; split <= groups.length; split++) {
+    if (difference(split) <= difference(best)) {
+      best = split;
+    }
+  }
+  return [groups.slice(0, best), groups.slice(best)];
+}
+
 const modifierAliases: Readonly<Record<string, string>> = {
   control: 'Control',
   ctrl: 'Control',
