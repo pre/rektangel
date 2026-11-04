@@ -1,6 +1,6 @@
 # Caps Lock mode
 
-Caps Lock mode makes Caps Lock the Super key of the Rektangel shortcuts. Hold Caps Lock instead of Super: Super+Alt+Left becomes Caps+Alt+Left. Super keeps its GNOME function. See ADR 0008 and ADR 0009.
+Caps Lock mode makes Caps Lock the Super key of the Rektangel shortcuts. Hold Caps Lock instead of Super: Super+Left becomes Caps+Left. Super keeps its GNOME function. See ADR 0008 and ADR 0009.
 
 The mode is optional. The default shortcuts do not need it.
 
@@ -66,12 +66,12 @@ Each shortcut is the stored shortcut with Caps Lock in place of Super. A shortcu
 
 | Action           | Default                  | Caps Lock mode           |
 |------------------|--------------------------|--------------------------|
-| Left half        | Super+Alt+Left           | Caps+Alt+Left            |
-| Maximize         | Super+Alt+F              | Caps+Alt+F               |
-| Top left         | Ctrl+Super+Left          | Ctrl+Caps+Left           |
-| Restore          | Ctrl+Alt+BackSpace       | Ctrl+Alt+BackSpace       |
+| Left half        | Super+Left               | Caps+Left                |
+| Top left         | Super+Shift+Left         | Caps+Shift+Left          |
+| Maximize         | Super+Space              | Caps+Space               |
+| Restore          | Super+BackSpace          | Caps+BackSpace           |
 
-The defaults have Alt only to prevent conflicts with GNOME. For shorter shortcuts, store them without Alt, for example `['<Super>Left']` for left half: Caps Lock mode then gives Caps+Left. `gnome-keys.sh` compares the stored form, so it also removes the GNOME Super+Left (tile the window to the left). It does this also in Caps Lock mode, where the two do not conflict, so that you need no new run when you set `super-key` back to `super`.
+All defaults use Super, so in Caps Lock mode all defaults use Caps Lock, and Super is free for GNOME. But `gnome-keys.sh` compares the stored form, so it removes the GNOME Super+Left (tile the window to the left) and the other conflicts also in Caps Lock mode. Then you need no new run when you set `super-key` back to `super`. To get the GNOME shortcuts back in Caps Lock mode, run `gnome-keys.sh --undo`.
 
 ## Known limits
 

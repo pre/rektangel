@@ -26,7 +26,19 @@ You do not need Node.js. GNOME Shell runs the extension.
    gnome-extensions enable rektangel@repo.pet
    ```
 
-Some default shortcuts are also GNOME shortcuts, for example Super+Alt+Left. To remove only the conflicting GNOME entries, run the script that is in the zip. It reads the current Rektangel shortcuts, so run it again after you change a shortcut. It removes each GNOME entry that is equal to a Rektangel shortcut from these schemas: `org.gnome.desktop.wm.keybindings`, `org.gnome.mutter.keybindings`, `org.gnome.mutter.wayland.keybindings`, `org.gnome.shell.keybindings` and `org.gnome.settings-daemon.plugins.media-keys`. The other entries of a key stay. The order of the modifiers does not matter, and neither does the case of a modifier or of a one-letter key. The script needs `gsettings`, `dconf` and `jq`. It saves the old values to `~/.config/rektangel/gnome-keys-backup.json` before it changes them. A key that is in the backup from an earlier run keeps its first value. `--undo` sets the old values again, or resets a key that had the GNOME default.
+Some default shortcuts are also GNOME shortcuts. On GNOME 46 these GNOME defaults conflict:
+
+| Rektangel default        | GNOME key                                                        |
+|--------------------------|------------------------------------------------------------------|
+| Super+Left, Super+Right  | `org.gnome.mutter.keybindings` `toggle-tiled-left`, `toggle-tiled-right` |
+| Super+Up                 | `org.gnome.desktop.wm.keybindings` `maximize`                    |
+| Super+Down               | `org.gnome.desktop.wm.keybindings` `unmaximize`                  |
+| Super+Shift+arrow keys   | `org.gnome.desktop.wm.keybindings` `move-to-monitor-left`, `-right`, `-up`, `-down` |
+| Super+Space              | `org.gnome.desktop.wm.keybindings` `switch-input-source`         |
+
+Ubuntu sets `maximize` and `unmaximize` to empty in the Ubuntu session, so on Ubuntu Super+Up and Super+Down are free. The other defaults (Super+Return, Super+Period, Super+Plus, Super+Minus, Super+Apostrophe, Super+Shift+Apostrophe and Super+BackSpace) have no GNOME 46 shortcut. IBus has Super+Period for emoji (`org.freedesktop.ibus.panel.emoji hotkey`). The script does not change IBus keys, because GNOME Shell gets the key before IBus does. Other extensions can also use these keys, for example Tiling Assistant uses Super+Up and Super+Down.
+
+Use `gnome-keys.sh` to remove the GNOME conflicts. The script is in the zip, and it removes only the conflicting GNOME entries. It reads the current Rektangel shortcuts, so run it again after you change a shortcut. It removes each GNOME entry that is equal to a Rektangel shortcut from these schemas: `org.gnome.desktop.wm.keybindings`, `org.gnome.mutter.keybindings`, `org.gnome.mutter.wayland.keybindings`, `org.gnome.shell.keybindings` and `org.gnome.settings-daemon.plugins.media-keys`. The other entries of a key stay. The order of the modifiers does not matter, and neither does the case of a modifier or of a one-letter key. The script needs `gsettings`, `dconf` and `jq`. It saves the old values to `~/.config/rektangel/gnome-keys-backup.json` before it changes them. A key that is in the backup from an earlier run keeps its first value. `--undo` sets the old values again, or resets a key that had the GNOME default.
 
 ```sh
 dir=~/.local/share/gnome-shell/extensions/rektangel@repo.pet
@@ -43,22 +55,24 @@ The scripts use `/usr/bin/gsettings` and `/usr/bin/dconf` when they exist. A `gs
 
 | Action           | Shortcut                 |
 |------------------|--------------------------|
-| Left half        | Super+Alt+Left           |
-| Right half       | Super+Alt+Right          |
-| Top half         | Super+Alt+Up             |
-| Bottom half      | Super+Alt+Down           |
-| Maximize         | Super+Alt+F              |
-| Center           | Super+Alt+C              |
-| Maximize height  | Ctrl+Alt+Shift+Up        |
-| Larger           | Ctrl+Alt+Shift+Right     |
-| Smaller          | Ctrl+Alt+Shift+Left      |
-| Previous display | Ctrl+Alt+Super+Left      |
-| Next display     | Ctrl+Alt+Super+Right     |
-| Top left         | Ctrl+Super+Left          |
-| Top right        | Ctrl+Super+Right         |
-| Bottom left      | Ctrl+Shift+Super+Left    |
-| Bottom right     | Ctrl+Shift+Super+Right   |
-| Restore          | Ctrl+Alt+BackSpace       |
+| Left half        | Super+Left               |
+| Right half       | Super+Right              |
+| Top half         | Super+Up                 |
+| Bottom half      | Super+Down               |
+| Top left         | Super+Shift+Left         |
+| Top right        | Super+Shift+Up           |
+| Bottom left      | Super+Shift+Down         |
+| Bottom right     | Super+Shift+Right        |
+| Maximize         | Super+Space              |
+| Maximize height  | Super+Return             |
+| Center           | Super+Period             |
+| Larger           | Super+Plus               |
+| Smaller          | Super+Minus              |
+| Next display     | Super+Apostrophe         |
+| Previous display | Super+Shift+Apostrophe   |
+| Restore          | Super+BackSpace          |
+
+The corners go clockwise from the arrow key: Left is top left, Up is top right, Right is bottom right and Down is bottom left. The keys are for a Finnish keyboard, on which Plus and Minus have no Shift and Apostrophe is the key to the right of Ä. On a Finnish keyboard, Shift+Apostrophe is the asterisk, so the previous display shortcut shows as Super+*. Mutter compares the key and the modifiers, so the stored form is `<Super><Shift>apostrophe`, not `<Super>asterisk`. On other layouts, the same key names can be on other keys, or need Shift. See ADR 0010.
 
 Thirds, almost maximize and move to edge have no default shortcut. Each shortcut is a gsettings key in `org.gnome.shell.extensions.rektangel`. To change one, use the preferences window (see below), `gsettings` or dconf-editor. The schema is in the extension directory, so give `gsettings` the schema directory:
 
