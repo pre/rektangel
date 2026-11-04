@@ -1,7 +1,8 @@
 import { Action } from './actions.js';
 import { calculations } from './calculations/index.js';
 import type { CoreConfig } from './config.js';
-import { monitorForRect, rectEquals, type Monitor, type Rect } from './geometry.js';
+import { fixedSizeFrame } from './fixed-size.js';
+import { clampRect, monitorForRect, rectEquals, type Monitor, type Rect } from './geometry.js';
 import type { WindowHistory } from './history.js';
 
 export interface ExecuteInput {
@@ -56,26 +57,57 @@ export function execute(input: ExecuteInput): ExecuteResult {
   const restoreRect = movedByHand || input.history === undefined ? input.frame : input.history.restoreRect;
 
   const result = calculation({
+    action: input.action,
     frame: input.frame,
     monitor,
     monitors: input.monitors,
     lastAction,
     config: input.config,
   });
-  if (result === null) {
+  const target = result === null ? undefined : input.monitors[result.monitorIndex];
+  if (result === null || target === undefined) {
     return { change: null, history: { restoreRect, lastAction } };
   }
 
-  // TODO(core): when canResize is false, keep the size and only move the
-  // window, as Rectangle FixedSizeWindowMover does.
-
-  const count = lastAction?.action === input.action ? lastAction.count + 1 : 1;
+  const frame = placeOnMonitor(roundRect(result.frame), input.frame, input.canResize, target.workArea);
+  const recordedAction = result.resultingAction ?? input.action;
+  const count = lastAction?.action === recordedAction ? lastAction.count + 1 : 1;
   const history: WindowHistory = {
     restoreRect,
-    lastAction: { action: input.action, rect: result.frame, count },
+    lastAction: {
+      action: recordedAction,
+      rect: frame,
+      count,
+      ...(result.subAction === undefined ? {} : { subAction: result.subAction }),
+    },
   };
-  const unchanged = result.monitorIndex === input.monitorIndex && rectEquals(result.frame, input.frame);
-  return { change: unchanged ? null : result, history };
+  const unchanged = result.monitorIndex === input.monitorIndex && rectEquals(frame, input.frame);
+  return { change: unchanged ? null : { frame, monitorIndex: result.monitorIndex }, history };
+}
+
+/**
+ * Keeps the frame inside the work area, as Rectangle `BestEffortWindowMover`
+ * does. A window that cannot change size keeps its size and goes where the
+ * calculated frame is (Rectangle `FixedSizeWindowMover`).
+ */
+function placeOnMonitor(calculated: Rect, current: Rect, canResize: boolean, workArea: Rect): Rect {
+  const sizeChanges = calculated.width !== current.width || calculated.height !== current.height;
+  if (!canResize && sizeChanges) {
+    return fixedSizeFrame(current.width, current.height, calculated, workArea);
+  }
+  return clampRect(calculated, workArea);
+}
+
+/** Rectangle works in fractional points. Mutter needs integer pixels, so every edge rounds to the nearest pixel. */
+function roundRect(rect: Rect): Rect {
+  const x = Math.round(rect.x);
+  const y = Math.round(rect.y);
+  return {
+    x,
+    y,
+    width: Math.round(rect.x + rect.width) - x,
+    height: Math.round(rect.y + rect.height) - y,
+  };
 }
 
 function restore(input: ExecuteInput): ExecuteResult {

@@ -72,3 +72,19 @@ describe('execute', () => {
     assert.equal(result.change, null);
   });
 });
+
+describe('execute with a window that cannot change size', () => {
+  test('maximize keeps the size and centers the window in the work area', () => {
+    const frame = { x: 100, y: 200, width: 800, height: 600 };
+
+    const result = execute(input({ action: 'maximize', frame, canResize: false }));
+
+    assert.deepEqual(result.change, { frame: { x: 1104, y: 560, width: 800, height: 600 }, monitorIndex: 0 });
+  });
+
+  test('the recorded rect is the frame that the window really gets', () => {
+    const result = execute(input({ action: 'maximize', canResize: false }));
+
+    assert.deepEqual(result.history?.lastAction?.rect, result.change?.frame);
+  });
+});
