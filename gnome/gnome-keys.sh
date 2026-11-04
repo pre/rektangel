@@ -72,7 +72,7 @@ remove_conflicts() {
     exit 1
   fi
 
-  local backup='{}' entry schema key accel current updated
+  local backup='{}' changes=() entry schema key accel current updated
   for entry in "${conflicts[@]}"; do
     read -r schema key accel <<<"$entry"
     current=$(gsettings get "$schema" "$key" | gvariant_to_json)
@@ -84,7 +84,7 @@ remove_conflicts() {
     fi
     backup=$(jq -c --arg schema "$schema" --arg key "$key" --argjson value "$current" \
       '.[$schema][$key] = $value' <<<"$backup")
-    run gsettings set "$schema" "$key" "$(json_to_gvariant <<<"$updated")"
+    changes+=("$schema" "$key" "$(json_to_gvariant <<<"$updated")")
   done
 
   if [[ "$backup" == '{}' ]]; then
@@ -99,6 +99,12 @@ remove_conflicts() {
     jq . <<<"$backup" >"$backup_file"
     echo "Saved the old values to $backup_file"
   fi
+
+  # The backup is on disk before the first change.
+  local i
+  for ((i = 0; i < ${#changes[@]}; i += 3)); do
+    run gsettings set "${changes[i]}" "${changes[i + 1]}" "${changes[i + 2]}"
+  done
 }
 
 restore_backup() {
