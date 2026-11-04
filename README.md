@@ -58,12 +58,26 @@ The scripts use `/usr/bin/gsettings` and `/usr/bin/dconf` when they exist. A `gs
 | Bottom right     | Ctrl+Shift+Super+Right   |
 | Restore          | Ctrl+Alt+BackSpace       |
 
-Thirds, almost maximize and move to edge have no default shortcut. Each shortcut is a gsettings key in `org.gnome.shell.extensions.rektangel`. To change one, use `gsettings` or dconf-editor. The schema is in the extension directory, so give `gsettings` the schema directory:
+Thirds, almost maximize and move to edge have no default shortcut. Each shortcut is a gsettings key in `org.gnome.shell.extensions.rektangel`. To change one, use the preferences window (see below), `gsettings` or dconf-editor. The schema is in the extension directory, so give `gsettings` the schema directory:
 
 ```sh
 schemas=~/.local/share/gnome-shell/extensions/rektangel@repo.pet/schemas
 gsettings --schemadir "$schemas" set org.gnome.shell.extensions.rektangel first-third "['<Super><Alt>e']"
 ```
+
+## Preferences
+
+The preferences window shows all actions and their shortcuts. To open it, open the Extensions app, then open Rektangel and click Settings. Or run:
+
+```sh
+gnome-extensions prefs rektangel@repo.pet
+```
+
+Click an action, press the new key combination, and click Set. Escape cancels. BackSpace disables the action. The window does not accept a combination that another Rektangel action uses. A shortcut must have Ctrl, Alt or Super. The undo button on a row sets the default shortcut of that action again, and Reset All sets all defaults. A change has an effect immediately. The window does not find conflicts with GNOME shortcuts: use `gnome-keys.sh` (see above) or Settings > Keyboard > View and Customize Shortcuts.
+
+When you set a shortcut for the first time, GNOME can ask if the Extensions app may inhibit shortcuts. Allow it, otherwise GNOME Shell gets the key combination before the window does.
+
+After you install a version that adds the preferences window over an older version, log out and in once. GNOME Shell checks for a preferences window only when it loads the extension.
 
 ## Settings file
 
