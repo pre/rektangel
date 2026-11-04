@@ -228,8 +228,9 @@ function shortcutRow(
 ): { row: Adw.ActionRow; refresh: (conflicts: readonly RowConflict[]) => void } {
   const key = keyName(action);
   const title = actionTitle(settings, action);
-  const row = new Adw.ActionRow({ title, activatable: true });
-  const label = new Gtk.Label({ css_classes: ['dim-label'] });
+  const row = new Adw.ActionRow({ title, activatable: false });
+  const label = new Gtk.Label();
+  const shortcut = new Gtk.Button({ child: label, valign: Gtk.Align.CENTER, tooltip_text: 'Set Shortcut' });
   const reset = new Gtk.Button({
     icon_name: 'edit-undo-symbolic',
     tooltip_text: 'Reset to Default',
@@ -238,19 +239,21 @@ function shortcutRow(
   });
   const { badge, show } = conflictBadge(settings, removeConflict);
   row.add_suffix(badge);
-  row.add_suffix(label);
+  row.add_suffix(shortcut);
   row.add_suffix(reset);
 
   const refresh = (conflicts: readonly RowConflict[]): void => {
     show(conflicts);
     const accelerators = settings.get_strv(key);
-    label.label = accelerators.length === 0 ? acceleratorLabel('') : accelerators.map(acceleratorLabel).join(', ');
+    const isEmpty = accelerators.length === 0;
+    label.label = isEmpty ? 'Set shortcut…' : accelerators.map(acceleratorLabel).join(', ');
+    label.css_classes = isEmpty ? ['dim-label'] : ['keycap'];
     const defaultValue = settings.get_default_value(key);
     reset.visible = defaultValue !== null && !settings.get_value(key).equal(defaultValue);
   };
 
   reset.connect('clicked', () => settings.reset(key));
-  row.connect('activated', () =>
+  shortcut.connect('clicked', () =>
     presentCaptureDialog(window, {
       actionTitle: title,
       current: settings.get_strv(key)[0] ?? '',

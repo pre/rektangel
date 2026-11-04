@@ -81,7 +81,7 @@ export function headerGroup(window: Adw.PreferencesWindow, settings: Gio.Setting
   });
   return new Adw.PreferencesGroup({
     title: 'Keyboard Shortcuts',
-    description: 'Click an action to set its shortcut.',
+    description: 'Click a shortcut to change it.',
     header_suffix: resetAll,
   });
 }
