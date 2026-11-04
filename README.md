@@ -91,6 +91,8 @@ gnome-extensions prefs rektangel@repo.pet
 
 Click an action, press the new key combination, and click Set. Escape cancels. BackSpace disables the action. The window does not accept a combination that another Rektangel action uses. A shortcut must have Ctrl, Alt or Super. The undo button on a row sets the default shortcut of that action again, and Reset All sets all defaults. A change has an effect immediately. If GNOME uses the combination, the dialog shows the GNOME shortcut and a Remove from GNOME button. The button removes only that combination from the GNOME shortcut and writes the old value to the backup file of `gnome-keys.sh`, so `gnome-keys.sh --undo` restores it. If the keys that you press do not appear in the dialog, GNOME already uses them: remove them with `gnome-keys.sh` (see above) or in Settings > Keyboard > View and Customize Shortcuts.
 
+A red warning badge before a shortcut shows that GNOME or another Rektangel action uses the same keys: click it to see the conflicts and to remove a GNOME entry, with the same backup as in the dialog.
+
 The Super Key group at the top selects the key that is Super for Rektangel: the Windows key or Caps Lock. All shortcuts are stored with Super, so this setting changes all of them at once. A change to Caps Lock has an effect after you log out and in.
 
 When you set a shortcut for the first time, GNOME can ask if the Extensions app may inhibit shortcuts. Allow it, otherwise GNOME Shell gets the key combination before the window does.
