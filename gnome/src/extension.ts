@@ -12,23 +12,16 @@ import {
   type Monitor,
   type Rect,
   type WindowChange,
-  type WindowHistory,
 } from '@rektangel/core';
 import { loadConfig } from './config-file.ts';
-
-interface TrackedWindow {
-  window: Meta.Window;
-  history: WindowHistory;
-  unmanagedSignal: number;
-}
+import { HistoryStore } from './history-store.ts';
 
 const supportedWindowTypes = [Meta.WindowType.NORMAL, Meta.WindowType.DIALOG];
 
 export default class RektangelExtension extends Extension {
   private settings: Gio.Settings | null = null;
   private config: Readonly<CoreConfig> = defaultConfig;
-  /** Keyed by Meta.Window.get_id(). */
-  private readonly tracked = new Map<number, TrackedWindow>();
+  private readonly history = new HistoryStore();
 
   override enable(): void {
     this.config = loadConfig();
@@ -45,9 +38,7 @@ export default class RektangelExtension extends Extension {
     for (const action of allActions) {
       Main.wm.removeKeybinding(action);
     }
-    for (const id of [...this.tracked.keys()]) {
-      this.forget(id);
-    }
+    this.history.clear();
     this.settings = null;
     this.config = defaultConfig;
     console.log('Rektangel: disabled');
@@ -73,37 +64,17 @@ export default class RektangelExtension extends Extension {
         monitorIndex: window.get_monitor(),
         monitors: currentMonitors(),
         canResize,
-        history: this.tracked.get(window.get_id())?.history,
+        history: this.history.get(window),
         config: this.config,
       });
 
-      this.storeHistory(window, result.history);
+      this.history.set(window, result.history);
       if (result.change !== null) {
         applyChange(window, result.change, canResize);
+        this.history.recordFrameAfterChange(window, result.change.frame);
       }
     } catch (error) {
       console.error(`Rektangel: ${action} failed`, error);
-    }
-  }
-
-  private storeHistory(window: Meta.Window, history: WindowHistory | undefined): void {
-    const id = window.get_id();
-    const tracked = this.tracked.get(id);
-    if (history === undefined) {
-      this.forget(id);
-    } else if (tracked !== undefined) {
-      tracked.history = history;
-    } else {
-      const unmanagedSignal = window.connect('unmanaged', () => this.forget(id));
-      this.tracked.set(id, { window, history, unmanagedSignal });
-    }
-  }
-
-  private forget(id: number): void {
-    const tracked = this.tracked.get(id);
-    if (tracked !== undefined) {
-      tracked.window.disconnect(tracked.unmanagedSignal);
-      this.tracked.delete(id);
     }
   }
 }
