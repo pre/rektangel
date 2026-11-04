@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.rektangel" path="/org/gnome/shell/extensions/rektangel/">
+    <key name="left-half" type="as">
+      <default><![CDATA[['<Super><Alt>Left']]]></default>
+      <summary>Left half</summary>
+    </key>
+    <key name="right-half" type="as">
+      <default><![CDATA[['<Super><Alt>Right']]]></default>
+      <summary>Right half</summary>
+    </key>
+    <key name="top-half" type="as">
+      <default><![CDATA[['<Super><Alt>Up']]]></default>
+      <summary>Top half</summary>
+    </key>
+    <key name="bottom-half" type="as">
+      <default><![CDATA[['<Super><Alt>Down']]]></default>
+      <summary>Bottom half</summary>
+    </key>
+    <key name="maximize" type="as">
+      <default><![CDATA[['<Super><Alt>f']]]></default>
+      <summary>Maximize</summary>
+    </key>
+    <key name="almost-maximize" type="as">
+      <default><![CDATA[[]]]></default>
+      <summary>Almost maximize</summary>
+    </key>
+    <key name="center" type="as">
+      <default><![CDATA[['<Super><Alt>c']]]></default>
+      <summary>Center</summary>
+    </key>
+    <key name="maximize-height" type="as">
+      <default><![CDATA[['<Control><Alt><Shift>Up']]]></default>
+      <summary>Maximize height</summary>
+    </key>
+    <key name="larger" type="as">
+      <default><![CDATA[['<Control><Alt><Shift>Right']]]></default>
+      <summary>Make larger</summary>
+    </key>
+    <key name="smaller" type="as">
+      <default><![CDATA[['<Control><Alt><Shift>Left']]]></default>
+      <summary>Make smaller</summary>
+    </key>
+    <key name="previous-display" type="as">
+      <default><![CDATA[['<Control><Alt><Super>Left']]]></default>
+      <summary>Move to previous display</summary>
+    </key>
+    <key name="next-display" type="as">
+      <default><![CDATA[['<Control><Alt><Super>Right']]]></default>
+      <summary>Move to next display</summary>
+    </key>
+    <key name="top-left" type="as">
+      <default><![CDATA[['<Control><Super>Left']]]></default>
+      <summary>Top left corner</summary>
+    </key>
+    <key name="top-right" type="as">
+      <default><![CDATA[['<Control><Super>Right']]]></default>
+      <summary>Top right corner</summary>
+    </key>
+    <key name="bottom-left" type="as">
+      <default><![CDATA[['<Control><Shift><Super>Left']]]></default>
+      <summary>Bottom left corner</summary>
+    </key>
+    <key name="bottom-right" type="as">
+      <default><![CDATA[['<Control><Shift><Super>Right']]]></default>
+      <summary>Bottom right corner</summary>
+    </key>
+    <key name="restore" type="as">
+      <default><![CDATA[['<Control><Alt>BackSpace']]]></default>
+      <summary>Restore</summary>
+    </key>
+    <key name="first-third" type="as">
+      <default><![CDATA[[]]]></default>
+      <summary>First third</summary>
+    </key>
+    <key name="center-third" type="as">
+      <default><![CDATA[[]]]></default>
+      <summary>Center third</summary>
+    </key>
+    <key name="last-third" type="as">
+      <default><![CDATA[[]]]></default>
+      <summary>Last third</summary>
+    </key>
+    <key name="first-two-thirds" type="as">
+      <default><![CDATA[[]]]></default>
+      <summary>First two thirds</summary>
+    </key>
+    <key name="last-two-thirds" type="as">
+      <default><![CDATA[[]]]></default>
+      <summary>Last two thirds</summary>
+    </key>
+    <key name="move-left" type="as">
+      <default><![CDATA[[]]]></default>
+      <summary>Move to left edge</summary>
+    </key>
+    <key name="move-right" type="as">
+      <default><![CDATA[[]]]></default>
+      <summary>Move to right edge</summary>
+    </key>
+    <key name="move-up" type="as">
+      <default><![CDATA[[]]]></default>
+      <summary>Move to top edge</summary>
+    </key>
+    <key name="move-down" type="as">
+      <default><![CDATA[[]]]></default>
+      <summary>Move to bottom edge</summary>
+    </key>
+  </schema>
+</schemalist>

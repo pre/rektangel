@@ -1,0 +1,23 @@
+{
+  "name": "@rektangel/gnome",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Rektangel GNOME Shell extension",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit -p tsconfig.json && node esbuild.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "node esbuild.mjs && gjs -m test/gjs-smoke.js",
+    "pack": "bash pack.sh"
+  },
+  "dependencies": {
+    "@rektangel/core": "0.1.0"
+  },
+  "devDependencies": {
+    "@girs/gjs": "4.0.0-beta.12",
+    "@girs/gnome-shell": "46.0.2",
+    "esbuild": "0.28.2",
+    "typescript": "5.9.3"
+  }
+}
