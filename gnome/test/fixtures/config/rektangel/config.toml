@@ -1,0 +1,5 @@
+# Sample config for the GJS smoke test.
+cycle_sizes = [0.5, 0.75]
+step_size = 40
+corner_axis = "vertical"
+almost_maximize_ratio = 0.8
