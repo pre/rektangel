@@ -115,7 +115,21 @@ function restore(input: ExecuteInput): ExecuteResult {
     return { change: null, history: undefined };
   }
   const { restoreRect } = input.history;
-  const monitorIndex = monitorForRect(restoreRect, input.monitors)?.index ?? input.monitorIndex;
-  const change = rectEquals(restoreRect, input.frame) ? null : { frame: { ...restoreRect }, monitorIndex };
+  const target = restoreFrame(restoreRect, input);
+  const change = rectEquals(target.frame, input.frame) ? null : target;
   return { change, history: { restoreRect } };
+}
+
+/**
+ * The restore frame on the monitor that contains its center. When that
+ * monitor is gone, the frame moves into the work area of the current monitor.
+ */
+function restoreFrame(restoreRect: Rect, input: ExecuteInput): WindowChange {
+  const monitor = monitorForRect(restoreRect, input.monitors);
+  if (monitor !== undefined) {
+    return { frame: { ...restoreRect }, monitorIndex: monitor.index };
+  }
+  const current = input.monitors[input.monitorIndex];
+  const frame = current === undefined ? { ...restoreRect } : clampRect(restoreRect, current.workArea);
+  return { frame, monitorIndex: input.monitorIndex };
 }
