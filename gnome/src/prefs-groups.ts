@@ -61,8 +61,8 @@ export function superKeyGroup(settings: Gio.Settings, extensionDir: Gio.File): A
   return group;
 }
 
-export function headerGroup(window: Adw.PreferencesWindow, settings: Gio.Settings): Adw.PreferencesGroup {
-  const resetAll = new Gtk.Button({ label: 'Reset All', valign: Gtk.Align.CENTER });
+export function resetAllButton(window: Adw.PreferencesWindow, settings: Gio.Settings): Gtk.Button {
+  const resetAll = new Gtk.Button({ label: 'Reset to defaults', halign: Gtk.Align.END, valign: Gtk.Align.START });
   resetAll.connect('clicked', () => {
     const dialog = new Adw.AlertDialog({
       heading: 'Reset All Shortcuts?',
@@ -79,11 +79,7 @@ export function headerGroup(window: Adw.PreferencesWindow, settings: Gio.Setting
     });
     dialog.present(window);
   });
-  return new Adw.PreferencesGroup({
-    title: 'Keyboard Shortcuts',
-    description: 'Click a shortcut to change it.',
-    header_suffix: resetAll,
-  });
+  return resetAll;
 }
 
 export function gnomeNoteGroup(scriptPath: string): Adw.PreferencesGroup {

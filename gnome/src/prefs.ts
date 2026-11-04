@@ -15,15 +15,15 @@ import {
 } from './gnome-conflicts.ts';
 import { gnomeKeybindingSettings, readGnomeKeybindings, removeFromGnome } from './gnome-keybindings.ts';
 import { keyName } from './key-names.ts';
-import { gnomeNoteGroup, headerGroup, superKeyGroup } from './prefs-groups.ts';
-import { findConflict, shortcutGroups, splitIntoColumns } from './shortcuts.ts';
+import { gnomeNoteGroup, resetAllButton, superKeyGroup } from './prefs-groups.ts';
+import { findConflict, shortcutLayout, type ShortcutGroup } from './shortcuts.ts';
 
 /** The space that the window leaves free above and below on the monitor. */
 const monitorMargin = 80;
 
 const defaultWidth = 1000;
 
-/** The page clamps its content to 600 px. The columns need more. */
+/** The page clamps its content to 600 px. The grid needs more. */
 const pageMaximumWidth = 1100;
 
 export default class RektangelPreferences extends ExtensionPreferences {
@@ -34,9 +34,6 @@ export default class RektangelPreferences extends ExtensionPreferences {
       icon_name: 'preferences-desktop-keyboard-shortcuts-symbolic',
     });
     window.add(page);
-
-    page.add(superKeyGroup(settings, this.dir));
-    page.add(headerGroup(window, settings));
 
     const gnomeSettings = gnomeKeybindingSettings();
     let gnomeTables = readGnomeKeybindings(gnomeSettings);
@@ -59,23 +56,31 @@ export default class RektangelPreferences extends ExtensionPreferences {
       reloadGnome();
     };
 
-    const columns = new Gtk.Box({ orientation: Gtk.Orientation.HORIZONTAL, spacing: 24, homogeneous: true });
-    for (const column of splitIntoColumns(shortcutGroups)) {
-      const box = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL, spacing: 24, valign: Gtk.Align.START });
-      for (const group of column) {
-        const preferencesGroup = new Adw.PreferencesGroup({ title: group.title });
-        for (const action of group.actions) {
-          const { row, refresh } = shortcutRow(window, settings, action, removeConflict);
-          refreshers.set(action, refresh);
-          preferencesGroup.add(row);
-        }
-        box.append(preferencesGroup);
+    const groupWidget = (group: ShortcutGroup): Adw.PreferencesGroup => {
+      const preferencesGroup = new Adw.PreferencesGroup({ title: group.title });
+      for (const action of group.actions) {
+        const { row, refresh } = shortcutRow(window, settings, action, removeConflict);
+        refreshers.set(action, refresh);
+        preferencesGroup.add(row);
       }
-      columns.append(box);
-    }
-    const columnsGroup = new Adw.PreferencesGroup();
-    columnsGroup.add(columns);
-    page.add(columnsGroup);
+      return preferencesGroup;
+    };
+    // Cells align at the top, so the titles of the groups in a row are on one line.
+    const grid = new Gtk.Grid({ column_spacing: 24, row_spacing: 24, column_homogeneous: true });
+    const superKey = superKeyGroup(settings, this.dir);
+    superKey.valign = Gtk.Align.START;
+    grid.attach(superKey, 0, 0, 1, 1);
+    grid.attach(resetAllButton(window, settings), 1, 0, 1, 1);
+    shortcutLayout.forEach((cells, row) =>
+      cells.forEach((groups, column) => {
+        const cell = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL, spacing: 24, valign: Gtk.Align.START });
+        groups.forEach((group) => cell.append(groupWidget(group)));
+        grid.attach(cell, column, row + 1, 1, 1);
+      }),
+    );
+    const gridGroup = new Adw.PreferencesGroup();
+    gridGroup.add(grid);
+    page.add(gridGroup);
     page.add(gnomeNoteGroup(`${this.path}/gnome-keys.sh`));
     refreshAll();
 

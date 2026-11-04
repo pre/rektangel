@@ -6,8 +6,7 @@ import {
   hasCommandModifier,
   normalizeAccelerator,
   shortcutGroups,
-  splitIntoColumns,
-  type ShortcutGroup,
+  shortcutLayout,
 } from '../src/shortcuts.ts';
 
 describe('shortcutGroups', () => {
@@ -77,45 +76,27 @@ describe('findConflict', () => {
   });
 });
 
-describe('splitIntoColumns', () => {
-  const group = (title: string, rows: number): ShortcutGroup => ({
-    title,
-    actions: allActions.slice(0, rows),
-  });
-  const titles = (columns: readonly (readonly ShortcutGroup[])[]): string[][] =>
-    columns.map((column) => column.map((g) => g.title));
-  const cost = (column: readonly ShortcutGroup[]): number =>
-    column.reduce((sum, g) => sum + g.actions.length + 1, 0);
+describe('shortcutLayout', () => {
+  const titles = shortcutLayout.map((row) => row.map((cell) => cell.map((group) => group.title)));
 
-  test('splits the current groups so that Thirds and Size are in different columns', () => {
-    const [left, right] = splitIntoColumns(shortcutGroups);
-    assert.deepEqual(titles([left, right]), [
-      ['Halves', 'Corners', 'Thirds'],
-      ['Size', 'Move', 'Displays', 'Other'],
+  test('has every group exactly once', () => {
+    const listed = shortcutLayout.flat(2);
+    assert.equal(new Set(listed).size, listed.length);
+    assert.deepEqual(new Set(listed), new Set(shortcutGroups));
+  });
+
+  test('has two cells in each row', () => {
+    assert.deepEqual(
+      titles.map((row) => row.length),
+      [2, 2, 2],
+    );
+  });
+
+  test('stacks Displays and Other in the last cell', () => {
+    assert.deepEqual(titles, [
+      [['Halves'], ['Corners']],
+      [['Thirds'], ['Size']],
+      [['Move'], ['Displays', 'Other']],
     ]);
-    assert.ok(Math.abs(cost(left) - cost(right)) <= 1);
-  });
-
-  test('keeps the display order, left column first', () => {
-    const [left, right] = splitIntoColumns(shortcutGroups);
-    assert.deepEqual([...left, ...right], [...shortcutGroups]);
-  });
-
-  test('balances by rows plus one for each title', () => {
-    const groups = [group('A', 1), group('B', 1), group('C', 4)];
-    assert.deepEqual(titles(splitIntoColumns(groups)), [['A', 'B'], ['C']]);
-  });
-
-  test('puts a single group in the left column', () => {
-    assert.deepEqual(titles(splitIntoColumns([group('A', 3)])), [['A'], []]);
-  });
-
-  test('gives two empty columns for no groups', () => {
-    assert.deepEqual(titles(splitIntoColumns([])), [[], []]);
-  });
-
-  test('gives the left column the extra row when the costs cannot be equal', () => {
-    const groups = [group('A', 1), group('B', 1), group('C', 1)];
-    assert.deepEqual(titles(splitIntoColumns(groups)), [['A', 'B'], ['C']]);
   });
 });

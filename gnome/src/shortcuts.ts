@@ -5,44 +5,41 @@ export interface ShortcutGroup {
   readonly actions: readonly Action[];
 }
 
-/** The groups of the preferences window, in display order. */
-export const shortcutGroups: readonly ShortcutGroup[] = [
-  { title: 'Halves', actions: [Action.LeftHalf, Action.RightHalf, Action.TopHalf, Action.BottomHalf] },
-  { title: 'Corners', actions: [Action.TopLeft, Action.TopRight, Action.BottomLeft, Action.BottomRight] },
-  {
-    title: 'Thirds',
-    actions: [Action.FirstThird, Action.CenterThird, Action.LastThird, Action.FirstTwoThirds, Action.LastTwoThirds],
-  },
-  {
-    title: 'Size',
-    actions: [Action.Maximize, Action.AlmostMaximize, Action.MaximizeHeight, Action.Larger, Action.Smaller],
-  },
-  { title: 'Move', actions: [Action.Center, Action.MoveLeft, Action.MoveRight, Action.MoveUp, Action.MoveDown] },
-  { title: 'Displays', actions: [Action.PreviousDisplay, Action.NextDisplay] },
-  { title: 'Other', actions: [Action.Restore] },
-];
+const halves: ShortcutGroup = {
+  title: 'Halves',
+  actions: [Action.LeftHalf, Action.RightHalf, Action.TopHalf, Action.BottomHalf],
+};
+const corners: ShortcutGroup = {
+  title: 'Corners',
+  actions: [Action.TopLeft, Action.TopRight, Action.BottomLeft, Action.BottomRight],
+};
+const thirds: ShortcutGroup = {
+  title: 'Thirds',
+  actions: [Action.FirstThird, Action.CenterThird, Action.LastThird, Action.FirstTwoThirds, Action.LastTwoThirds],
+};
+const size: ShortcutGroup = {
+  title: 'Size',
+  actions: [Action.Maximize, Action.AlmostMaximize, Action.MaximizeHeight, Action.Larger, Action.Smaller],
+};
+const move: ShortcutGroup = {
+  title: 'Move',
+  actions: [Action.Center, Action.MoveLeft, Action.MoveRight, Action.MoveUp, Action.MoveDown],
+};
+const displays: ShortcutGroup = { title: 'Displays', actions: [Action.PreviousDisplay, Action.NextDisplay] };
+const other: ShortcutGroup = { title: 'Other', actions: [Action.Restore] };
 
-const columnCost = (groups: readonly ShortcutGroup[]): number =>
-  groups.reduce((sum, group) => sum + group.actions.length + 1, 0);
+/** The groups of the preferences window, in display order. */
+export const shortcutGroups: readonly ShortcutGroup[] = [halves, corners, thirds, size, move, displays, other];
 
 /**
- * Splits the groups into a left and a right column of about the same
- * height. A group costs its rows plus one for its title. The left column
- * gets the first groups and the right column the rest, so that the display
- * order reads down the left column first. On a tie the left column is the
- * taller one.
+ * The grid of the preferences window: rows of a left and a right cell.
+ * A cell stacks its groups from top to bottom.
  */
-export function splitIntoColumns<T extends ShortcutGroup>(groups: readonly T[]): [T[], T[]] {
-  const total = columnCost(groups);
-  const difference = (split: number): number => Math.abs(total - 2 * columnCost(groups.slice(0, split)));
-  let best = 0;
-  for (let split = 1; split <= groups.length; split++) {
-    if (difference(split) <= difference(best)) {
-      best = split;
-    }
-  }
-  return [groups.slice(0, best), groups.slice(best)];
-}
+export const shortcutLayout: readonly (readonly (readonly ShortcutGroup[])[])[] = [
+  [[halves], [corners]],
+  [[thirds], [size]],
+  [[move], [displays, other]],
+];
 
 const modifierAliases: Readonly<Record<string, string>> = {
   control: 'Control',
