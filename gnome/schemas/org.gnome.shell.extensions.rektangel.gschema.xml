@@ -105,5 +105,14 @@
       <default><![CDATA[[]]]></default>
       <summary>Move to bottom edge</summary>
     </key>
+    <key name="super-key" type="s">
+      <choices>
+        <choice value="super"/>
+        <choice value="capslock"/>
+      </choices>
+      <default>'super'</default>
+      <summary>Super key</summary>
+      <description>The key for the &lt;Super&gt; modifier of the shortcuts. The shortcuts are always stored with &lt;Super&gt;. "super": the Super key. "capslock": Caps Lock, which needs the XKB option rektangel:caps_hyper. Rektangel then registers the shortcuts with &lt;Mod3&gt;.</description>
+    </key>
   </schema>
 </schemalist>

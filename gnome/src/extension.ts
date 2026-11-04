@@ -1,4 +1,3 @@
-import type Gio from 'gi://Gio';
 import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
@@ -16,19 +15,21 @@ import {
 import { loadConfig } from './config-file.ts';
 import { HistoryStore } from './history-store.ts';
 import { keyName } from './key-names.ts';
+import { TranslatedSettings } from './translated-settings.ts';
 
 const supportedWindowTypes = [Meta.WindowType.NORMAL, Meta.WindowType.DIALOG];
 
 export default class RektangelExtension extends Extension {
-  private settings: Gio.Settings | null = null;
+  private keybindings: TranslatedSettings | null = null;
   private config: Readonly<CoreConfig> = defaultConfig;
   private readonly history = new HistoryStore();
 
   override enable(): void {
     this.config = loadConfig();
-    this.settings = this.getSettings();
+    this.keybindings = new TranslatedSettings(this.getSettings(), allActions.map(keyName));
+    const { settings } = this.keybindings;
     for (const action of allActions) {
-      Main.wm.addKeybinding(keyName(action), this.settings, Meta.KeyBindingFlags.NONE, Shell.ActionMode.NORMAL, () =>
+      Main.wm.addKeybinding(keyName(action), settings, Meta.KeyBindingFlags.NONE, Shell.ActionMode.NORMAL, () =>
         this.onAction(action),
       );
     }
@@ -39,8 +40,9 @@ export default class RektangelExtension extends Extension {
     for (const action of allActions) {
       Main.wm.removeKeybinding(keyName(action));
     }
+    this.keybindings?.destroy();
+    this.keybindings = null;
     this.history.clear();
-    this.settings = null;
     this.config = defaultConfig;
     console.log('Rektangel: disabled');
   }

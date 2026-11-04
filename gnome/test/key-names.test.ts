@@ -8,7 +8,7 @@ const schema = readFileSync(
   new URL('../schemas/org.gnome.shell.extensions.rektangel.gschema.xml', import.meta.url),
   'utf8',
 );
-const schemaKeys = [...schema.matchAll(/<key name="([^"]+)"/g)].map((match) => match[1]);
+const schemaKeys = [...schema.matchAll(/<key name="([^"]+)" type="as"/g)].map((match) => match[1]);
 
 describe('keyName', () => {
   test('does not use the name of the Mutter maximize keybinding', () => {
@@ -19,7 +19,7 @@ describe('keyName', () => {
     assert.equal(keyName(Action.LeftHalf), 'left-half');
   });
 
-  test('gives exactly the keys of the schema', () => {
+  test('gives exactly the keybinding keys of the schema', () => {
     assert.deepEqual(allActions.map(keyName).sort(), [...schemaKeys].sort());
   });
 });
