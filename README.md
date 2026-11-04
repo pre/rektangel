@@ -35,6 +35,8 @@ bash "$dir/gnome-keys.sh"             # do the changes
 bash "$dir/gnome-keys.sh" --undo      # restore the old values
 ```
 
+The scripts use `/usr/bin/gsettings` and `/usr/bin/dconf` when they exist. A `gsettings` from Homebrew or linuxbrew GLib often has no dconf backend. It then writes to a keyfile, and GNOME Shell does not see the change. Before a script changes a value, it compares `gsettings` with `dconf` and stops if they do not agree. When you run `gsettings` yourself, use `/usr/bin/gsettings`.
+
 ## Default shortcuts
 
 | Action           | Shortcut                 |

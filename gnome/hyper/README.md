@@ -26,7 +26,9 @@ The bindings use `<Mod3>`, not `<Hyper>`. Mutter changes `<Hyper>` to all real m
 
 ## Install and uninstall
 
-Install the extension first. Then run the scripts from the extension directory. Both scripts run as the normal user and need `gsettings` and `jq`. Use `--dry-run` first: it shows the commands and changes nothing.
+Install the extension first. Then run the scripts from the extension directory. Both scripts run as the normal user and need `gsettings`, `dconf` and `jq`. Use `--dry-run` first: it shows the commands and changes nothing.
+
+The scripts use `/usr/bin/gsettings` and `/usr/bin/dconf` when they exist. A `gsettings` from Homebrew or linuxbrew GLib often has no dconf backend. It then writes to a keyfile, and GNOME Shell does not see the change. Before a script changes a value, it compares `gsettings` with `dconf` and stops if they do not agree.
 
 ```sh
 dir=~/.local/share/gnome-shell/extensions/rektangel@repo.pet/hyper

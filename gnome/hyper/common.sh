@@ -12,6 +12,31 @@ rektangel_schema="org.gnome.shell.extensions.rektangel"
 rektangel_path="/org/gnome/shell/extensions/rektangel/"
 input_schema="org.gnome.desktop.input-sources"
 
+# Prefer the system tools. A gsettings from Homebrew or linuxbrew often has
+# no dconf module, so it writes to a keyfile that GNOME Shell does not read.
+system_tool() {
+  if [[ -x "/usr/bin/$1" ]]; then echo "/usr/bin/$1"; else echo "$1"; fi
+}
+gsettings=$(system_tool gsettings)
+dconf=$(system_tool dconf)
+
+# With the dconf backend, gsettings shows the dconf value, or the schema
+# default (the memory backend value) when dconf has no value for the key.
+check_backend() {
+  local schema=org.gnome.shell key=enabled-extensions
+  local from_gsettings from_dconf expected
+  from_gsettings=$("$gsettings" get "$schema" "$key")
+  from_dconf=$("$dconf" read "/org/gnome/shell/$key")
+  expected=${from_dconf:-$(GSETTINGS_BACKEND=memory "$gsettings" get "$schema" "$key")}
+  if [[ "$from_gsettings" != "$expected" ]]; then
+    echo "$gsettings does not use dconf, so GNOME Shell will not see its changes." >&2
+    echo "  $gsettings get $schema $key: $from_gsettings" >&2
+    echo "  $dconf read /org/gnome/shell/$key: ${from_dconf:-(no value)}" >&2
+    echo "Use a gsettings with the dconf backend (package dconf-gsettings-backend)." >&2
+    exit 1
+  fi
+}
+
 # The Caps Lock mode bindings. Caps Lock sets Mod3. The bindings use
 # <Mod3> and not <Hyper>, because Mutter resolves <Hyper> to every real
 # modifier that the Hyper virtual modifier maps to (Lock and Mod4 too).
@@ -80,5 +105,5 @@ json_to_gvariant() {
 # Prints true when the user set the key. Empty dconf output means that the
 # schema default applies.
 user_set() {
-  if [[ -n "$(dconf read "$1$2")" ]]; then echo true; else echo false; fi
+  if [[ -n "$("$dconf" read "$1$2")" ]]; then echo true; else echo false; fi
 }

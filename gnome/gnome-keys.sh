@@ -4,11 +4,37 @@
 # The old values go to a backup file, and --undo writes them back.
 #
 # Usage: gnome-keys.sh [--dry-run] [--undo]
-# Needs: gsettings, dconf, jq
+# Needs: gsettings, dconf, jq. Uses /usr/bin/gsettings and /usr/bin/dconf
+# when they exist, because a Homebrew GLib can write to a keyfile, not dconf.
 set -euo pipefail
 
 backup_dir="${XDG_CONFIG_HOME:-$HOME/.config}/rektangel"
 backup_file="$backup_dir/gnome-keys-backup.json"
+
+# Prefer the system tools. A gsettings from Homebrew or linuxbrew often has
+# no dconf module, so it writes to a keyfile that GNOME Shell does not read.
+system_tool() {
+  if [[ -x "/usr/bin/$1" ]]; then echo "/usr/bin/$1"; else echo "$1"; fi
+}
+gsettings=$(system_tool gsettings)
+dconf=$(system_tool dconf)
+
+# With the dconf backend, gsettings shows the dconf value, or the schema
+# default (the memory backend value) when dconf has no value for the key.
+check_backend() {
+  local schema=org.gnome.shell key=enabled-extensions
+  local from_gsettings from_dconf expected
+  from_gsettings=$("$gsettings" get "$schema" "$key")
+  from_dconf=$("$dconf" read "/org/gnome/shell/$key")
+  expected=${from_dconf:-$(GSETTINGS_BACKEND=memory "$gsettings" get "$schema" "$key")}
+  if [[ "$from_gsettings" != "$expected" ]]; then
+    echo "$gsettings does not use dconf, so GNOME Shell will not see its changes." >&2
+    echo "  $gsettings get $schema $key: $from_gsettings" >&2
+    echo "  $dconf read /org/gnome/shell/$key: ${from_dconf:-(no value)}" >&2
+    echo "Use a gsettings with the dconf backend (package dconf-gsettings-backend)." >&2
+    exit 1
+  fi
+}
 
 # schema key accelerator
 conflicts=(
@@ -59,7 +85,7 @@ json_to_gvariant() {
 # Prints true when the user set the key. Empty dconf output means that the
 # schema default applies.
 user_set() {
-  if [[ -n "$(dconf read "/${1//.//}/$2")" ]]; then echo true; else echo false; fi
+  if [[ -n "$("$dconf" read "/${1//.//}/$2")" ]]; then echo true; else echo false; fi
 }
 
 # The canonical form ignores case and modifier order, and <Primary> or
@@ -81,7 +107,7 @@ remove_conflicts() {
   local backup='{}' changes=() entry schema key accel current updated
   for entry in "${conflicts[@]}"; do
     read -r schema key accel <<<"$entry"
-    current=$(gsettings get "$schema" "$key" | gvariant_to_json)
+    current=$("$gsettings" get "$schema" "$key" | gvariant_to_json)
     updated=$(jq -c --arg accel "$accel" "$normalize_jq"'
       ($accel | normalize) as $target | map(select(normalize != $target))' <<<"$current")
     if [[ "$current" == "$updated" ]]; then
@@ -110,7 +136,7 @@ remove_conflicts() {
   # The backup is on disk before the first change.
   local i
   for ((i = 0; i < ${#changes[@]}; i += 3)); do
-    run gsettings set "${changes[i]}" "${changes[i + 1]}" "${changes[i + 2]}"
+    run "$gsettings" set "${changes[i]}" "${changes[i + 1]}" "${changes[i + 2]}"
   done
 }
 
@@ -123,9 +149,9 @@ restore_backup() {
   local schema key user_set value
   while IFS=$'\t' read -r schema key user_set value; do
     if [[ "$user_set" == true ]]; then
-      run gsettings set "$schema" "$key" "$(json_to_gvariant <<<"$value")"
+      run "$gsettings" set "$schema" "$key" "$(json_to_gvariant <<<"$value")"
     else
-      run gsettings reset "$schema" "$key"
+      run "$gsettings" reset "$schema" "$key"
     fi
   done < <(jq -r 'to_entries[] | .key as $schema | .value | to_entries[]
     | [$schema, .key, .value.user_set, (.value.value | tojson)] | @tsv' "$backup_file")
@@ -133,6 +159,7 @@ restore_backup() {
   run rm "$backup_file"
 }
 
+check_backend
 if $undo; then
   restore_backup
 else

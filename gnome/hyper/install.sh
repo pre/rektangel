@@ -8,12 +8,14 @@
 # uninstall.sh reverses the three steps.
 #
 # Usage: install.sh [--dry-run]
-# Needs: gsettings, dconf, jq. No root.
+# Needs: gsettings, dconf, jq. No root. Uses /usr/bin/gsettings and
+# /usr/bin/dconf when they exist, see common.sh.
 set -euo pipefail
 # shellcheck source=common.sh
 source "$(dirname "$0")/common.sh"
 parse_args "$@"
 check_schema
+check_backend
 
 if [[ -e "$backup_file" ]]; then
   echo "Caps Lock mode is already on: $backup_file exists. Run uninstall.sh first." >&2
@@ -28,7 +30,7 @@ for file in "${xkb_files[@]}"; do
   fi
 done
 
-options=$(gsettings get "$input_schema" xkb-options | gvariant_to_json)
+options=$("$gsettings" get "$input_schema" xkb-options | gvariant_to_json)
 if jq -e 'any(startswith("caps:"))' <<<"$options" >/dev/null; then
   echo "xkb-options has a caps: option that also changes Caps Lock: $options" >&2
   echo "Remove it first, for example in GNOME Tweaks." >&2
@@ -38,7 +40,7 @@ fi
 backup='{"bindings": {}}'
 for entry in "${hyper_bindings[@]}"; do
   read -r key accel <<<"$entry"
-  current=$(gsettings --schemadir "$schema_dir" get "$rektangel_schema" "$key" | gvariant_to_json)
+  current=$("$gsettings" --schemadir "$schema_dir" get "$rektangel_schema" "$key" | gvariant_to_json)
   backup=$(jq -c --arg key "$key" --argjson value "$current" \
     --argjson user_set "$(user_set "$rektangel_path" "$key")" \
     '.bindings[$key] = {value: $value, user_set: $user_set}' <<<"$backup")
@@ -58,13 +60,13 @@ for file in "${xkb_files[@]}"; do
 done
 
 if jq -e --arg option "$xkb_option" 'index($option) == null' <<<"$options" >/dev/null; then
-  run gsettings set "$input_schema" xkb-options \
+  run "$gsettings" set "$input_schema" xkb-options \
     "$(jq -c --arg option "$xkb_option" '. + [$option]' <<<"$options" | json_to_gvariant)"
 fi
 
 for entry in "${hyper_bindings[@]}"; do
   read -r key accel <<<"$entry"
-  run gsettings --schemadir "$schema_dir" set "$rektangel_schema" "$key" "['$accel']"
+  run "$gsettings" --schemadir "$schema_dir" set "$rektangel_schema" "$key" "['$accel']"
 done
 
 if $dry_run; then
