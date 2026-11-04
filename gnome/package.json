@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
     "test": "node --test \"test/**/*.test.ts\" && node esbuild.mjs && XDG_CONFIG_HOME=test/fixtures/config gjs -m test/gjs-smoke.js",
     "pack": "bash pack.sh",
-    "test:coverage": "node --test --experimental-test-coverage --test-coverage-include=\"src/**\" \"test/**/*.test.ts\""
+    "test:coverage": "node --test --experimental-test-coverage --test-coverage-include=\"src/**\" \"test/**/*.test.ts\"",
+    "test:xkb": "bash test/xkb-check.sh"
   },
   "dependencies": {
     "@rektangel/core": "0.1.0"

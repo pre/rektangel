@@ -1,0 +1,8 @@
+// Offline check of the Caps Lock mode symbols. Compile with:
+//   xkbcomp -I<repo>/gnome/hyper/xkb -xkb keymap.xkb out.xkb
+xkb_keymap {
+    xkb_keycodes { include "evdev+aliases(qwerty)" };
+    xkb_types    { include "complete" };
+    xkb_compat   { include "complete" };
+    xkb_symbols  { include "pc+us+inet(evdev)+rektangel(caps_hyper)" };
+};

@@ -13,5 +13,5 @@ zip_file="$repo_dir/$uuid.zip"
 
 rm -f "$zip_file"
 (cd "$gnome_dir/dist" && zip -r -X "$zip_file" \
-  extension.js metadata.json schemas LICENSE gnome-keys.sh)
+  extension.js metadata.json schemas LICENSE gnome-keys.sh hyper)
 echo "Wrote $zip_file"

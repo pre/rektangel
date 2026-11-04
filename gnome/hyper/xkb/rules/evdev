@@ -1,0 +1,7 @@
+// Rektangel user rules. libxkbcommon reads this file from
+// $XDG_CONFIG_HOME/xkb/rules/evdev. It includes the system rules and
+// adds one option. %S is the system XKB directory.
+! include %S/evdev
+
+! option = symbols
+  rektangel:caps_hyper = +rektangel(caps_hyper)
