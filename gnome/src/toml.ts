@@ -49,7 +49,7 @@ export function parseToml(text: string): TomlDocument {
     }
     const key = keyValue[1]!;
     const values = document[table]!;
-    if (key in values) {
+    if (Object.hasOwn(values, key)) {
       throw new TomlError(lineNumber, `duplicate key "${key}"`);
     }
     values[key] = parseValue(keyValue[2]!.trim(), lineNumber);

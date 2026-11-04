@@ -45,6 +45,7 @@ describe('parseConfig', () => {
   const invalid: [string, string, RegExp][] = [
     ['a syntax error', 'step_size 10', /line 2: expected "key = value"/],
     ['an unknown key', 'step-size = 10', /unknown key "step-size"/],
+    ['an Object.prototype key', 'toString = 1', /unknown key "toString"/],
     ['a key in a section', 'step_size = 10\n[core]\nstep_size = 10', /unknown key "core.step_size"/],
     ['an empty cycle', 'cycle_sizes = []', /cycle_sizes must be/],
     ['a cycle size above 1', 'cycle_sizes = [0.5, 1.5]', /cycle_sizes must be/],

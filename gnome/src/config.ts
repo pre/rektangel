@@ -52,7 +52,7 @@ export function parseConfig(text: string): ParsedConfig {
     const config: CoreConfig = { ...defaultConfig };
     for (const [table, values] of Object.entries(document)) {
       for (const [key, value] of Object.entries(values)) {
-        const set = table === '' ? keys[key] : undefined;
+        const set = table === '' && Object.hasOwn(keys, key) ? keys[key] : undefined;
         if (set === undefined) {
           throw new Error(`unknown key "${table === '' ? key : `${table}.${key}`}"`);
         }

@@ -41,6 +41,12 @@ describe('parseToml', () => {
     assert.deepEqual(parseToml('a = 1\r\nb = 2\r\n')[''], { a: 1, b: 2 });
   });
 
+  test('reads a key that is also an Object.prototype property', () => {
+    const document = parseToml('constructor = 1');
+
+    assert.equal(document['']?.['constructor'], 1);
+  });
+
   const errors: [string, string, RegExp][] = [
     ['a second section', '[one]\n[two]', /line 2: only one \[section\]/],
     ['a line without "="', 'a 1', /line 1: expected "key = value"/],
