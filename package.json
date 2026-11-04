@@ -12,8 +12,8 @@
   "scripts": {
     "build": "npm run build --workspace core --workspace gnome",
     "test": "npm test --workspace core --workspace gnome",
-    "pack": "bash gnome/pack.sh",
-    "prefs": "bash gnome/prefs-dev.sh"
+    "pack": "gnome/pack.sh",
+    "prefs": "gnome/prefs-dev.sh"
   },
   "engines": {
     "node": ">=22"
