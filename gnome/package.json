@@ -12,7 +12,8 @@
     "pack": "./pack.sh",
     "test:coverage": "node --test --experimental-test-coverage --test-coverage-include=\"src/**\" \"test/**/*.test.ts\"",
     "test:xkb": "test/xkb-check.sh",
-    "prefs": "./prefs-dev.sh"
+    "prefs": "./prefs-dev.sh",
+    "prefs-sandbox": "./prefs-dev.sh --sandbox"
   },
   "dependencies": {
     "@rektangel/core": "0.1.0"

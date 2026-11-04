@@ -13,7 +13,8 @@
     "build": "npm run build --workspace core --workspace gnome",
     "test": "npm test --workspace core --workspace gnome",
     "pack": "gnome/pack.sh",
-    "prefs": "gnome/prefs-dev.sh"
+    "prefs": "gnome/prefs-dev.sh",
+    "prefs-sandbox": "gnome/prefs-dev.sh --sandbox"
   },
   "engines": {
     "node": ">=22"

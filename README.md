@@ -147,7 +147,7 @@ GNOME Shell keeps the prefs code of an extension until the next login. To see a 
 
 ```sh
 npm run prefs                 # uses your real settings
-npm run prefs -- --sandbox    # uses temporary settings, nothing real changes
+npm run prefs-sandbox         # uses temporary settings, nothing real changes
 ```
 
 The script `gnome/prefs-dev.sh` builds `gnome/dist` and opens `gnome/dist/prefs.js` with `gnome/test/prefs-launcher.js`. The window uses the schema in `gnome/dist/schemas`, not the installed schema. Without `--sandbox`, a change in the window changes the settings of your session, the same as the installed preferences window. With `--sandbox`, the settings go to a keyfile in a temporary directory under `$HOME/tmp`, and the script deletes the directory when you close the window. The script needs the gnome-shell typelibs in `/usr/lib*/gnome-shell/girepository-1.0`.
