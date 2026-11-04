@@ -4,7 +4,7 @@
 #  2. adds the option rektangel:caps_hyper to
 #     org.gnome.desktop.input-sources xkb-options,
 #  3. sets the Rektangel bindings to the Caps Lock variants.
-# The old values go to ~/.config/rektangel/hyper-backup.json.
+# The old bindings go to ~/.config/rektangel/hyper-backup.json.
 # uninstall.sh reverses the three steps.
 #
 # Usage: install.sh [--dry-run]
@@ -35,7 +35,7 @@ if jq -e 'any(startswith("caps:"))' <<<"$options" >/dev/null; then
   exit 1
 fi
 
-backup=$(jq -n --argjson options "$options" '{"xkb-options": $options, bindings: {}}')
+backup='{"bindings": {}}'
 for entry in "${hyper_bindings[@]}"; do
   read -r key accel <<<"$entry"
   current=$(gsettings --schemadir "$schema_dir" get "$rektangel_schema" "$key" | gvariant_to_json)

@@ -59,7 +59,6 @@ export default class RektangelExtension extends Extension {
       // not change until the client acknowledges the unmaximize.
       const result = execute({
         action,
-        windowId: String(window.get_id()),
         frame: toRect(window.get_frame_rect()),
         monitorIndex: window.get_monitor(),
         monitors: currentMonitors(),

@@ -29,7 +29,7 @@ check(`config from ${configPath()}`, config, {
 const frame = { x: 100, y: 200, width: 800, height: 600 };
 const workArea = { x: 0, y: 32, width: 3008, height: 1660 };
 const monitors = [{ index: 0, geometry: { x: 0, y: 0, width: 3008, height: 1692 }, workArea }];
-const input = { windowId: '1', monitorIndex: 0, monitors, canResize: true, config };
+const input = { monitorIndex: 0, monitors, canResize: true, config };
 
 const maximized = execute({ ...input, action: 'maximize', frame, history: undefined });
 check('maximize', maximized.change, { frame: workArea, monitorIndex: 0 });

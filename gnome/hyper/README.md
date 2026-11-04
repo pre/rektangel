@@ -38,7 +38,7 @@ bash "$dir/uninstall.sh"
 
 `install.sh` does these steps:
 
-1. It saves the current `xkb-options` and the Rektangel bindings to `~/.config/rektangel/hyper-backup.json`.
+1. It saves the current Rektangel bindings to `~/.config/rektangel/hyper-backup.json`.
 2. It copies the three XKB files to `~/.config/xkb`. It stops if a file with other content is already there, because then you have your own XKB configuration. Merge the files by hand in that case.
 3. It adds `rektangel:caps_hyper` to `xkb-options`. It keeps the other options. It stops if a `caps:` option is already set, because two options for one key conflict.
 4. It sets the Rektangel bindings in the table below.

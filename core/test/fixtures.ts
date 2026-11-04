@@ -26,7 +26,6 @@ export const twoMonitors: readonly Monitor[] = [singleMonitor, rightMonitor];
 export function input(overrides: Partial<ExecuteInput>): ExecuteInput {
   return {
     action: 'maximize',
-    windowId: '1',
     frame: { x: 100, y: 200, width: 800, height: 600 },
     monitorIndex: 0,
     monitors: [singleMonitor],

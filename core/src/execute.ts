@@ -7,7 +7,6 @@ import type { WindowHistory } from './history.js';
 
 export interface ExecuteInput {
   action: Action;
-  windowId: string;
   /** The current frame of the window. */
   frame: Rect;
   /** Index into `monitors` of the monitor that the window is on now. */

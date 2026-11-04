@@ -13,7 +13,6 @@ function execute(input: ExecuteInput): ExecuteResult;
 
 interface ExecuteInput {
   action: Action;                  // for example 'left-half'
-  windowId: string;
   frame: Rect;                     // current frame of the window
   monitorIndex: number;            // index into monitors
   monitors: readonly Monitor[];    // monitors[i].index === i
@@ -40,7 +39,7 @@ Other exported names:
 ## Rules for the caller
 
 1. Give integer pixels. The y axis points down.
-2. Keep one `WindowHistory` per window id. Store `result.history` after each call. Delete the entry when the result history is undefined or the window closes.
+2. Keep one `WindowHistory` per window. Store `result.history` after each call. Delete the entry when the result history is undefined or the window closes.
 3. When `change` is not null, apply `change.frame`. The frame is in absolute coordinates, so it also sets the monitor. `change.monitorIndex` tells which monitor that is.
 4. `execute` does not change its input.
 
