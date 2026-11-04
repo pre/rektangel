@@ -10,4 +10,4 @@ The optional Caps Lock mode is a user XKB option that makes Caps Lock `Hyper_L` 
 
 ## Consequences
 
-The gsettings bindings of this mode use `<Mod3>`, not `<Hyper>`. Mutter 46 expands `<Hyper>` to every real modifier that the Hyper virtual modifier maps to, which with this keymap is Lock, Mod3 and Mod4, and Mutter removes Lock from key events, so a `<Hyper>` binding never matches. See gnome/hyper/README.md.
+The shortcuts of this mode use `<Mod3>`, not `<Hyper>`. ADR 0009 gives the reason, and how the stored `<Super>` shortcuts become `<Mod3>` shortcuts. See gnome/hyper/README.md.

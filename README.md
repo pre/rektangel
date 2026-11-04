@@ -26,7 +26,7 @@ You do not need Node.js. GNOME Shell runs the extension.
    gnome-extensions enable rektangel@repo.pet
    ```
 
-Some default shortcuts are also GNOME shortcuts, for example Super+Alt+Left. To remove only the conflicting GNOME entries, run the script that is in the zip. It needs `gsettings`, `dconf` and `jq`. It saves the old values to `~/.config/rektangel/gnome-keys-backup.json` before it changes them. `--undo` sets the old values again, or resets a key that had the GNOME default.
+Some default shortcuts are also GNOME shortcuts, for example Super+Alt+Left. To remove only the conflicting GNOME entries, run the script that is in the zip. It reads the current Rektangel shortcuts, so run it again after you change a shortcut. It removes each GNOME entry that is equal to a Rektangel shortcut from these schemas: `org.gnome.desktop.wm.keybindings`, `org.gnome.mutter.keybindings`, `org.gnome.mutter.wayland.keybindings`, `org.gnome.shell.keybindings` and `org.gnome.settings-daemon.plugins.media-keys`. The other entries of a key stay. The order of the modifiers does not matter, and neither does the case of a modifier or of a one-letter key. The script needs `gsettings`, `dconf` and `jq`. It saves the old values to `~/.config/rektangel/gnome-keys-backup.json` before it changes them. A key that is in the backup from an earlier run keeps its first value. `--undo` sets the old values again, or resets a key that had the GNOME default.
 
 ```sh
 dir=~/.local/share/gnome-shell/extensions/rektangel@repo.pet
@@ -34,6 +34,8 @@ bash "$dir/gnome-keys.sh" --dry-run   # show the changes
 bash "$dir/gnome-keys.sh"             # do the changes
 bash "$dir/gnome-keys.sh" --undo      # restore the old values
 ```
+
+The script reads the Rektangel schema from the installed extension. To use another compiled schema, give `--schemadir DIR`. The script compares the stored shortcuts, which always use Super, also when `super-key` is `capslock` (see Caps Lock mode).
 
 The scripts use `/usr/bin/gsettings` and `/usr/bin/dconf` when they exist. A `gsettings` from Homebrew or linuxbrew GLib often has no dconf backend. It then writes to a keyfile, and GNOME Shell does not see the change. Before a script changes a value, it compares `gsettings` with `dconf` and stops if they do not agree. When you run `gsettings` yourself, use `/usr/bin/gsettings`.
 
@@ -102,7 +104,9 @@ The file uses a subset of TOML: `key = value` lines, numbers, quoted strings, on
 
 ## Caps Lock mode
 
-Caps Lock mode is optional. It makes Caps Lock the Rektangel key: hold Caps Lock and press an arrow key. Shift+Caps Lock toggles caps lock. The scripts for it are in the `hyper` directory of the extension. See `gnome/hyper/README.md`.
+Caps Lock mode is optional. It makes Caps Lock the Super key of the Rektangel shortcuts: hold Caps Lock instead of Super. Shift+Caps Lock toggles caps lock. Super keeps its GNOME function.
+
+The shortcuts are always stored with Super. The setting `super-key` (`super` or `capslock`) selects the key, so one change switches all shortcuts. Rektangel registers the shortcuts with Caps Lock when the value is `capslock`. Caps Lock mode also needs a user XKB option. The `hyper` directory of the extension has scripts that install the option and set `super-key`. See `gnome/hyper/README.md` and ADR 0009.
 
 ## Build from source
 
@@ -111,7 +115,7 @@ You need Node.js 22, npm, `glib-compile-schemas`, `gjs` and `zip`.
 ```sh
 npm install
 npm run build   # core with tsc, extension with esbuild, to gnome/dist/
-npm test        # core and config.toml unit tests, and the GJS smoke test
+npm test        # unit tests, and the GJS smoke and Caps Lock tests
 npm run pack    # writes rektangel@repo.pet.zip
 ```
 
@@ -122,7 +126,7 @@ To check the Caps Lock mode XKB files offline, run `npm run test:xkb --workspace
 ## Repository layout
 
 - `core/`: the window calculations, shared by all platforms. See `core/README.md`.
-- `gnome/`: the GNOME Shell extension.
+- `gnome/`: the GNOME Shell extension. See `gnome/README.md`.
 - `docs/adr/`: the architecture decisions. Read them before you change the architecture.
 
 ## License
