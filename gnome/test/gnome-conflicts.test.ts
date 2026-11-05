@@ -3,6 +3,7 @@ import { describe, test } from 'node:test';
 import { Action } from '@rektangel/core';
 import {
   addBackupRecord,
+  canConflictWithGnome,
   conflictSections,
   conflictWording,
   findGnomeConflicts,
@@ -104,6 +105,19 @@ describe('schemaTitle', () => {
   });
 });
 
+describe('canConflictWithGnome', () => {
+  test('checks every shortcut when the Windows key is Super', () => {
+    assert.equal(canConflictWithGnome('<Super>Left', 'super'), true);
+    assert.equal(canConflictWithGnome('<Control><Alt>Left', 'super'), true);
+  });
+
+  test('skips the Super shortcuts in Caps Lock mode, because Rektangel grabs them with Caps Lock', () => {
+    assert.equal(canConflictWithGnome('<Super>Left', 'capslock'), false);
+    assert.equal(canConflictWithGnome('<shift><super>up', 'capslock'), false);
+    assert.equal(canConflictWithGnome('<Control><Alt>Left', 'capslock'), true);
+  });
+});
+
 describe('rowConflicts', () => {
   const gnome: KeybindingTables = new Map([
     ['org.gnome.mutter.keybindings', new Map([['toggle-tiled-left', ['<Super>Left']]])],
@@ -112,7 +126,7 @@ describe('rowConflicts', () => {
 
   test('lists every GNOME key that uses the accelerator of the action', () => {
     const bindings = new Map([[Action.LeftHalf, ['<super>left']]]);
-    assert.deepEqual(rowConflicts(Action.LeftHalf, bindings, gnome), [
+    assert.deepEqual(rowConflicts(Action.LeftHalf, bindings, gnome, 'super'), [
       { kind: 'gnome', schema: 'org.gnome.mutter.keybindings', key: 'toggle-tiled-left', accelerator: '<super>left' },
       { kind: 'gnome', schema: 'org.gnome.shell.keybindings', key: 'toggle-overview', accelerator: '<super>left' },
     ]);
@@ -124,11 +138,23 @@ describe('rowConflicts', () => {
       [Action.Maximize, ['<Super>Up']],
       [Action.MaximizeHeight, ['<Shift><Super>Up', '<Super>return']],
     ]);
-    assert.deepEqual(rowConflicts(Action.Center, bindings, new Map()), [
+    assert.deepEqual(rowConflicts(Action.Center, bindings, new Map(), 'super'), [
       { kind: 'rektangel', action: Action.MaximizeHeight, accelerator: '<Super>Return' },
     ]);
-    assert.deepEqual(rowConflicts(Action.MaximizeHeight, bindings, new Map()), [
+    assert.deepEqual(rowConflicts(Action.MaximizeHeight, bindings, new Map(), 'super'), [
       { kind: 'rektangel', action: Action.Center, accelerator: '<Super>return' },
+    ]);
+  });
+
+  test('in Caps Lock mode, lists the GNOME keys only for shortcuts without Super', () => {
+    const withAlt: KeybindingTables = new Map([['org.gnome.desktop.wm.keybindings', new Map([['close', ['<Alt>F4']]])]]);
+    const bindings = new Map([
+      [Action.LeftHalf, ['<Super>Left']],
+      [Action.Restore, ['<Alt>F4']],
+    ]);
+    assert.deepEqual(rowConflicts(Action.LeftHalf, bindings, gnome, 'capslock'), []);
+    assert.deepEqual(rowConflicts(Action.Restore, bindings, withAlt, 'capslock'), [
+      { kind: 'gnome', schema: 'org.gnome.desktop.wm.keybindings', key: 'close', accelerator: '<Alt>F4' },
     ]);
   });
 
@@ -137,7 +163,7 @@ describe('rowConflicts', () => {
       [Action.LeftHalf, []],
       [Action.RightHalf, []],
     ]);
-    assert.deepEqual(rowConflicts(Action.LeftHalf, bindings, gnome), []);
+    assert.deepEqual(rowConflicts(Action.LeftHalf, bindings, gnome, 'super'), []);
   });
 
   test('returns nothing for a free accelerator', () => {
@@ -145,7 +171,7 @@ describe('rowConflicts', () => {
       [Action.LeftHalf, ['<Super><Alt>Left']],
       [Action.RightHalf, ['<Super>Right']],
     ]);
-    assert.deepEqual(rowConflicts(Action.LeftHalf, bindings, gnome), []);
+    assert.deepEqual(rowConflicts(Action.LeftHalf, bindings, gnome, 'super'), []);
   });
 });
 
@@ -162,7 +188,7 @@ describe('IBus emoji hotkeys', () => {
 
   test('finds the emoji hotkey that Center uses', () => {
     const bindings = new Map([[Action.Center, ['<Super>period']]]);
-    assert.deepEqual(rowConflicts(Action.Center, bindings, ibus), [
+    assert.deepEqual(rowConflicts(Action.Center, bindings, ibus, 'super'), [
       { kind: 'gnome', schema: 'org.freedesktop.ibus.panel.emoji', key: 'hotkey', accelerator: '<Super>period' },
     ]);
   });

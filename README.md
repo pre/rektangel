@@ -52,7 +52,7 @@ bash "$dir/gnome-keys.sh"             # do the changes
 bash "$dir/gnome-keys.sh" --undo      # restore the old values
 ```
 
-The script reads the Rektangel schema from the installed extension. To use another compiled schema, give `--schemadir DIR`. The script compares the stored shortcuts, which always use Super, also when `super-key` is `capslock` (see Caps Lock mode).
+The script reads the Rektangel schema from the installed extension. To use another compiled schema, give `--schemadir DIR`. When `super-key` is `capslock`, Rektangel grabs the Super shortcuts with Caps Lock, so the script compares only the shortcuts without Super. The conflict badges and the dialog of the preferences window use the same rule (see Caps Lock mode).
 
 The scripts use `/usr/bin/gsettings` and `/usr/bin/dconf` when they exist. A `gsettings` from Homebrew or linuxbrew GLib often has no dconf backend. It then writes to a keyfile, and GNOME Shell does not see the change. Before a script changes a value, it compares `gsettings` with `dconf` and stops if they do not agree. When you run `gsettings` yourself, use `/usr/bin/gsettings`.
 

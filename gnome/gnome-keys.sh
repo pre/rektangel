@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Removes the GNOME keybindings that are equal to a current Rektangel
 # shortcut. Only the equal entries are removed, the other entries stay.
+# When super-key is capslock, Rektangel grabs the Super shortcuts with
+# Caps Lock, so only the shortcuts without Super are compared.
 # The old values go to a backup file, and --undo writes them back.
 #
 # Usage: gnome-keys.sh [--dry-run] [--undo] [--schemadir DIR]
@@ -59,7 +61,7 @@ while (($# > 0)); do
       shift
       ;;
     -h | --help)
-      sed -n '2,10p' "$0"
+      sed -n '2,12p' "$0"
       exit 0
       ;;
     *)
@@ -116,15 +118,20 @@ normalize_jq='
     | ($modifiers | unique | join("")) + (if ($key | length) == 1 then $key | ascii_downcase else $key end);
 '
 
-# The current Rektangel shortcuts, normalized, as a JSON array. The
-# conflicts are found in the stored <Super> form for all super-key values.
+# The current Rektangel shortcuts that GNOME can take, normalized, as a
+# JSON array. With super-key capslock, the shortcuts with Super are left out.
 rektangel_accelerators() {
   if [[ ! -e "$schema_dir/gschemas.compiled" ]]; then
     echo "No compiled Rektangel schema in $schema_dir. Install the extension, or use --schemadir." >&2
     exit 1
   fi
+  local capslock=false
+  if [[ $("$gsettings" --schemadir "$schema_dir" get "$rektangel_schema" super-key) == "'capslock'" ]]; then
+    capslock=true
+  fi
   "$gsettings" --schemadir "$schema_dir" list-recursively "$rektangel_schema" |
-    jq -R -n -c "$normalize_jq$string_lists_jq"'| [.[].value[] | normalize] | unique'
+    jq -R -n -c --argjson capslock "$capslock" "$normalize_jq$string_lists_jq"'
+      | [.[].value[] | normalize | select($capslock and contains("<super>") | not)] | unique'
 }
 
 # Prints {schema, key, value, updated} for each GNOME key with an entry

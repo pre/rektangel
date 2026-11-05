@@ -7,11 +7,11 @@ import { allActions, type Action } from '@rektangel/core';
 import { superKeySetting, type SuperKey } from './accelerator.ts';
 import { acceleratorLabel, presentCaptureDialog } from './capture-dialog.ts';
 import {
+  canConflictWithGnome,
   conflictSections,
   findGnomeConflicts,
   rowConflicts,
   type GnomeBinding,
-  type KeybindingTables,
   type RowConflict,
 } from './gnome-conflicts.ts';
 import { gnomeKeybindingSettings, readGnomeKeybindings, removeFromGnome } from './gnome-keybindings.ts';
@@ -46,8 +46,8 @@ export default class RektangelPreferences extends ExtensionPreferences {
     const refreshers = new Map<Action, (conflicts: readonly RowConflict[]) => void>();
     const refreshAll = (): void => {
       const bindings = currentBindings(settings);
-      const gnome = withGnomeConflicts(settings) ? gnomeTables : emptyTables;
-      refreshers.forEach((refresh, action) => refresh(rowConflicts(action, bindings, gnome)));
+      const superKey = settings.get_string(superKeySetting) as SuperKey;
+      refreshers.forEach((refresh, action) => refresh(rowConflicts(action, bindings, gnomeTables, superKey)));
     };
     const reloadGnome = (): void => {
       gnomeTables = readGnomeKeybindings(gnomeSettings);
@@ -87,7 +87,7 @@ export default class RektangelPreferences extends ExtensionPreferences {
     const gridGroup = new Adw.PreferencesGroup();
     gridGroup.add(grid);
     page.add(gridGroup);
-    page.add(gnomeNoteGroup(`${this.path}/gnome-keys.sh`));
+    page.add(gnomeNoteGroup(`${this.path}/gnome-keys.sh`, settings, watch));
     refreshAll();
 
     // A change of one shortcut can add or remove a conflict on other rows.
@@ -157,19 +157,10 @@ function actionTitle(settings: Gio.Settings, action: Action): string {
 
 type GnomeConflict = Extract<RowConflict, { kind: 'gnome' }>;
 
-const emptyTables: KeybindingTables = new Map();
-
-/**
- * With Caps Lock as Super, the extension grabs <Mod3> instead of <Super>,
- * so GNOME keys do not conflict.
- */
-function withGnomeConflicts(settings: Gio.Settings): boolean {
-  return settings.get_string('super-key') !== 'capslock';
-}
-
-/** The GNOME keys that use the accelerator. */
+/** The GNOME keys that can take the accelerator before Rektangel. */
 function gnomeConflictsOf(settings: Gio.Settings, accelerator: string): GnomeBinding[] {
-  return withGnomeConflicts(settings) ? findGnomeConflicts(accelerator, readGnomeKeybindings()) : [];
+  const superKey = settings.get_string(superKeySetting) as SuperKey;
+  return canConflictWithGnome(accelerator, superKey) ? findGnomeConflicts(accelerator, readGnomeKeybindings()) : [];
 }
 
 /**

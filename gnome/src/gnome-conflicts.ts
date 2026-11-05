@@ -1,4 +1,5 @@
 import type { Action } from '@rektangel/core';
+import type { SuperKey } from './accelerator.ts';
 import { normalizeAccelerator } from './shortcuts.ts';
 
 /** Schema id -> key -> accelerators. Only keys of type `as`. */
@@ -40,6 +41,15 @@ export type RowConflict =
   | { readonly kind: 'rektangel'; readonly action: Action; readonly accelerator: string };
 
 /**
+ * True when a GNOME key can take the accelerator before Rektangel. In Caps
+ * Lock mode Rektangel grabs a <Super> shortcut with Caps Lock (<Mod3>),
+ * which no GNOME key uses, so only the shortcuts without Super can conflict.
+ */
+export function canConflictWithGnome(accelerator: string, superKey: SuperKey): boolean {
+  return superKey === 'super' || !normalizeAccelerator(accelerator).includes('<Super>');
+}
+
+/**
  * The conflicts of each accelerator of the action: first the GNOME keys,
  * then the other Rektangel actions that use it.
  */
@@ -47,10 +57,12 @@ export function rowConflicts(
   action: Action,
   bindings: ReadonlyMap<Action, readonly string[]>,
   gnome: KeybindingTables,
+  superKey: SuperKey,
 ): RowConflict[] {
   const conflicts: RowConflict[] = [];
   for (const accelerator of bindings.get(action) ?? []) {
-    for (const binding of findGnomeConflicts(accelerator, gnome)) {
+    const gnomeBindings = canConflictWithGnome(accelerator, superKey) ? findGnomeConflicts(accelerator, gnome) : [];
+    for (const binding of gnomeBindings) {
       conflicts.push({ kind: 'gnome', ...binding, accelerator });
     }
     const wanted = normalizeAccelerator(accelerator);
