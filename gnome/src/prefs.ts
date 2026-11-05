@@ -73,7 +73,7 @@ export default class RektangelPreferences extends ExtensionPreferences {
     };
     // Cells align at the top, so the titles of the groups in a row are on one line.
     const grid = new Gtk.Grid({ column_spacing: 24, row_spacing: 24, column_homogeneous: true });
-    const superKey = superKeyGroup(settings, this.dir, watch);
+    const superKey = superKeyGroup(settings, this.path, watch);
     superKey.valign = Gtk.Align.START;
     grid.attach(superKey, 0, 0, 1, 1);
     grid.attach(resetAllButton(window, settings), 1, 0, 1, 1);

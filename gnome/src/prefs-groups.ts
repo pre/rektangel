@@ -13,7 +13,7 @@ const superKeyChoices = ['super', 'capslock'] as const;
 /** Connects a handler that the preferences window disconnects when it closes. */
 export type Watch = (settings: Gio.Settings, signal: string, handler: () => void) => void;
 
-export function superKeyGroup(settings: Gio.Settings, extensionDir: Gio.File, watch: Watch): Adw.PreferencesGroup {
+export function superKeyGroup(settings: Gio.Settings, extensionPath: string, watch: Watch): Adw.PreferencesGroup {
   const group = new Adw.PreferencesGroup({ title: 'Super Key' });
   const row = new Adw.ComboRow({
     title: 'Super key',
@@ -70,7 +70,7 @@ export function superKeyGroup(settings: Gio.Settings, extensionDir: Gio.File, wa
   };
   reinstall.connect('clicked', () => {
     try {
-      installXkbOption(extensionDir.get_path() ?? "");
+      installXkbOption(extensionPath);
       settings.set_boolean(xkbOptionInstalledSetting, true);
     } catch (error) {
       showNote(`Cannot install the Caps Lock option: ${error}`, true);
@@ -83,7 +83,7 @@ export function superKeyGroup(settings: Gio.Settings, extensionDir: Gio.File, wa
     }
     try {
       if (value === 'capslock') {
-        installXkbOption(extensionDir.get_path() ?? "");
+        installXkbOption(extensionPath);
         settings.set_boolean(xkbOptionInstalledSetting, true);
         showNote('Caps Lock is Super now, usually at once, at the latest after you log out and in.', false);
       } else {
