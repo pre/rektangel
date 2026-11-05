@@ -1,0 +1,16 @@
+[
+  { "input": "", "canonical": "" },
+  { "input": "<Super><Alt>F", "canonical": "<Alt><Super>f" },
+  { "input": "<Super>A", "canonical": "<Super>a" },
+  { "input": "<Primary><Mod1>Left", "canonical": "<Alt><Control>Left" },
+  { "input": "<Ctrl>a", "canonical": "<Control>a" },
+  { "input": "<ctl><shft>Up", "canonical": "<Control><Shift>Up" },
+  { "input": "<control>BackSpace", "canonical": "<Control>BackSpace" },
+  { "input": "<Mod4>period", "canonical": "<Super>period" },
+  { "input": "<hyper>x", "canonical": "<Hyper>x" },
+  { "input": "<META>Return", "canonical": "<Meta>Return" },
+  { "input": "<Shift><Super>apostrophe", "canonical": "<Shift><Super>apostrophe" },
+  { "input": "<Super><Shift>apostrophe", "canonical": "<Shift><Super>apostrophe" },
+  { "input": "<Mod3>Left", "canonical": "<mod3>Left" },
+  { "input": "F1", "canonical": "F1" }
+]

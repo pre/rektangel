@@ -42,6 +42,8 @@ export const shortcutLayout: readonly (readonly (readonly ShortcutGroup[])[])[] 
   [[move], [displays, other]],
 ];
 
+// gnome-keys.sh has the same table in jq. test/fixtures/accelerators.json
+// checks that both give the same form.
 const modifierAliases: Readonly<Record<string, string>> = {
   control: 'Control',
   ctrl: 'Control',
@@ -50,6 +52,7 @@ const modifierAliases: Readonly<Record<string, string>> = {
   alt: 'Alt',
   mod1: 'Alt',
   super: 'Super',
+  mod4: 'Super',
   shift: 'Shift',
   shft: 'Shift',
   meta: 'Meta',
@@ -58,8 +61,8 @@ const modifierAliases: Readonly<Record<string, string>> = {
 
 /**
  * Gives one spelling for accelerators that GTK and Mutter treat as the
- * same: sorted modifiers with aliases resolved, and the key in lower case.
- * An empty string stays empty.
+ * same: sorted modifiers with aliases resolved, and a key of one letter in
+ * lower case. An empty string stays empty.
  */
 export function normalizeAccelerator(accelerator: string): string {
   const modifiers = new Set<string>();
@@ -68,7 +71,8 @@ export function normalizeAccelerator(accelerator: string): string {
     modifiers.add(modifierAliases[lower] ?? lower);
     return '';
   });
-  return [...[...modifiers].sort().map((name) => `<${name}>`), key.trim().toLowerCase()].join('');
+  const name = key.trim();
+  return [...[...modifiers].sort().map((modifier) => `<${modifier}>`), name.length === 1 ? name.toLowerCase() : name].join('');
 }
 
 /**

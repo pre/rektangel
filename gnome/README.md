@@ -27,4 +27,4 @@ To turn on Caps Lock mode, call `installXkbOption` first and then set `super-key
 
 ## Tests
 
-`npm test --workspace gnome` runs the unit tests with Node.js, then two GJS tests: `test/gjs-smoke.js` (core and config.toml) and `test/gjs-capslock.js` (the super-key translation and the XKB steps, with memory settings backends and a temporary directory).
+`npm test --workspace gnome` runs the unit tests with Node.js, `test/gnome-keys-normalize.sh` (the jq normalizer of `gnome-keys.sh` with the pairs of `test/fixtures/accelerators.json`, the same pairs as the TypeScript test), then two GJS tests: `test/gjs-smoke.js` (core and config.toml) and `test/gjs-capslock.js` (the super-key translation and the XKB steps, with memory settings backends and a temporary directory).

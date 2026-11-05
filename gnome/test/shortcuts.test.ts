@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { describe, test } from 'node:test';
 import { Action, allActions } from '@rektangel/core';
 import {
@@ -27,17 +28,17 @@ describe('shortcutGroups', () => {
 });
 
 describe('normalizeAccelerator', () => {
-  test('sorts the modifiers and lowers the key', () => {
-    assert.equal(normalizeAccelerator('<Super><Alt>F'), '<Alt><Super>f');
-  });
+  // gnome-keys.sh has the same normalizer in jq: test/gnome-keys-normalize.sh
+  // checks it with the same pairs.
+  const pairs = JSON.parse(readFileSync(new URL('fixtures/accelerators.json', import.meta.url), 'utf8')) as {
+    input: string;
+    canonical: string;
+  }[];
 
-  test('resolves modifier aliases', () => {
-    assert.equal(normalizeAccelerator('<Primary><Mod1>Left'), normalizeAccelerator('<Alt><Control>Left'));
-    assert.equal(normalizeAccelerator('<Ctrl>a'), '<Control>a');
-  });
-
-  test('keeps an empty accelerator empty', () => {
-    assert.equal(normalizeAccelerator(''), '');
+  test('gives the canonical form of each fixture accelerator', () => {
+    for (const { input, canonical } of pairs) {
+      assert.equal(normalizeAccelerator(input), canonical, input);
+    }
   });
 });
 
@@ -88,7 +89,7 @@ describe('findConflict', () => {
   ]);
 
   test('finds the other action that uses the accelerator', () => {
-    assert.equal(findConflict('<Alt><Super>left', Action.RightHalf, bindings), Action.LeftHalf);
+    assert.equal(findConflict('<Alt><super>Left', Action.RightHalf, bindings), Action.LeftHalf);
   });
 
   test('ignores the action that is being changed', () => {

@@ -28,7 +28,7 @@ const tables: KeybindingTables = new Map([
 
 describe('findGnomeConflicts', () => {
   test('finds a key with the same accelerator in another modifier order and case', () => {
-    assert.deepEqual(findGnomeConflicts('<Alt><Super>left', tables), [
+    assert.deepEqual(findGnomeConflicts('<alt><SUPER>Left', tables), [
       { schema: 'org.gnome.desktop.wm.keybindings', key: 'switch-to-workspace-left' },
     ]);
   });
@@ -125,10 +125,10 @@ describe('rowConflicts', () => {
   ]);
 
   test('lists every GNOME key that uses the accelerator of the action', () => {
-    const bindings = new Map([[Action.LeftHalf, ['<super>left']]]);
+    const bindings = new Map([[Action.LeftHalf, ['<super>Left']]]);
     assert.deepEqual(rowConflicts(Action.LeftHalf, bindings, gnome, 'super'), [
-      { kind: 'gnome', schema: 'org.gnome.mutter.keybindings', key: 'toggle-tiled-left', accelerator: '<super>left' },
-      { kind: 'gnome', schema: 'org.gnome.shell.keybindings', key: 'toggle-overview', accelerator: '<super>left' },
+      { kind: 'gnome', schema: 'org.gnome.mutter.keybindings', key: 'toggle-tiled-left', accelerator: '<super>Left' },
+      { kind: 'gnome', schema: 'org.gnome.shell.keybindings', key: 'toggle-overview', accelerator: '<super>Left' },
     ]);
   });
 
@@ -136,13 +136,13 @@ describe('rowConflicts', () => {
     const bindings = new Map([
       [Action.Center, ['<Super>Return']],
       [Action.Maximize, ['<Super>Up']],
-      [Action.MaximizeHeight, ['<Shift><Super>Up', '<Super>return']],
+      [Action.MaximizeHeight, ['<Shift><Super>Up', '<super>Return']],
     ]);
     assert.deepEqual(rowConflicts(Action.Center, bindings, new Map(), 'super'), [
       { kind: 'rektangel', action: Action.MaximizeHeight, accelerator: '<Super>Return' },
     ]);
     assert.deepEqual(rowConflicts(Action.MaximizeHeight, bindings, new Map(), 'super'), [
-      { kind: 'rektangel', action: Action.Center, accelerator: '<Super>return' },
+      { kind: 'rektangel', action: Action.Center, accelerator: '<super>Return' },
     ]);
   });
 

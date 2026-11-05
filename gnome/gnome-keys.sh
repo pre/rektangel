@@ -52,10 +52,13 @@ check_backend() {
 
 dry_run=false
 undo=false
+normalize=false
 while (($# > 0)); do
   case "$1" in
     --dry-run) dry_run=true ;;
     --undo) undo=true ;;
+    # For test/gnome-keys-normalize.sh: normalizes the lines of stdin.
+    --normalize) normalize=true ;;
     --schemadir)
       schema_dir=${2:?--schemadir needs a directory}
       shift
@@ -108,12 +111,17 @@ string_lists_jq='
    | select(.value | type == "array" and all(type == "string"))]
 '
 
-# The canonical form ignores modifier order and case, and <Primary> or
-# <Ctrl> is the same as <Control>. A key of one letter ignores case.
+# The canonical form ignores modifier order and case, and resolves the
+# modifier aliases, for example <Primary> or <Ctrl> is <Control>. A key of
+# one letter ignores case. src/shortcuts.ts has the same normalizer, and
+# test/fixtures/accelerators.json checks that both give the same form.
 # shellcheck disable=SC2016 # jq variables, not shell variables
 normalize_jq='
   def normalize:
-    [scan("<[^>]+>") | ascii_downcase | sub("^<(primary|ctrl)>$"; "<control>")] as $modifiers
+    {control: "Control", ctrl: "Control", ctl: "Control", primary: "Control",
+     alt: "Alt", mod1: "Alt", super: "Super", mod4: "Super", shift: "Shift",
+     shft: "Shift", meta: "Meta", hyper: "Hyper"} as $aliases
+    | [scan("<([^>]+)>") | .[0] | ascii_downcase | "<" + ($aliases[.] // .) + ">"] as $modifiers
     | sub("^(<[^>]+>)*"; "") as $key
     | ($modifiers | unique | join("")) + (if ($key | length) == 1 then $key | ascii_downcase else $key end);
 '
@@ -131,7 +139,7 @@ rektangel_accelerators() {
   fi
   "$gsettings" --schemadir "$schema_dir" list-recursively "$rektangel_schema" |
     jq -R -n -c --argjson capslock "$capslock" "$normalize_jq$string_lists_jq"'
-      | [.[].value[] | normalize | select($capslock and contains("<super>") | not)] | unique'
+      | [.[].value[] | normalize | select($capslock and contains("<Super>") | not)] | unique'
 }
 
 # Prints {schema, key, value, updated} for each GNOME key with an entry
@@ -203,6 +211,10 @@ restore_backup() {
   run rm "$backup_file"
 }
 
+if $normalize; then
+  jq -R -r "$normalize_jq"'normalize'
+  exit 0
+fi
 check_backend
 if $undo; then
   restore_backup
