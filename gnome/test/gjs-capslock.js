@@ -32,19 +32,19 @@ const gnomeDir = GLib.path_get_dirname(GLib.path_get_dirname(GLib.filename_from_
 
 const schemas = Gio.SettingsSchemaSource.new_from_directory(`${gnomeDir}/dist/schemas`, null, false);
 const stored = memorySettings(schemas, 'org.gnome.shell.extensions.rektangel');
-const translated = new TranslatedSettings(stored, ['left-half', 'restore']);
+const translated = new TranslatedSettings(stored, ['left-half', 'restore'], 'capslock');
 check('default super-key', stored.get_string('super-key'), 'capslock');
-check('default: left-half', translated.settings.get_strv('left-half'), ['<Mod3>Left']);
-stored.set_string('super-key', 'super');
-check('super: left-half', translated.settings.get_strv('left-half'), ['<Super>Left']);
-stored.set_string('super-key', 'capslock');
 check('capslock: left-half', translated.settings.get_strv('left-half'), ['<Mod3>Left']);
+translated.setSuperKey('super');
+check('super: left-half', translated.settings.get_strv('left-half'), ['<Super>Left']);
+translated.setSuperKey('capslock');
+check('capslock again: left-half', translated.settings.get_strv('left-half'), ['<Mod3>Left']);
 check('capslock: restore', translated.settings.get_strv('restore'), ['<Mod3>BackSpace']);
 stored.set_strv('restore', ['<Control><Alt>BackSpace']);
 check('capslock: restore without Super', translated.settings.get_strv('restore'), ['<Control><Alt>BackSpace']);
 stored.set_strv('left-half', ['<Super><Alt>Left', '<Control><Super>h']);
 check('capslock: changed left-half', translated.settings.get_strv('left-half'), ['<Mod3><Alt>Left', '<Control><Mod3>h']);
-stored.set_string('super-key', 'super');
+translated.setSuperKey('super');
 check('super again: left-half', translated.settings.get_strv('left-half'), ['<Super><Alt>Left', '<Control><Super>h']);
 translated.destroy();
 stored.set_strv('left-half', ['<Super>x']);

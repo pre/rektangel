@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { describe, test } from 'node:test';
 import {
   addXkbLines,
+  capsLockModeProblem,
   conflictingCapsOption,
   removeXkbLines,
   withoutXkbOption,
@@ -84,5 +85,32 @@ describe('xkb-options', () => {
 
   test('removes only the Rektangel option', () => {
     assert.deepEqual(withoutXkbOption([xkbOption, 'compose:ralt']), ['compose:ralt']);
+  });
+});
+
+describe('capsLockModeProblem', () => {
+  test('gives null when the option is set on Wayland', () => {
+    assert.equal(capsLockModeProblem({ xkbOptions: ['compose:ralt', xkbOption], sessionType: 'wayland' }), null);
+  });
+
+  test('names the X11 session', () => {
+    assert.equal(
+      capsLockModeProblem({ xkbOptions: [xkbOption], sessionType: 'x11' }),
+      'the X server does not read user XKB rules',
+    );
+  });
+
+  test('names a caps: option that also changes Caps Lock', () => {
+    assert.equal(
+      capsLockModeProblem({ xkbOptions: ['caps:escape', xkbOption], sessionType: 'wayland' }),
+      'xkb-options has caps:escape, which also changes Caps Lock',
+    );
+  });
+
+  test('tells that the option is missing', () => {
+    assert.equal(
+      capsLockModeProblem({ xkbOptions: ['compose:ralt'], sessionType: 'wayland' }),
+      'xkb-options does not have rektangel:caps_hyper',
+    );
   });
 });

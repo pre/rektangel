@@ -1,4 +1,4 @@
-import type Gio from 'gi://Gio';
+import Gio from 'gi://Gio';
 import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
@@ -13,29 +13,40 @@ import {
   type Rect,
   type WindowChange,
 } from '@rektangel/core';
-import { superKeySetting } from './accelerator.ts';
+import { superKeySetting, type SuperKey } from './accelerator.ts';
 import { ensureXkbOption } from './capslock-mode.ts';
 import { loadConfig } from './config-file.ts';
 import { HistoryStore } from './history-store.ts';
 import { keyName } from './key-names.ts';
 import { TranslatedSettings } from './translated-settings.ts';
+import { capsLockModeProblem } from './xkb-merge.ts';
 
 const supportedWindowTypes = [Meta.WindowType.NORMAL, Meta.WindowType.DIALOG];
 
 export default class RektangelExtension extends Extension {
   private keybindings: TranslatedSettings | null = null;
   private stored: Gio.Settings | null = null;
+  private inputSources: Gio.Settings | null = null;
   private superKeyHandlerId = 0;
+  private xkbOptionsHandlerId = 0;
+  private loggedProblem: string | null = null;
   private config: Readonly<CoreConfig> = defaultConfig;
   private readonly history = new HistoryStore();
 
   override enable(): void {
     this.config = loadConfig();
     const stored = this.getSettings();
+    const inputSources = new Gio.Settings({ schema_id: 'org.gnome.desktop.input-sources' });
     this.stored = stored;
+    this.inputSources = inputSources;
     this.ensureCapsLockKey(stored);
-    this.superKeyHandlerId = stored.connect(`changed::${superKeySetting}`, () => this.ensureCapsLockKey(stored));
-    this.keybindings = new TranslatedSettings(stored, allActions.map(keyName));
+    this.keybindings = new TranslatedSettings(stored, allActions.map(keyName), this.activeSuperKey(stored, inputSources));
+    const updateSuperKey = (): void => this.keybindings?.setSuperKey(this.activeSuperKey(stored, inputSources));
+    this.superKeyHandlerId = stored.connect(`changed::${superKeySetting}`, () => {
+      this.ensureCapsLockKey(stored);
+      updateSuperKey();
+    });
+    this.xkbOptionsHandlerId = inputSources.connect('changed::xkb-options', updateSuperKey);
     const { settings } = this.keybindings;
     for (const action of allActions) {
       Main.wm.addKeybinding(keyName(action), settings, Meta.KeyBindingFlags.NONE, Shell.ActionMode.NORMAL, () =>
@@ -52,8 +63,12 @@ export default class RektangelExtension extends Extension {
     this.keybindings?.destroy();
     this.keybindings = null;
     this.stored?.disconnect(this.superKeyHandlerId);
+    this.inputSources?.disconnect(this.xkbOptionsHandlerId);
     this.stored = null;
+    this.inputSources = null;
     this.superKeyHandlerId = 0;
+    this.xkbOptionsHandlerId = 0;
+    this.loggedProblem = null;
     this.history.clear();
     this.config = defaultConfig;
     console.log('Rektangel: disabled');
@@ -69,6 +84,26 @@ export default class RektangelExtension extends Extension {
     } catch (error) {
       console.error('Rektangel: cannot install the Caps Lock XKB option', error);
     }
+  }
+
+  /**
+   * The key that the shortcuts use now: the super-key setting, or the
+   * Windows key when Caps Lock mode cannot work. Logs a new problem once.
+   */
+  private activeSuperKey(stored: Gio.Settings, inputSources: Gio.Settings): SuperKey {
+    const superKey = stored.get_string(superKeySetting) as SuperKey;
+    const problem =
+      superKey === 'capslock'
+        ? capsLockModeProblem({
+            xkbOptions: inputSources.get_strv('xkb-options'),
+            sessionType: Meta.is_wayland_compositor() ? 'wayland' : 'x11',
+          })
+        : null;
+    if (problem !== null && problem !== this.loggedProblem) {
+      console.warn(`Rektangel: Caps Lock mode is not active: ${problem}. The shortcuts use the Windows key.`);
+    }
+    this.loggedProblem = problem;
+    return problem === null ? superKey : 'super';
   }
 
   private onAction(action: Action): void {

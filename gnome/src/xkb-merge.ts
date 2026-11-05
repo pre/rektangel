@@ -85,6 +85,27 @@ export function conflictingCapsOption(options: readonly string[]): string | null
   return options.find((option) => option.startsWith('caps:')) ?? null;
 }
 
+export interface CapsLockModeState {
+  readonly xkbOptions: readonly string[];
+  /** 'wayland' or 'x11', as in XDG_SESSION_TYPE. */
+  readonly sessionType: string | null;
+}
+
+/**
+ * Why Caps Lock mode cannot work, in a short English text, or null when
+ * it can. The extension then registers the shortcuts with the Windows key.
+ */
+export function capsLockModeProblem({ xkbOptions, sessionType }: CapsLockModeState): string | null {
+  if (sessionType === 'x11') {
+    return 'the X server does not read user XKB rules';
+  }
+  const conflict = conflictingCapsOption(xkbOptions);
+  if (conflict !== null) {
+    return `xkb-options has ${conflict}, which also changes Caps Lock`;
+  }
+  return xkbOptions.includes(xkbOption) ? null : `xkb-options does not have ${xkbOption}`;
+}
+
 export function withXkbOption(options: readonly string[]): string[] {
   return options.includes(xkbOption) ? [...options] : [...options, xkbOption];
 }
