@@ -2,7 +2,9 @@
 
 Rektangel moves and resizes windows with keyboard shortcuts on Linux. It pays tribute to [Rectangle](https://github.com/rxhanson/Rectangle) for macOS.
 
-Design goal is to be fast and agile. No transition animations, no confirmations, quick reaction time.
+Design goal is to be fast and unobtrusive. This means no transition animations, no confirmations, quick reaction time, enable hammering the keys repeatedly.
+
+<img height="750" alt="Screenshot from 2026-11-05 13-39-57" src="https://github.com/user-attachments/assets/1d35ec6b-3333-46ea-9aa0-9ea50e7f5803" />
 
 ## Install from Gnome Extension Marketplace
 
