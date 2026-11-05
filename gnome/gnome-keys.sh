@@ -145,9 +145,10 @@ rektangel_accelerators() {
 # Prints {schema, key, value, updated} for each GNOME key with an entry
 # that is equal to a Rektangel shortcut.
 find_conflicts() {
-  local ours=$1 schema
+  local ours=$1 schema installed
+  installed=$("$gsettings" list-schemas)
   for schema in "${gnome_schemas[@]}"; do
-    if ! "$gsettings" list-schemas | grep -qxF "$schema"; then
+    if ! grep -qxF "$schema" <<<"$installed"; then
       continue
     fi
     "$gsettings" list-recursively "$schema" |
