@@ -19,6 +19,7 @@ export const gnomeKeybindingSchemas: ReadonlyMap<string, string> = new Map([
   ['org.gnome.mutter.wayland.keybindings', 'Mutter Wayland'],
   ['org.gnome.shell.keybindings', 'Shell'],
   ['org.gnome.settings-daemon.plugins.media-keys', 'Media Keys'],
+  ['org.freedesktop.ibus.panel.emoji', 'IBus emoji'],
 ]);
 
 export function schemaShortName(schema: string): string {

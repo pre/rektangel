@@ -20,6 +20,7 @@ gnome_schemas=(
   org.gnome.mutter.wayland.keybindings
   org.gnome.shell.keybindings
   org.gnome.settings-daemon.plugins.media-keys
+  org.freedesktop.ibus.panel.emoji
 )
 
 # Prefer the system tools. A gsettings from Homebrew or linuxbrew often has
@@ -82,10 +83,18 @@ json_to_gvariant() {
   jq -r '"[" + (map("'"'"'" + . + "'"'"'") | join(", ")) + "]"'
 }
 
+# The dconf path of a schema. The GNOME schemas use the schema id as the path.
+dconf_path() {
+  case "$1" in
+    org.freedesktop.ibus.panel.emoji) echo /desktop/ibus/panel/emoji/ ;;
+    *) echo "/${1//.//}/" ;;
+  esac
+}
+
 # Prints true when the user set the key. Empty dconf output means that the
 # schema default applies.
 user_set() {
-  if [[ -n "$("$dconf" read "/${1//.//}/$2")" ]]; then echo true; else echo false; fi
+  if [[ -n "$("$dconf" read "$(dconf_path "$1")$2")" ]]; then echo true; else echo false; fi
 }
 
 # jq: the lines of "gsettings list-recursively" to

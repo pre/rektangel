@@ -146,3 +146,36 @@ describe('rowConflicts', () => {
     assert.deepEqual(rowConflicts(Action.LeftHalf, bindings, gnome), []);
   });
 });
+
+describe('IBus emoji hotkeys', () => {
+  const ibus: KeybindingTables = new Map([
+    [
+      'org.freedesktop.ibus.panel.emoji',
+      new Map([
+        ['hotkey', ['<Super>period', '<Super>semicolon']],
+        ['unicode-hotkey', ['<Control><Shift>u']],
+      ]),
+    ],
+  ]);
+
+  test('finds the emoji hotkey that Center uses', () => {
+    const bindings = new Map([[Action.Center, ['<Super>period']]]);
+    assert.deepEqual(rowConflicts(Action.Center, bindings, ibus), [
+      { kind: 'gnome', schema: 'org.freedesktop.ibus.panel.emoji', key: 'hotkey', accelerator: '<Super>period' },
+    ]);
+  });
+
+  test('finds the unicode hotkey in another modifier order', () => {
+    assert.deepEqual(findGnomeConflicts('<Shift><Control>U', ibus), [
+      { schema: 'org.freedesktop.ibus.panel.emoji', key: 'unicode-hotkey' },
+    ]);
+  });
+
+  test('removes the period entry and keeps the semicolon entry', () => {
+    assert.deepEqual(withoutAccelerator(['<Super>period', '<Super>semicolon'], '<Super>period'), ['<Super>semicolon']);
+  });
+
+  test('names the schema IBus emoji', () => {
+    assert.equal(schemaTitle('org.freedesktop.ibus.panel.emoji'), 'IBus emoji');
+  });
+});
