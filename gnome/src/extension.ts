@@ -1,3 +1,4 @@
+import type Gio from 'gi://Gio';
 import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
@@ -12,6 +13,8 @@ import {
   type Rect,
   type WindowChange,
 } from '@rektangel/core';
+import { superKeySetting, type SuperKey } from './accelerator.ts';
+import { ensureXkbOption } from './capslock-mode.ts';
 import { loadConfig } from './config-file.ts';
 import { HistoryStore } from './history-store.ts';
 import { keyName } from './key-names.ts';
@@ -21,12 +24,18 @@ const supportedWindowTypes = [Meta.WindowType.NORMAL, Meta.WindowType.DIALOG];
 
 export default class RektangelExtension extends Extension {
   private keybindings: TranslatedSettings | null = null;
+  private stored: Gio.Settings | null = null;
+  private superKeyHandlerId = 0;
   private config: Readonly<CoreConfig> = defaultConfig;
   private readonly history = new HistoryStore();
 
   override enable(): void {
     this.config = loadConfig();
-    this.keybindings = new TranslatedSettings(this.getSettings(), allActions.map(keyName));
+    const stored = this.getSettings();
+    this.stored = stored;
+    this.ensureCapsLockKey(stored);
+    this.superKeyHandlerId = stored.connect(`changed::${superKeySetting}`, () => this.ensureCapsLockKey(stored));
+    this.keybindings = new TranslatedSettings(stored, allActions.map(keyName));
     const { settings } = this.keybindings;
     for (const action of allActions) {
       Main.wm.addKeybinding(keyName(action), settings, Meta.KeyBindingFlags.NONE, Shell.ActionMode.NORMAL, () =>
@@ -42,9 +51,25 @@ export default class RektangelExtension extends Extension {
     }
     this.keybindings?.destroy();
     this.keybindings = null;
+    this.stored?.disconnect(this.superKeyHandlerId);
+    this.stored = null;
+    this.superKeyHandlerId = 0;
     this.history.clear();
     this.config = defaultConfig;
     console.log('Rektangel: disabled');
+  }
+
+  // Never removes the option: only the Windows key choice in the
+  // preferences and hyper/uninstall.sh do that.
+  private ensureCapsLockKey(settings: Gio.Settings): void {
+    try {
+      const superKey = settings.get_string(superKeySetting) as SuperKey;
+      if (ensureXkbOption(superKey, this.path, { log: () => {} })) {
+        console.log('Rektangel: installed the Caps Lock XKB option');
+      }
+    } catch (error) {
+      console.error('Rektangel: cannot install the Caps Lock XKB option', error);
+    }
   }
 
   private onAction(action: Action): void {

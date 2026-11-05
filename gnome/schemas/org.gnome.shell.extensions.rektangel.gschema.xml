@@ -110,9 +110,9 @@
         <choice value="super"/>
         <choice value="capslock"/>
       </choices>
-      <default>'super'</default>
+      <default>'capslock'</default>
       <summary>Super key</summary>
-      <description>The key for the &lt;Super&gt; modifier of the shortcuts. The shortcuts are always stored with &lt;Super&gt;. "super": the Super key. "capslock": Caps Lock, which needs the XKB option rektangel:caps_hyper. Rektangel then registers the shortcuts with &lt;Mod3&gt;.</description>
+      <description>The key for the &lt;Super&gt; modifier of the shortcuts. The shortcuts are always stored with &lt;Super&gt;. "super": the Super key. "capslock" (the default): Caps Lock, which needs the XKB option rektangel:caps_hyper. Rektangel then registers the shortcuts with &lt;Mod3&gt;, and the extension adds the XKB option when it is enabled.</description>
     </key>
   </schema>
 </schemalist>

@@ -1,5 +1,6 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
+import type { SuperKey } from './accelerator.ts';
 import {
   addXkbLines,
   conflictingCapsOption,
@@ -66,6 +67,20 @@ export function installXkbOption(extensionPath: string, context: XkbOptionContex
       inputSources.set_strv('xkb-options', updated),
     );
   }
+}
+
+/**
+ * Installs the XKB option when superKey is 'capslock' and xkb-options does
+ * not have the option. Returns true when it installed the option. The
+ * extension calls it at enable and when super-key changes, so that Caps
+ * Lock, the default Super key, works without a script.
+ */
+export function ensureXkbOption(superKey: SuperKey, extensionPath: string, context: XkbOptionContext = {}): boolean {
+  if (superKey !== 'capslock' || isXkbOptionInstalled(context.inputSources)) {
+    return false;
+  }
+  installXkbOption(extensionPath, context);
+  return true;
 }
 
 /**

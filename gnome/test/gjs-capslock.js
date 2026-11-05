@@ -5,7 +5,7 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import { TranslatedSettings } from '../build/translated-settings.js';
-import { installXkbOption, isXkbOptionInstalled, removeXkbOption } from '../build/capslock-mode.js';
+import { ensureXkbOption, installXkbOption, isXkbOptionInstalled, removeXkbOption } from '../build/capslock-mode.js';
 
 function check(name, actual, expected) {
   const actualJson = JSON.stringify(actual);
@@ -33,6 +33,9 @@ const gnomeDir = GLib.path_get_dirname(GLib.path_get_dirname(GLib.filename_from_
 const schemas = Gio.SettingsSchemaSource.new_from_directory(`${gnomeDir}/dist/schemas`, null, false);
 const stored = memorySettings(schemas, 'org.gnome.shell.extensions.rektangel');
 const translated = new TranslatedSettings(stored, ['left-half', 'restore']);
+check('default super-key', stored.get_string('super-key'), 'capslock');
+check('default: left-half', translated.settings.get_strv('left-half'), ['<Mod3>Left']);
+stored.set_string('super-key', 'super');
 check('super: left-half', translated.settings.get_strv('left-half'), ['<Super>Left']);
 stored.set_string('super-key', 'capslock');
 check('capslock: left-half', translated.settings.get_strv('left-half'), ['<Mod3>Left']);
@@ -60,6 +63,8 @@ try {
   installXkbOption(gnomeDir, context);
   check('install two times: option', inputSources.get_strv('xkb-options'), ['compose:ralt', 'rektangel:caps_hyper']);
 
+  check('ensure: installed already', ensureXkbOption('capslock', gnomeDir, context), false);
+
   removeXkbOption(gnomeDir, context);
   check('remove: option', inputSources.get_strv('xkb-options'), ['compose:ralt']);
   check('remove: xkb directory', GLib.file_test(xkbDir, GLib.FileTest.EXISTS), false);
@@ -71,6 +76,12 @@ try {
   removeXkbOption(gnomeDir, context);
   check('merge: user rules file back', readFile(`${xkbDir}/rules/evdev`), userRules);
   check('merge: symbols removed', GLib.file_test(`${xkbDir}/symbols`, GLib.FileTest.EXISTS), false);
+
+  check('ensure: super does nothing', ensureXkbOption('super', gnomeDir, context), false);
+  check('ensure: super keeps options', inputSources.get_strv('xkb-options'), ['compose:ralt']);
+  check('ensure: capslock installs', ensureXkbOption('capslock', gnomeDir, context), true);
+  check('ensure: option', inputSources.get_strv('xkb-options'), ['compose:ralt', 'rektangel:caps_hyper']);
+  removeXkbOption(gnomeDir, context);
 
   inputSources.set_strv('xkb-options', ['caps:escape']);
   let message = '';
