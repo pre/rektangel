@@ -8,15 +8,15 @@ export interface ShortcutGroup {
 
 const halves: ShortcutGroup = {
   title: 'Halves',
-  actions: [Action.LeftHalf, Action.RightHalf, Action.TopHalf, Action.BottomHalf],
+  actions: [Action.TopHalf, Action.LeftHalf, Action.BottomHalf, Action.RightHalf],
 };
 const corners: ShortcutGroup = {
   title: 'Corners',
-  actions: [Action.TopLeft, Action.TopRight, Action.BottomLeft, Action.BottomRight],
+  actions: [Action.TopRight, Action.TopLeft, Action.BottomLeft, Action.BottomRight],
 };
 const thirds: ShortcutGroup = {
   title: 'Thirds',
-  actions: [Action.FirstThird, Action.CenterThird, Action.LastThird, Action.FirstTwoThirds, Action.LastTwoThirds],
+  actions: [Action.FirstThird, Action.LastThird, Action.FirstTwoThirds, Action.LastTwoThirds, Action.CenterThird],
 };
 const size: ShortcutGroup = {
   title: 'Size',
@@ -24,9 +24,9 @@ const size: ShortcutGroup = {
 };
 const move: ShortcutGroup = {
   title: 'Move',
-  actions: [Action.Center, Action.MoveLeft, Action.MoveRight, Action.MoveUp, Action.MoveDown],
+  actions: [Action.Center, Action.MoveUp, Action.MoveLeft, Action.MoveDown, Action.MoveRight],
 };
-const displays: ShortcutGroup = { title: 'Displays', actions: [Action.PreviousDisplay, Action.NextDisplay] };
+const displays: ShortcutGroup = { title: 'Displays', actions: [Action.NextDisplay, Action.PreviousDisplay] };
 const other: ShortcutGroup = { title: 'Other', actions: [Action.Restore] };
 
 /** The groups of the preferences window, in display order. */

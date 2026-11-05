@@ -1,6 +1,6 @@
 # Default keybindings use Super with one key, and only conflicting GNOME entries are removed
 
-Status: accepted. Supersedes ADR-0006.
+Status: accepted. Supersedes ADR-0006. ADR-0012 adds defaults for the thirds and for move to edge.
 
 All default keybindings use Super as the only modifier, with Shift for a second set. The arrow keys move a window to the halves (Super+arrow) and to the corners (Super+Shift+arrow, clockwise: Left is top left, Up is top right, Right is bottom right, Down is bottom left). The other actions use Super with one key: Space maximize, Return maximize height, Period center, Plus larger, Minus smaller, Apostrophe next display, Shift+Apostrophe previous display, BackSpace restore. Thirds, almost maximize and move to edge have no default.
 

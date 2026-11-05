@@ -25,6 +25,34 @@ describe('shortcutGroups', () => {
       ['Halves', 'Corners', 'Thirds', 'Size', 'Move', 'Displays', 'Other'],
     );
   });
+
+  test('lists the halves and the corners in the Up, Left, Down, Right order of their arrow keys', () => {
+    const halves = shortcutGroups.find((group) => group.title === 'Halves');
+    const corners = shortcutGroups.find((group) => group.title === 'Corners');
+    assert.deepEqual(halves?.actions, [Action.TopHalf, Action.LeftHalf, Action.BottomHalf, Action.RightHalf]);
+    assert.deepEqual(corners?.actions, [Action.TopRight, Action.TopLeft, Action.BottomLeft, Action.BottomRight]);
+  });
+
+  test('lists the thirds from one third to two thirds, with the center last', () => {
+    const thirds = shortcutGroups.find((group) => group.title === 'Thirds');
+    assert.deepEqual(thirds?.actions, [
+      Action.FirstThird,
+      Action.LastThird,
+      Action.FirstTwoThirds,
+      Action.LastTwoThirds,
+      Action.CenterThird,
+    ]);
+  });
+
+  test('lists the edges of Move in the W, A, S, D order after Center', () => {
+    const move = shortcutGroups.find((group) => group.title === 'Move');
+    assert.deepEqual(move?.actions, [Action.Center, Action.MoveUp, Action.MoveLeft, Action.MoveDown, Action.MoveRight]);
+  });
+
+  test('lists the next display before the previous display', () => {
+    const displays = shortcutGroups.find((group) => group.title === 'Displays');
+    assert.deepEqual(displays?.actions, [Action.NextDisplay, Action.PreviousDisplay]);
+  });
 });
 
 describe('normalizeAccelerator', () => {

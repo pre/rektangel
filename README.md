@@ -49,26 +49,35 @@ To attach to Caps Lock, the extension writes a user XKB option to `~/.config/xkb
 
 | Action           | Shortcut                 |
 |------------------|--------------------------|
-| Left half        | Super+Left               |
-| Right half       | Super+Right              |
 | Top half         | Super+Up                 |
+| Left half        | Super+Left               |
 | Bottom half      | Super+Down               |
-| Top left         | Super+Shift+Left         |
+| Right half       | Super+Right              |
 | Top right        | Super+Shift+Up           |
+| Top left         | Super+Shift+Left         |
 | Bottom left      | Super+Shift+Down         |
 | Bottom right     | Super+Shift+Right        |
+| First third      | Super+1                  |
+| Last third       | Super+2                  |
+| First two thirds | Super+3                  |
+| Last two thirds  | Super+4                  |
+| Center third     | Super+5                  |
 | Maximize         | Super+Space              |
 | Maximize height  | Super+Return             |
-| Center           | Super+Period             |
 | Larger           | Super+Plus               |
 | Smaller          | Super+Minus              |
+| Center           | Super+Period             |
+| Top edge         | Super+W                  |
+| Left edge        | Super+A                  |
+| Bottom edge      | Super+S                  |
+| Right edge       | Super+D                  |
 | Next display     | Super+Apostrophe         |
 | Previous display | Super+Shift+Apostrophe   |
 | Restore          | Super+Backspace          |
 
-Super is Caps Lock by default, so Super+Left is Caps Lock+Left. The corners go clockwise from the arrow key: Left is top left, Up is top right, Right is bottom right and Down is bottom left. The keys are for a Finnish keyboard, on which Plus and Minus have no Shift and Apostrophe is the key to the right of Ä. On a Finnish keyboard, Shift+Apostrophe is the asterisk, so the previous display shortcut shows as Super+*. Mutter compares the key and the modifiers, so the stored form is `<Super><Shift>apostrophe`, not `<Super>asterisk`. On other layouts, the same key names can be on other keys, or need Shift. See ADR 0010.
+Super is Caps Lock by default, so Super+Left is Caps Lock+Left. The table has the order of the preferences window, which lists the halves, the corners and the edges by their arrow or WASD key: Up, Left, Down, Right. The corners go clockwise from the arrow key: Left is top left, Up is top right, Right is bottom right and Down is bottom left. The keys are for a Finnish keyboard, on which Plus and Minus have no Shift and Apostrophe is the key to the right of Ä. On a Finnish keyboard, Shift+Apostrophe is the asterisk, so the previous display shortcut shows as Super+*. Mutter compares the key and the modifiers, so the stored form is `<Super><Shift>apostrophe`, not `<Super>asterisk`. On other layouts, the same key names can be on other keys, or need Shift. See ADR 0010 and ADR 0012.
 
-Thirds, almost maximize and move to edge have no default shortcut. Each shortcut is a gsettings key in `org.gnome.shell.extensions.rektangel`. To change one, use the preferences window (see below), `gsettings` or dconf-editor. The schema is in the extension directory, so give `gsettings` the schema directory:
+Almost maximize has no default shortcut. Each shortcut is a gsettings key in `org.gnome.shell.extensions.rektangel`. To change one, use the preferences window (see below), `gsettings` or dconf-editor. The schema is in the extension directory, so give `gsettings` the schema directory:
 
 ```sh
 schemas=~/.local/share/gnome-shell/extensions/rektangel@repo.pet/schemas
@@ -87,8 +96,12 @@ With Caps Lock as the Super key, the default shortcuts do not conflict with GNOM
 | Super+Shift+arrow keys   | `org.gnome.desktop.wm.keybindings` `move-to-monitor-left`, `-right`, `-up`, `-down` |
 | Super+Space              | `org.gnome.desktop.wm.keybindings` `switch-input-source`         |
 | Super+Period             | `org.freedesktop.ibus.panel.emoji` `hotkey` (IBus emoji)         |
+| Super+1 to Super+5       | `org.gnome.shell.keybindings` `switch-to-application-1` to `-5` (dash favorites) |
+| Super+A                  | `org.gnome.shell.keybindings` `toggle-application-view` (show applications) |
+| Super+S                  | `org.gnome.shell.keybindings` `toggle-quick-settings`            |
+| Super+D                  | `org.gnome.desktop.wm.keybindings` `show-desktop` (Ubuntu only)  |
 
-Ubuntu sets `maximize` and `unmaximize` to empty in the Ubuntu session, so on Ubuntu Super+Up and Super+Down are free. The other defaults (Super+Return, Super+Plus, Super+Minus, Super+Apostrophe, Super+Shift+Apostrophe and Super+Backspace) have no GNOME 46 shortcut. IBus is not a part of GNOME Shell, but in some applications, for example GNOME Terminal, the IBus emoji hotkey gets Super+Period before Rektangel does. IBus also has Super+Semicolon for emoji and Ctrl+Shift+U for Unicode input. Other extensions can also use these keys, for example Tiling Assistant uses Super+Up and Super+Down.
+Ubuntu sets `maximize` and `unmaximize` to empty in the Ubuntu session, so on Ubuntu Super+Up and Super+Down are free. Ubuntu also adds Super+D for `show-desktop`, which GNOME leaves empty. The other defaults (Super+Return, Super+Plus, Super+Minus, Super+Apostrophe, Super+Shift+Apostrophe, Super+Backspace and Super+W) have no GNOME 46 shortcut. IBus is not a part of GNOME Shell, but in some applications, for example GNOME Terminal, the IBus emoji hotkey gets Super+Period before Rektangel does. IBus also has Super+Semicolon for emoji and Ctrl+Shift+U for Unicode input. Other extensions can also use these keys, for example Tiling Assistant uses Super+Up and Super+Down.
 
 With the Windows key, use `gnome-keys.sh` to remove the GNOME conflicts. The script is in the zip, and it removes only the conflicting GNOME entries. It reads the current Rektangel shortcuts, so run it again after you change a shortcut. It removes each GNOME entry that is equal to a Rektangel shortcut from these schemas: `org.gnome.desktop.wm.keybindings`, `org.gnome.mutter.keybindings`, `org.gnome.mutter.wayland.keybindings`, `org.gnome.shell.keybindings`, `org.gnome.settings-daemon.plugins.media-keys` and `org.freedesktop.ibus.panel.emoji` (IBus emoji). The script skips a schema that is not installed, for example the IBus schema on a system without IBus. The other entries of a key stay, so Super+Semicolon stays for the IBus emoji picker. The order of the modifiers does not matter, and neither does the case of a modifier or of a one-letter key. The script needs `gsettings`, `dconf` and `jq`. It saves the old values to `~/.config/rektangel/gnome-keys-backup.json` before it changes them. A key that is in the backup from an earlier run keeps its first value. `--undo` sets the old values again, or resets a key that had the GNOME default.
 

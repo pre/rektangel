@@ -70,40 +70,40 @@
       <summary>Restore</summary>
     </key>
     <key name="first-third" type="as">
-      <default><![CDATA[[]]]></default>
+      <default><![CDATA[['<Super>1']]]></default>
       <summary>First third</summary>
     </key>
-    <key name="center-third" type="as">
-      <default><![CDATA[[]]]></default>
-      <summary>Center third</summary>
-    </key>
     <key name="last-third" type="as">
-      <default><![CDATA[[]]]></default>
+      <default><![CDATA[['<Super>2']]]></default>
       <summary>Last third</summary>
     </key>
     <key name="first-two-thirds" type="as">
-      <default><![CDATA[[]]]></default>
+      <default><![CDATA[['<Super>3']]]></default>
       <summary>First two thirds</summary>
     </key>
     <key name="last-two-thirds" type="as">
-      <default><![CDATA[[]]]></default>
+      <default><![CDATA[['<Super>4']]]></default>
       <summary>Last two thirds</summary>
     </key>
-    <key name="move-left" type="as">
-      <default><![CDATA[[]]]></default>
-      <summary>Move to left edge</summary>
-    </key>
-    <key name="move-right" type="as">
-      <default><![CDATA[[]]]></default>
-      <summary>Move to right edge</summary>
+    <key name="center-third" type="as">
+      <default><![CDATA[['<Super>5']]]></default>
+      <summary>Center third</summary>
     </key>
     <key name="move-up" type="as">
-      <default><![CDATA[[]]]></default>
+      <default><![CDATA[['<Super>w']]]></default>
       <summary>Move to top edge</summary>
     </key>
+    <key name="move-left" type="as">
+      <default><![CDATA[['<Super>a']]]></default>
+      <summary>Move to left edge</summary>
+    </key>
     <key name="move-down" type="as">
-      <default><![CDATA[[]]]></default>
+      <default><![CDATA[['<Super>s']]]></default>
       <summary>Move to bottom edge</summary>
+    </key>
+    <key name="move-right" type="as">
+      <default><![CDATA[['<Super>d']]]></default>
+      <summary>Move to right edge</summary>
     </key>
     <key name="super-key" type="s">
       <choices>

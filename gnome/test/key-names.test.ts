@@ -31,7 +31,7 @@ describe('keyName', () => {
 describe('schema defaults', () => {
   test('use each accelerator once', () => {
     const normalized = schemaDefaults.map(normalizeAccelerator);
-    assert.equal(schemaDefaults.length, 16);
+    assert.equal(schemaDefaults.length, 25);
     assert.equal(new Set(normalized).size, normalized.length);
   });
 });
