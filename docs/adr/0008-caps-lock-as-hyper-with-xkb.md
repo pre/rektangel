@@ -1,6 +1,6 @@
 # Caps Lock mode is a user XKB option with Hyper on Mod3
 
-The optional Caps Lock mode is a user XKB option that makes Caps Lock `Hyper_L` on Mod3, and Shift+Caps Lock toggles caps lock (a `TWO_LEVEL` key). Mutter loads the keymap like any keyboard layout, so the mode needs no remapper, no process and no root, and Super keeps its GNOME meaning.
+The Caps Lock mode is a user XKB option that makes Caps Lock `Hyper_L` on Mod3, and Shift+Caps Lock toggles caps lock (a `TWO_LEVEL` key). Mutter loads the keymap like any keyboard layout, so the mode needs no remapper, no process and no root, and Super keeps its GNOME meaning.
 
 ## Considered Options
 
@@ -11,3 +11,5 @@ The optional Caps Lock mode is a user XKB option that makes Caps Lock `Hyper_L` 
 ## Consequences
 
 The shortcuts of this mode use `<Mod3>`, not `<Hyper>`. ADR 0009 gives the reason, and how the stored `<Super>` shortcuts become `<Mod3>` shortcuts. See gnome/hyper/README.md.
+
+Since ADR 0011, Caps Lock mode is the default, and the extension installs the XKB option itself.

@@ -26,7 +26,11 @@ You do not need Node.js. GNOME Shell runs the extension.
    gnome-extensions enable rektangel@repo.pet
    ```
 
-Some default shortcuts are also GNOME shortcuts. On GNOME 46 these GNOME defaults conflict:
+When you enable the extension the first time, Caps Lock becomes the Super key of the Rektangel shortcuts: hold Caps Lock and press Left to move a window to the left half. Shift+Caps Lock still toggles caps lock. The extension writes a user XKB option to `~/.config/xkb` and adds `rektangel:caps_hyper` to `xkb-options`. The change usually has an effect at once, at the latest after you log out and in. The Windows key keeps its GNOME function. To use the Windows key for the Rektangel shortcuts and get a normal Caps Lock back, select Windows key in the Super Key group of the preferences window. See Caps Lock mode below.
+
+### GNOME conflicts with the Windows key
+
+With Caps Lock as the Super key, the default shortcuts do not conflict with GNOME. If you select the Windows key, some default shortcuts are also GNOME shortcuts. On GNOME 46 these GNOME defaults conflict:
 
 | Rektangel default        | GNOME key                                                        |
 |--------------------------|------------------------------------------------------------------|
@@ -39,7 +43,7 @@ Some default shortcuts are also GNOME shortcuts. On GNOME 46 these GNOME default
 
 Ubuntu sets `maximize` and `unmaximize` to empty in the Ubuntu session, so on Ubuntu Super+Up and Super+Down are free. The other defaults (Super+Return, Super+Plus, Super+Minus, Super+Apostrophe, Super+Shift+Apostrophe and Super+Backspace) have no GNOME 46 shortcut. IBus is not a part of GNOME Shell, but in some applications, for example GNOME Terminal, the IBus emoji hotkey gets Super+Period before Rektangel does. IBus also has Super+Semicolon for emoji and Ctrl+Shift+U for Unicode input. Other extensions can also use these keys, for example Tiling Assistant uses Super+Up and Super+Down.
 
-Use `gnome-keys.sh` to remove the GNOME conflicts. The script is in the zip, and it removes only the conflicting GNOME entries. It reads the current Rektangel shortcuts, so run it again after you change a shortcut. It removes each GNOME entry that is equal to a Rektangel shortcut from these schemas: `org.gnome.desktop.wm.keybindings`, `org.gnome.mutter.keybindings`, `org.gnome.mutter.wayland.keybindings`, `org.gnome.shell.keybindings`, `org.gnome.settings-daemon.plugins.media-keys` and `org.freedesktop.ibus.panel.emoji` (IBus emoji). The script skips a schema that is not installed, for example the IBus schema on a system without IBus. The other entries of a key stay, so Super+Semicolon stays for the IBus emoji picker. The order of the modifiers does not matter, and neither does the case of a modifier or of a one-letter key. The script needs `gsettings`, `dconf` and `jq`. It saves the old values to `~/.config/rektangel/gnome-keys-backup.json` before it changes them. A key that is in the backup from an earlier run keeps its first value. `--undo` sets the old values again, or resets a key that had the GNOME default.
+With the Windows key, use `gnome-keys.sh` to remove the GNOME conflicts. The script is in the zip, and it removes only the conflicting GNOME entries. It reads the current Rektangel shortcuts, so run it again after you change a shortcut. It removes each GNOME entry that is equal to a Rektangel shortcut from these schemas: `org.gnome.desktop.wm.keybindings`, `org.gnome.mutter.keybindings`, `org.gnome.mutter.wayland.keybindings`, `org.gnome.shell.keybindings`, `org.gnome.settings-daemon.plugins.media-keys` and `org.freedesktop.ibus.panel.emoji` (IBus emoji). The script skips a schema that is not installed, for example the IBus schema on a system without IBus. The other entries of a key stay, so Super+Semicolon stays for the IBus emoji picker. The order of the modifiers does not matter, and neither does the case of a modifier or of a one-letter key. The script needs `gsettings`, `dconf` and `jq`. It saves the old values to `~/.config/rektangel/gnome-keys-backup.json` before it changes them. A key that is in the backup from an earlier run keeps its first value. `--undo` sets the old values again, or resets a key that had the GNOME default.
 
 ```sh
 dir=~/.local/share/gnome-shell/extensions/rektangel@repo.pet
@@ -73,7 +77,7 @@ The scripts use `/usr/bin/gsettings` and `/usr/bin/dconf` when they exist. A `gs
 | Previous display | Super+Shift+Apostrophe   |
 | Restore          | Super+Backspace          |
 
-The corners go clockwise from the arrow key: Left is top left, Up is top right, Right is bottom right and Down is bottom left. The keys are for a Finnish keyboard, on which Plus and Minus have no Shift and Apostrophe is the key to the right of Ä. On a Finnish keyboard, Shift+Apostrophe is the asterisk, so the previous display shortcut shows as Super+*. Mutter compares the key and the modifiers, so the stored form is `<Super><Shift>apostrophe`, not `<Super>asterisk`. On other layouts, the same key names can be on other keys, or need Shift. See ADR 0010.
+Super is Caps Lock by default, so Super+Left is Caps Lock+Left. The corners go clockwise from the arrow key: Left is top left, Up is top right, Right is bottom right and Down is bottom left. The keys are for a Finnish keyboard, on which Plus and Minus have no Shift and Apostrophe is the key to the right of Ä. On a Finnish keyboard, Shift+Apostrophe is the asterisk, so the previous display shortcut shows as Super+*. Mutter compares the key and the modifiers, so the stored form is `<Super><Shift>apostrophe`, not `<Super>asterisk`. On other layouts, the same key names can be on other keys, or need Shift. See ADR 0010.
 
 Thirds, almost maximize and move to edge have no default shortcut. Each shortcut is a gsettings key in `org.gnome.shell.extensions.rektangel`. To change one, use the preferences window (see below), `gsettings` or dconf-editor. The schema is in the extension directory, so give `gsettings` the schema directory:
 
@@ -94,7 +98,7 @@ Click the shortcut button of an action, press the new key combination, and click
 
 A red warning badge before a shortcut shows that GNOME or another Rektangel action uses the same keys: click it to see the conflicts and to remove a GNOME entry, with the same backup as in the dialog.
 
-The Super Key group at the top selects the key that is Super for Rektangel: the Windows key or Caps Lock. All shortcuts are stored with Super, so this setting changes all of them at once. A change to Caps Lock has an effect after you log out and in.
+The Super Key group at the top selects the key that is Super for Rektangel: Caps Lock (the default) or the Windows key. All shortcuts are stored with Super, so this setting changes all of them at once. Caps Lock adds the XKB option, and Windows key removes it. The change usually has an effect at once, at the latest after you log out and in.
 
 When you set a shortcut for the first time, GNOME can ask if the Extensions app may inhibit shortcuts. Allow it, otherwise GNOME Shell gets the key combination before the window does.
 
@@ -123,9 +127,11 @@ The file uses a subset of TOML: `key = value` lines, numbers, quoted strings, on
 
 ## Caps Lock mode
 
-Caps Lock mode is optional. It makes Caps Lock the Super key of the Rektangel shortcuts: hold Caps Lock instead of Super. Shift+Caps Lock toggles caps lock. Super keeps its GNOME function.
+Caps Lock mode is the default. It makes Caps Lock the Super key of the Rektangel shortcuts: hold Caps Lock instead of Super. Shift+Caps Lock toggles caps lock. Super keeps its GNOME function.
 
-The shortcuts are always stored with Super. The setting `super-key` (`super` or `capslock`) selects the key, so one change switches all shortcuts. Rektangel registers the shortcuts with Caps Lock when the value is `capslock`. Caps Lock mode also needs a user XKB option. The `hyper` directory of the extension has scripts that install the option and set `super-key`. See `gnome/hyper/README.md` and ADR 0009.
+The shortcuts are always stored with Super. The setting `super-key` (`capslock`, the default, or `super`) selects the key, so one change switches all shortcuts. Rektangel registers the shortcuts with Caps Lock when the value is `capslock`. Caps Lock mode also needs a user XKB option. When `super-key` is `capslock`, the extension installs the option when it is enabled and when the setting changes. It does not remove the option when it is disabled.
+
+To switch back to the Windows key, select Windows key in the preferences window. It removes the option and sets `super-key` to `super`. Without the preferences window, run `hyper/uninstall.sh`. If `xkb-options` has a `caps:` option, for example `caps:escape`, the extension cannot install its option: it writes the error to the journal, and the shortcuts do nothing until you remove the `caps:` option or select the Windows key. See `gnome/hyper/README.md`, ADR 0009 and ADR 0011.
 
 ## Build from source
 

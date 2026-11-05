@@ -1,12 +1,12 @@
 # Caps Lock mode
 
-Caps Lock mode makes Caps Lock the Super key of the Rektangel shortcuts. Hold Caps Lock instead of Super: Super+Left becomes Caps+Left. Super keeps its GNOME function. See ADR 0008 and ADR 0009.
+Caps Lock mode makes Caps Lock the Super key of the Rektangel shortcuts. Hold Caps Lock instead of Super: Super+Left becomes Caps+Left. Super keeps its GNOME function. See ADR 0008, ADR 0009 and ADR 0011.
 
-The mode is optional. The default shortcuts do not need it.
+The mode is the default. When `super-key` is `capslock`, the extension installs the XKB option itself when it is enabled, and the preferences window installs it when you select Caps Lock. You do not need the scripts in this directory for the default.
 
 ## How it works
 
-- The shortcuts are always stored with `<Super>`. The setting `super-key` tells Rektangel which key that is: `super` (the default) or `capslock`.
+- The shortcuts are always stored with `<Super>`. The setting `super-key` tells Rektangel which key that is: `capslock` (the default) or `super`.
 - With `capslock`, Rektangel registers each stored shortcut with `<Mod3>` in place of `<Super>`. The stored values do not change. When you set `super-key` back to `super`, the Super shortcuts work again, and you do not edit a shortcut.
 - A user XKB option, `rektangel:caps_hyper`, gives the Caps Lock key two levels: `[ Hyper_L, Caps_Lock ]` with type `TWO_LEVEL`.
 - Caps Lock alone (level 1) is `Hyper_L` on the real modifier Mod3 while you hold it.
@@ -30,6 +30,8 @@ Rektangel registers `<Mod3>`, not `<Hyper>`. Mutter changes `<Hyper>` to all rea
 If `~/.config/xkb/rules/evdev` or `evdev.lst` exists already, the XKB step does not replace it. It adds the Rektangel lines at the end, if they are not there. The remove step removes only these lines. It removes a file only if the file is the Rektangel file.
 
 ## Install and uninstall
+
+The extension and the preferences window do the same steps as these scripts. Use `uninstall.sh` to get a normal Caps Lock back without the preferences window. Use `install.sh` only if you selected the Windows key before and want Caps Lock again without the preferences window. `uninstall.sh` also sets `super-key` to `super`. If `super-key` stays `capslock`, the extension installs the option again at the next enable.
 
 Install the extension first. Then run the scripts from the extension directory. Both scripts run as the normal user and need `gsettings`, `dconf` and `gjs`. Use `--dry-run` first: it shows the changes and changes nothing.
 
@@ -58,7 +60,7 @@ schemas=~/.local/share/gnome-shell/extensions/rektangel@repo.pet/schemas
 /usr/bin/gsettings --schemadir "$schemas" set org.gnome.shell.extensions.rektangel super-key capslock
 ```
 
-Without the XKB option, Caps Lock does not set Mod3, so the shortcuts then do not work.
+When `super-key` changes to `capslock`, the extension installs the XKB option if it is not there. Without the XKB option, Caps Lock does not set Mod3, so the shortcuts then do not work.
 
 ## Shortcuts in Caps Lock mode
 
@@ -71,7 +73,7 @@ Each shortcut is the stored shortcut with Caps Lock in place of Super. A shortcu
 | Maximize         | Super+Space              | Caps+Space               |
 | Restore          | Super+BackSpace          | Caps+BackSpace           |
 
-All defaults use Super, so in Caps Lock mode all defaults use Caps Lock, and Super is free for GNOME. But `gnome-keys.sh` compares the stored form, so it removes the GNOME Super+Left (tile the window to the left) and the other conflicts also in Caps Lock mode. Then you need no new run when you set `super-key` back to `super`. To get the GNOME shortcuts back in Caps Lock mode, run `gnome-keys.sh --undo`.
+All defaults use Super, so in Caps Lock mode all defaults use Caps Lock, and Super is free for GNOME. In Caps Lock mode you do not need `gnome-keys.sh`. But `gnome-keys.sh` compares the stored form, so if you run it, it removes the GNOME Super+Left (tile the window to the left) and the other conflicts also in Caps Lock mode. Then you need no new run when you set `super-key` to `super`. To get the GNOME shortcuts back in Caps Lock mode, run `gnome-keys.sh --undo`.
 
 ## Known limits
 

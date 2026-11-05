@@ -4,7 +4,7 @@ The user documentation is in the README.md of the repository. This file describe
 
 ## Super key and Caps Lock mode
 
-The shortcuts are stored with `<Super>`. The gsettings key `super-key` (`'super'` or `'capslock'`) selects the key for that modifier. See ADR 0009.
+The shortcuts are stored with `<Super>`. The gsettings key `super-key` (`'capslock'`, the default, or `'super'`) selects the key for that modifier. See ADR 0009.
 
 `src/accelerator.ts` has no imports:
 
@@ -17,8 +17,9 @@ The shortcuts are stored with `<Super>`. The gsettings key `super-key` (`'super'
 - `installXkbOption(extensionPath, context?)`: copies the XKB files of `extensionPath/hyper/xkb` to `$XDG_CONFIG_HOME/xkb`, or adds the Rektangel lines to the user files that are there. Then it adds `rektangel:caps_hyper` to `org.gnome.desktop.input-sources xkb-options`. It throws an `Error` with a message for the user, before it changes something, if `xkb-options` has a `caps:` option.
 - `removeXkbOption(extensionPath, context?)`: removes the option, then the Rektangel files and lines. Other options and lines stay.
 - `isXkbOptionInstalled(inputSources?)`: true when `xkb-options` has the option.
+- `ensureXkbOption(superKey, extensionPath, context?)`: calls `installXkbOption` when `superKey` is `'capslock'` and `xkb-options` does not have the option. Returns true when it installed the option. The extension calls it at enable and when `super-key` changes (ADR 0011).
 
-Both steps do nothing a second time. In the preferences window, `extensionPath` is `this.path`. `context` is for tests and the scripts: `configDir`, `inputSources` (a `Gio.Settings`), `dryRun` and `log`.
+Both steps do nothing a second time. In the extension and the preferences window, `extensionPath` is `this.path`. `context` is for tests and the scripts: `configDir`, `inputSources` (a `Gio.Settings`), `dryRun` and `log`.
 
 To turn on Caps Lock mode, call `installXkbOption` first and then set `super-key` to `'capslock'`. To turn it off, set `super-key` to `'super'` and then call `removeXkbOption`. In this order, the Super shortcuts never point to a key that does not set Mod3.
 

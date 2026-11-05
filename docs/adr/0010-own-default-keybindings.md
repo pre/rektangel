@@ -15,6 +15,6 @@ The Rectangle defaults of ADR-0006 were made for macOS, where Cmd+Alt and Ctrl+A
 
 ## Consequences
 
-- The defaults conflict with more GNOME defaults than before: Super+Left and Super+Right (tiling), Super+Up and Super+Down (maximize, unmaximize), Super+Shift+arrow (move to monitor) and Super+Space (input source). Run `gnome-keys.sh` after the update.
+- The defaults conflict with more GNOME defaults than before: Super+Left and Super+Right (tiling), Super+Up and Super+Down (maximize, unmaximize), Super+Shift+arrow (move to monitor) and Super+Space (input source). Run `gnome-keys.sh` after the update. Since ADR 0011, Caps Lock is the default Super key, and these conflicts apply only to users who select the Windows key.
 - The keys of Plus, Minus and Apostrophe are for a Finnish keyboard. On other layouts these key names can be on other keys or need Shift.
 - A user who changed a shortcut keeps the value. A changed shortcut can now be equal to a new default of another action, and then the two actions use the same key until the user changes one.
