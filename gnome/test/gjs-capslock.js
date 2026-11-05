@@ -67,7 +67,8 @@ try {
 
   removeXkbOption(gnomeDir, context);
   check('remove: option', inputSources.get_strv('xkb-options'), ['compose:ralt']);
-  check('remove: xkb directory', GLib.file_test(xkbDir, GLib.FileTest.EXISTS), false);
+  check('remove: symbols file', GLib.file_test(`${xkbDir}/symbols/rektangel`, GLib.FileTest.EXISTS), false);
+  check('remove: rules file', GLib.file_test(`${xkbDir}/rules/evdev`, GLib.FileTest.EXISTS), false);
 
   const userRules = '! include %S/evdev\n\n! option = symbols\n  my:option = +my(option)\n';
   writeFile(`${xkbDir}/rules/evdev`, userRules);
@@ -75,7 +76,7 @@ try {
   check('merge: user rule kept', readFile(`${xkbDir}/rules/evdev`).startsWith(userRules), true);
   removeXkbOption(gnomeDir, context);
   check('merge: user rules file back', readFile(`${xkbDir}/rules/evdev`), userRules);
-  check('merge: symbols removed', GLib.file_test(`${xkbDir}/symbols`, GLib.FileTest.EXISTS), false);
+  check('merge: symbols removed', GLib.file_test(`${xkbDir}/symbols/rektangel`, GLib.FileTest.EXISTS), false);
 
   check('ensure: super does nothing', ensureXkbOption('super', gnomeDir, context), false);
   check('ensure: super keeps options', inputSources.get_strv('xkb-options'), ['compose:ralt']);

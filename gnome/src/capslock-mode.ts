@@ -86,7 +86,8 @@ export function ensureXkbOption(superKey: SuperKey, extensionPath: string, conte
 /**
  * Turns off the Caps Lock key of Caps Lock mode: removes
  * rektangel:caps_hyper from xkb-options, then removes the Rektangel lines
- * and files from $XDG_CONFIG_HOME/xkb. Other options and lines stay.
+ * and files from $XDG_CONFIG_HOME/xkb. Other options and lines stay. The
+ * directories stay, also when they are empty.
  */
 export function removeXkbOption(extensionPath: string, context: XkbOptionContext = {}): void {
   const { inputSources, act } = resolve(context);
@@ -111,12 +112,6 @@ export function removeXkbOption(extensionPath: string, context: XkbOptionContext
       act(`remove ${path}`, () => Gio.File.new_for_path(path).delete(null));
     } else if (updated !== existing) {
       act(`write ${path}`, () => writeText(path, updated));
-    }
-  }
-  for (const dir of ['rules', 'symbols', '']) {
-    const path = GLib.build_filenamev([xkbDir, dir]);
-    if (!context.dryRun && isEmptyDir(path)) {
-      Gio.File.new_for_path(path).delete(null);
     }
   }
 }
@@ -161,12 +156,3 @@ function writeText(path: string, text: string): void {
   );
 }
 
-function isEmptyDir(path: string): boolean {
-  if (!GLib.file_test(path, GLib.FileTest.IS_DIR)) {
-    return false;
-  }
-  const children = Gio.File.new_for_path(path).enumerate_children('standard::name', Gio.FileQueryInfoFlags.NONE, null);
-  const empty = children.next_file(null) === null;
-  children.close(null);
-  return empty;
-}
