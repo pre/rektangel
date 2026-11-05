@@ -7,6 +7,9 @@ import {
   conflictSections,
   conflictWording,
   findGnomeConflicts,
+  ibusHeading,
+  ibusTypesKey,
+  keyCharacter,
   rowConflicts,
   schemaShortName,
   schemaTitle,
@@ -220,6 +223,75 @@ describe('rowConflicts', () => {
       [Action.RightHalf, ['<Super>Right']],
     ]);
     assert.deepEqual(rowConflicts(Action.LeftHalf, bindings, gnome, 'super'), []);
+  });
+});
+
+/** A keymap for the tests: the Finnish keys with a character outside ASCII. */
+const unicodeOf = (key: string): number =>
+  ({ section: 0xa7, adiaeresis: 0xe4, onehalf: 0xbd, a: 0x61, apostrophe: 0x27, period: 0x2e })[key] ?? 0;
+
+describe('ibusTypesKey', () => {
+  test('is true for Super with a key that gives a character outside ASCII', () => {
+    assert.equal(ibusTypesKey('<Super>section', unicodeOf), true);
+    assert.equal(ibusTypesKey('<Shift><super>adiaeresis', unicodeOf), true);
+    assert.equal(ibusTypesKey('<Super>onehalf', unicodeOf), true);
+  });
+
+  test('is true for Super with a dead key', () => {
+    assert.equal(ibusTypesKey('<Super>dead_acute', unicodeOf), true);
+  });
+
+  test('is false for an ASCII key, a key without a character, and a disabled shortcut', () => {
+    assert.equal(ibusTypesKey('<Super>a', unicodeOf), false);
+    assert.equal(ibusTypesKey('<Super>apostrophe', unicodeOf), false);
+    assert.equal(ibusTypesKey('<Super>period', unicodeOf), false);
+    assert.equal(ibusTypesKey('<Super>Left', unicodeOf), false);
+    assert.equal(ibusTypesKey('', unicodeOf), false);
+  });
+
+  test('is false when Alt or Ctrl is in the shortcut, because IBus refuses those keys', () => {
+    assert.equal(ibusTypesKey('<Super><Alt>section', unicodeOf), false);
+    assert.equal(ibusTypesKey('<Control>section', unicodeOf), false);
+    assert.equal(ibusTypesKey('<Alt>section', unicodeOf), false);
+  });
+});
+
+describe('rowConflicts with IBus', () => {
+  test('lists the IBus problem after the GNOME keys and before the Rektangel actions', () => {
+    const gnome: KeybindingTables = new Map([['org.gnome.shell.keybindings', new Map([['x', ['<Super>section']]])]]);
+    const bindings = new Map([
+      [Action.Center, ['<Super>section']],
+      [Action.Restore, ['<Super>section']],
+    ]);
+    assert.deepEqual(rowConflicts(Action.Center, bindings, gnome, 'super', unicodeOf), [
+      { kind: 'gnome', schema: 'org.gnome.shell.keybindings', key: 'x', accelerator: '<Super>section' },
+      { kind: 'ibus', accelerator: '<Super>section', character: '§' },
+      { kind: 'rektangel', action: Action.Restore, accelerator: '<Super>section' },
+    ]);
+  });
+
+  test('lists the IBus problem in Caps Lock mode too', () => {
+    const bindings = new Map([[Action.Center, ['<Super>adiaeresis']]]);
+    assert.deepEqual(rowConflicts(Action.Center, bindings, new Map(), 'capslock', unicodeOf), [
+      { kind: 'ibus', accelerator: '<Super>adiaeresis', character: 'ä' },
+    ]);
+  });
+});
+
+describe('keyCharacter', () => {
+  test('gives the character of the key', () => {
+    assert.equal(keyCharacter('<Super>section', unicodeOf), '§');
+    assert.equal(keyCharacter('<Shift><Super>adiaeresis', unicodeOf), 'ä');
+  });
+
+  test('gives the key name for a dead key', () => {
+    assert.equal(keyCharacter('<Super>dead_acute', unicodeOf), 'dead_acute');
+  });
+});
+
+describe('ibusHeading', () => {
+  test('names the character', () => {
+    assert.equal(ibusHeading('§'), 'Character § might be swallowed by text fields.');
   });
 });
 

@@ -1,6 +1,7 @@
 import Adw from 'gi://Adw';
 import Gdk from 'gi://Gdk?version=4.0';
 import type Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk?version=4.0';
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 import { allActions, type Action } from '@rektangel/core';
@@ -10,6 +11,8 @@ import {
   canConflictWithGnome,
   conflictSections,
   findGnomeConflicts,
+  ibusExplanation,
+  ibusHeading,
   rowConflicts,
   type GnomeBinding,
   type RowConflict,
@@ -43,6 +46,13 @@ export default class RektangelPreferences extends ExtensionPreferences {
     const watch: Watch = (watched, signal, handler) => {
       connections.push({ settings: watched, id: watched.connect(signal, handler) });
     };
+    // GTK 4 emits destroy only for windows, so the popovers of the badges
+    // are unparented here. A popover that is still a child of a finalized
+    // button gives a GTK warning.
+    const cleanups: (() => void)[] = [];
+    const onClose = (cleanup: () => void): void => {
+      cleanups.push(cleanup);
+    };
     const page = new Adw.PreferencesPage({
       title: 'Shortcuts',
       icon_name: 'preferences-desktop-keyboard-shortcuts-symbolic',
@@ -56,7 +66,9 @@ export default class RektangelPreferences extends ExtensionPreferences {
     const refreshAll = (): void => {
       const bindings = currentBindings(settings);
       const superKey = settings.get_string(superKeySetting) as SuperKey;
-      refreshers.forEach((refresh, action) => refresh(rowConflicts(action, bindings, gnomeTables, superKey)));
+      refreshers.forEach((refresh, action) =>
+        refresh(rowConflicts(action, bindings, gnomeTables, superKey, keyToUnicode)),
+      );
     };
     const reloadGnome = (): void => {
       gnomeTables = readGnomeKeybindings(gnomeSettings);
@@ -74,7 +86,7 @@ export default class RektangelPreferences extends ExtensionPreferences {
     const groupWidget = (group: ShortcutGroup): Adw.PreferencesGroup => {
       const preferencesGroup = new Adw.PreferencesGroup({ title: group.title });
       for (const action of group.actions) {
-        const { row, refresh } = shortcutRow(window, settings, action, removeConflict);
+        const { row, refresh } = shortcutRow(window, settings, action, removeConflict, onClose);
         refreshers.set(action, refresh);
         preferencesGroup.add(row);
       }
@@ -111,6 +123,7 @@ export default class RektangelPreferences extends ExtensionPreferences {
     gnomeSettings.forEach((gnome) => watch(gnome, 'changed', reloadGnome));
     window.connect('close-request', () => {
       connections.forEach(({ settings: watched, id }) => watched.disconnect(id));
+      cleanups.forEach((cleanup) => cleanup());
       return false;
     });
     window.default_width = defaultWidth;
@@ -178,6 +191,10 @@ function actionTitle(settings: Gio.Settings, action: Action): string {
 
 type GnomeConflict = Extract<RowConflict, { kind: 'gnome' }>;
 
+function keyToUnicode(keyName: string): number {
+  return Gdk.keyval_to_unicode(Gdk.keyval_from_name(keyName));
+}
+
 /** The GNOME keys that can take the accelerator before Rektangel. */
 function gnomeConflictsOf(settings: Gio.Settings, accelerator: string): GnomeBinding[] {
   const superKey = settings.get_string(superKeySetting) as SuperKey;
@@ -186,28 +203,128 @@ function gnomeConflictsOf(settings: Gio.Settings, accelerator: string): GnomeBin
     : [];
 }
 
+/** One line of the badge text. A GNOME key has a button that removes the shortcut from it. */
+interface ConflictLine {
+  readonly text: string;
+  readonly dim: boolean;
+  readonly button?: { readonly label: string; readonly onClick: () => void };
+}
+
+function conflictLines(
+  settings: Gio.Settings,
+  conflicts: readonly RowConflict[],
+  removeConflict: (conflict: GnomeConflict) => void,
+): ConflictLine[] {
+  const lines: ConflictLine[] = [];
+  const gnomeConflicts = conflicts.filter((conflict) => conflict.kind === 'gnome');
+  for (const section of conflictSections(gnomeConflicts, (conflict) => acceleratorLabel(conflict.accelerator))) {
+    lines.push({ text: section.explanation, dim: true });
+    for (const { binding, wording } of section.entries) {
+      const button = { label: wording.button, onClick: () => removeConflict(binding) };
+      lines.push({ text: wording.entry, dim: false, button });
+    }
+  }
+  for (const conflict of conflicts) {
+    if (conflict.kind === 'ibus') {
+      lines.push({ text: ibusHeading(conflict.character), dim: false });
+      lines.push({ text: ibusExplanation, dim: true });
+    }
+  }
+  for (const conflict of conflicts) {
+    if (conflict.kind === 'rektangel') {
+      lines.push({ text: `Also used by Rektangel: ${actionTitle(settings, conflict.action)}`, dim: false });
+    }
+  }
+  return lines;
+}
+
+const popoverCss = `
+.rektangel-conflicts > contents { background-color: black; color: white; }
+.rektangel-conflicts > arrow { background-color: black; }
+.rektangel-conflicts .dim-label { color: #c8c8c8; opacity: 1; }
+`;
+let popoverCssAdded = false;
+
+/** Adds the popover style to the display one time. */
+function addPopoverCss(display: Gdk.Display): void {
+  if (popoverCssAdded) {
+    return;
+  }
+  const provider = new Gtk.CssProvider();
+  provider.load_from_string(popoverCss);
+  Gtk.StyleContext.add_provider_for_display(display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+  popoverCssAdded = true;
+}
+
+/** The time that the pointer can be between the badge and its popover. */
+const popoverGraceMs = 200;
+
 /**
- * A red warning button that is visible when the row has conflicts. Its
- * popover lists them, with a remove button for each GNOME key.
+ * A red warning button that is visible when the row has conflicts. Hover
+ * and click open the same popover, which lists the conflicts with a
+ * button for each GNOME key. The popover closes when the pointer leaves
+ * the badge and the popover.
  */
 function conflictBadge(
   settings: Gio.Settings,
   removeConflict: (conflict: GnomeConflict) => void,
-): { badge: Gtk.MenuButton; show: (conflicts: readonly RowConflict[]) => void } {
-  const popover = new Gtk.Popover();
-  const badge = new Gtk.MenuButton({
+  onClose: (cleanup: () => void) => void,
+): { badge: Gtk.Button; show: (conflicts: readonly RowConflict[]) => void } {
+  const badge = new Gtk.Button({
     icon_name: 'dialog-warning-symbolic',
     valign: Gtk.Align.CENTER,
     css_classes: ['flat', 'error'],
-    popover,
   });
-  const label = (text: string, cssClasses: string[] = []): Gtk.Label =>
-    new Gtk.Label({ label: text, wrap: true, max_width_chars: 40, xalign: 0, css_classes: cssClasses });
+  // autohide false: a popover that opened on hover must not take the focus.
+  const popover = new Gtk.Popover({ css_classes: ['rektangel-conflicts'], autohide: false });
+  popover.set_parent(badge);
+  addPopoverCss(badge.get_display());
+
+  let insideBadge = false;
+  let insidePopover = false;
+  let closeTimer = 0;
+  const closeWhenOutside = (): void => {
+    if (closeTimer !== 0) {
+      GLib.source_remove(closeTimer);
+    }
+    closeTimer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, popoverGraceMs, () => {
+      closeTimer = 0;
+      if (!insideBadge && !insidePopover) {
+        popover.popdown();
+      }
+      return GLib.SOURCE_REMOVE;
+    });
+  };
+  const badgeMotion = new Gtk.EventControllerMotion();
+  badgeMotion.connect('enter', () => {
+    insideBadge = true;
+    popover.popup();
+  });
+  badgeMotion.connect('leave', () => {
+    insideBadge = false;
+    closeWhenOutside();
+  });
+  badge.add_controller(badgeMotion);
+  const popoverMotion = new Gtk.EventControllerMotion();
+  popoverMotion.connect('enter', () => {
+    insidePopover = true;
+  });
+  popoverMotion.connect('leave', () => {
+    insidePopover = false;
+    closeWhenOutside();
+  });
+  popover.add_controller(popoverMotion);
+  badge.connect('clicked', () => (popover.visible ? popover.popdown() : popover.popup()));
+  onClose(() => {
+    if (closeTimer !== 0) {
+      GLib.source_remove(closeTimer);
+    }
+    popover.unparent();
+  });
 
   const show = (conflicts: readonly RowConflict[]): void => {
-    badge.visible = conflicts.length > 0;
-    const hasGnome = conflicts.some((conflict) => conflict.kind === 'gnome');
-    badge.tooltip_text = hasGnome ? 'Conflicts with a GNOME shortcut' : 'Conflicts with another Rektangel shortcut';
+    const lines = conflictLines(settings, conflicts, removeConflict);
+    badge.visible = lines.length > 0;
     const box = new Gtk.Box({
       orientation: Gtk.Orientation.VERTICAL,
       spacing: 6,
@@ -216,22 +333,18 @@ function conflictBadge(
       margin_start: 6,
       margin_end: 6,
     });
-    const gnomeConflicts = conflicts.filter((conflict) => conflict.kind === 'gnome');
-    for (const section of conflictSections(gnomeConflicts, (conflict) => acceleratorLabel(conflict.accelerator))) {
-      box.append(label(section.explanation, ['dim-label']));
-      for (const { binding, wording } of section.entries) {
-        box.append(label(wording.entry, ['heading']));
-        const remove = new Gtk.Button({ label: wording.button, halign: Gtk.Align.START });
-        remove.connect('clicked', () => {
+    for (const line of lines) {
+      const label = new Gtk.Label({ label: line.text, wrap: true, max_width_chars: 40, xalign: 0 });
+      label.css_classes = line.dim ? ['dim-label'] : ['heading'];
+      box.append(label);
+      if (line.button !== undefined) {
+        const { label: text, onClick } = line.button;
+        const button = new Gtk.Button({ label: text, halign: Gtk.Align.START });
+        button.connect('clicked', () => {
           popover.popdown();
-          removeConflict(binding);
+          onClick();
         });
-        box.append(remove);
-      }
-    }
-    for (const conflict of conflicts) {
-      if (conflict.kind === 'rektangel') {
-        box.append(label(`Also used by Rektangel: ${actionTitle(settings, conflict.action)}`, ['heading']));
+        box.append(button);
       }
     }
     popover.child = box;
@@ -244,6 +357,7 @@ function shortcutRow(
   settings: Gio.Settings,
   action: Action,
   removeConflict: (conflict: GnomeConflict) => void,
+  onClose: (cleanup: () => void) => void,
 ): { row: Adw.ActionRow; refresh: (conflicts: readonly RowConflict[]) => void } {
   const key = keyName(action);
   const title = actionTitle(settings, action);
@@ -256,7 +370,7 @@ function shortcutRow(
     valign: Gtk.Align.CENTER,
     css_classes: ['flat'],
   });
-  const { badge, show } = conflictBadge(settings, removeConflict);
+  const { badge, show } = conflictBadge(settings, removeConflict, onClose);
   row.add_suffix(badge);
   row.add_suffix(shortcut);
   row.add_suffix(reset);

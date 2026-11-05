@@ -35,10 +35,44 @@ export function schemaTitle(schema: string): string {
   return `${schemaShortName(schema)} keybindings`;
 }
 
-/** A shortcut that the action shares with a GNOME key or another Rektangel action. */
+/**
+ * A shortcut that the action shares with a GNOME key or another Rektangel
+ * action, or that IBus types as text in a window with a text input.
+ */
 export type RowConflict =
   | { readonly kind: 'gnome'; readonly schema: string; readonly key: string; readonly accelerator: string }
+  | { readonly kind: 'ibus'; readonly accelerator: string; readonly character: string }
   | { readonly kind: 'rektangel'; readonly action: Action; readonly accelerator: string };
+
+/** The Unicode code point of a key name, or 0 for a key that gives no character. */
+export type KeyToUnicode = (keyName: string) => number;
+
+/**
+ * True when IBus types the key instead of passing the shortcut to GNOME. In
+ * a window with a text input, IBus gets each key before GNOME checks the
+ * shortcuts. Its simple engine types a character above U+007F, starts a
+ * compose sequence for a dead key, and refuses a key only with Alt or Ctrl.
+ * Super is the Windows key or Caps Lock, and IBus refuses neither.
+ */
+export function ibusTypesKey(accelerator: string, keyToUnicode: KeyToUnicode): boolean {
+  const normalized = normalizeAccelerator(accelerator);
+  if (!normalized.includes('<Super>') || /<(Alt|Control)>/.test(normalized)) {
+    return false;
+  }
+  const key = keyOf(accelerator);
+  return key.startsWith('dead_') || keyToUnicode(key) > 0x7f;
+}
+
+function keyOf(accelerator: string): string {
+  return normalizeAccelerator(accelerator).replace(/<[^>]+>/g, '');
+}
+
+/** The character of the key, or the key name of a dead key, for example "dead_acute". */
+export function keyCharacter(accelerator: string, keyToUnicode: KeyToUnicode): string {
+  const key = keyOf(accelerator);
+  const codePoint = keyToUnicode(key);
+  return codePoint === 0 ? key : String.fromCodePoint(codePoint);
+}
 
 /**
  * True when a GNOME key can take the accelerator before Rektangel. No
@@ -51,14 +85,16 @@ export function canConflictWithGnome(accelerator: string, superKey: SuperKey): b
 
 /**
  * The conflicts of each accelerator of the action: first the GNOME keys,
- * then the other Rektangel actions that use it. A GNOME conflict has the
- * accelerator in the form that GNOME uses, <Hyper> translated.
+ * then IBus, then the other Rektangel actions that use it. A GNOME conflict
+ * has the accelerator in the form that GNOME uses, <Hyper> translated.
+ * Without `keyToUnicode`, no key gives a character and IBus is not checked.
  */
 export function rowConflicts(
   action: Action,
   bindings: ReadonlyMap<Action, readonly string[]>,
   gnome: KeybindingTables,
   superKey: SuperKey,
+  keyToUnicode: KeyToUnicode = () => 0,
 ): RowConflict[] {
   const conflicts: RowConflict[] = [];
   for (const accelerator of bindings.get(action) ?? []) {
@@ -66,6 +102,9 @@ export function rowConflicts(
       for (const binding of findGnomeConflicts(accelerator, gnome, superKey)) {
         conflicts.push({ kind: 'gnome', ...binding, accelerator: translateHyper(accelerator, superKey) });
       }
+    }
+    if (ibusTypesKey(accelerator, keyToUnicode)) {
+      conflicts.push({ kind: 'ibus', accelerator, character: keyCharacter(accelerator, keyToUnicode) });
     }
     const wanted = effectiveAccelerator(accelerator, superKey);
     for (const [other, accelerators] of bindings) {
@@ -122,6 +161,17 @@ export interface ConflictWording {
 }
 
 const ibusEmojiSchema = 'org.freedesktop.ibus.panel.emoji';
+
+/** The heading of the preferences window for a shortcut that IBus types. */
+export function ibusHeading(character: string): string {
+  return `Character ${character} might be swallowed by text fields.`;
+}
+
+/** The explanation under the heading. */
+export const ibusExplanation =
+  'In a terminal or a text field, the IBus input method gets the key before GNOME and types the character, ' +
+  'so the shortcut works only in other windows. IBus 1.5.29 and 1.5.30 have this fault, for example on Ubuntu 24.04. ' +
+  'Use a key with an ASCII character, or add Ctrl or Alt.';
 
 /** The IBus hotkey that opens the emoji picker. */
 export function isIbusEmojiPicker(binding: GnomeBinding): boolean {
