@@ -10,7 +10,7 @@
 # Needs: gsettings, dconf, gjs. No root. Uses /usr/bin/gsettings,
 # /usr/bin/dconf and /usr/bin/gjs when they exist, see common.sh.
 set -euo pipefail
-# shellcheck source=common.sh
+# shellcheck source-path=SCRIPTDIR source=common.sh
 source "$(dirname "$0")/common.sh"
 parse_args "$@"
 check_schema
