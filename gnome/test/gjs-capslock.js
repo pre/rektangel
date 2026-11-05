@@ -62,9 +62,12 @@ try {
   installXkbOption(gnomeDir, context);
   check('install two times: option', inputSources.get_strv('xkb-options'), ['compose:ralt', 'rektangel:caps_hyper']);
 
-  check('ensure: installed already', ensureXkbOption('capslock', gnomeDir, context), false);
+  stored.set_string('super-key', 'capslock');
+  check('ensure: installed already', ensureXkbOption(stored, gnomeDir, context), false);
+  check('ensure: sets the flag', stored.get_boolean('xkb-option-installed'), true);
+  stored.set_boolean('xkb-option-installed', false);
   Gio.File.new_for_path(`${xkbDir}/symbols/rektangel`).delete(null);
-  check('ensure: missing file', ensureXkbOption('capslock', gnomeDir, context), true);
+  check('ensure: missing file', ensureXkbOption(stored, gnomeDir, context), true);
   check('ensure: file again', readFile(`${xkbDir}/symbols/rektangel`), readFile(`${gnomeDir}/hyper/xkb/symbols/rektangel`));
 
   removeXkbOption(context);
@@ -86,9 +89,14 @@ try {
   check('older version: symbols removed', GLib.file_test(`${xkbDir}/symbols/rektangel`, GLib.FileTest.EXISTS), false);
   check('older version: list removed', GLib.file_test(`${xkbDir}/rules/evdev.lst`, GLib.FileTest.EXISTS), false);
 
-  check('ensure: super does nothing', ensureXkbOption('super', gnomeDir, context), false);
+  check('ensure: flag stops a second install', ensureXkbOption(stored, gnomeDir, context), false);
+  check('ensure: flag keeps options', inputSources.get_strv('xkb-options'), ['compose:ralt']);
+  stored.set_boolean('xkb-option-installed', false);
+  stored.set_string('super-key', 'super');
+  check('ensure: super does nothing', ensureXkbOption(stored, gnomeDir, context), false);
   check('ensure: super keeps options', inputSources.get_strv('xkb-options'), ['compose:ralt']);
-  check('ensure: capslock installs', ensureXkbOption('capslock', gnomeDir, context), true);
+  stored.set_string('super-key', 'capslock');
+  check('ensure: capslock installs', ensureXkbOption(stored, gnomeDir, context), true);
   check('ensure: option', inputSources.get_strv('xkb-options'), ['compose:ralt', 'rektangel:caps_hyper']);
   removeXkbOption(context);
 

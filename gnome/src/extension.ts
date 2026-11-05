@@ -13,7 +13,7 @@ import {
   type Rect,
   type WindowChange,
 } from '@rektangel/core';
-import { superKeySetting, type SuperKey } from './accelerator.ts';
+import { superKeySetting } from './accelerator.ts';
 import { ensureXkbOption } from './capslock-mode.ts';
 import { loadConfig } from './config-file.ts';
 import { HistoryStore } from './history-store.ts';
@@ -63,8 +63,7 @@ export default class RektangelExtension extends Extension {
   // preferences and hyper/uninstall.sh do that.
   private ensureCapsLockKey(settings: Gio.Settings): void {
     try {
-      const superKey = settings.get_string(superKeySetting) as SuperKey;
-      if (ensureXkbOption(superKey, this.path, { log: () => {} })) {
+      if (ensureXkbOption(settings, this.path, { log: () => {} })) {
         console.log('Rektangel: installed the Caps Lock XKB option');
       }
     } catch (error) {

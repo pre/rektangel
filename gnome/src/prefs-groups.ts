@@ -2,6 +2,7 @@ import Adw from 'gi://Adw';
 import type Gio from 'gi://Gio';
 import Gtk from 'gi://Gtk?version=4.0';
 import { allActions } from '@rektangel/core';
+import { xkbOptionInstalledSetting } from './accelerator.ts';
 import { installXkbOption, removeXkbOption } from './capslock-mode.ts';
 import { keyName } from './key-names.ts';
 
@@ -54,9 +55,11 @@ export function superKeyGroup(settings: Gio.Settings, extensionDir: Gio.File): A
     try {
       if (value === 'capslock') {
         installXkbOption(extensionDir.get_path() ?? "");
+        settings.set_boolean(xkbOptionInstalledSetting, true);
         showNote('Caps Lock is Super now, usually at once, at the latest after you log out and in.', false);
       } else {
         removeXkbOption();
+        settings.set_boolean(xkbOptionInstalledSetting, false);
         showNote('Caps Lock is a normal key again, usually at once, at the latest after you log out and in.', false);
       }
       settings.set_string('super-key', value);

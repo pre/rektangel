@@ -8,6 +8,9 @@ export type SuperKey = 'super' | 'capslock';
 
 export const superKeySetting = 'super-key';
 
+/** True after Rektangel installed the XKB option. See ADR 0011. */
+export const xkbOptionInstalledSetting = 'xkb-option-installed';
+
 /** The accelerator that Mutter must grab for a stored accelerator. */
 export function translateSuper(accelerator: string, superKey: SuperKey): string {
   return superKey === 'capslock' ? accelerator.replace(/<super>/gi, '<Mod3>') : accelerator;

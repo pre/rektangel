@@ -1,6 +1,6 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
-import type { SuperKey } from './accelerator.ts';
+import { superKeySetting, xkbOptionInstalledSetting } from './accelerator.ts';
 import {
   addXkbLines,
   conflictingCapsOption,
@@ -59,14 +59,21 @@ export function installXkbOption(extensionPath: string, context: XkbOptionContex
 }
 
 /**
- * Installs the XKB option when superKey is 'capslock': writes the files
- * that are missing or different and adds the option if xkb-options does
- * not have it. Returns true when it changed something. The extension
- * calls it, so that Caps Lock, the default Super key, works without a
- * script.
+ * Installs the XKB option one time: when super-key of the Rektangel
+ * settings is 'capslock' and xkb-option-installed is false. Writes the
+ * files that are missing or different, adds the option if necessary and
+ * sets xkb-option-installed. Returns true when it changed a file or the
+ * option. GNOME disables and enables the extension around the lock
+ * screen, and the user can remove the option in Tweaks: the flag stops a
+ * second install in both cases.
  */
-export function ensureXkbOption(superKey: SuperKey, extensionPath: string, context: XkbOptionContext = {}): boolean {
-  return superKey === 'capslock' && installXkbOption(extensionPath, context);
+export function ensureXkbOption(rektangel: Gio.Settings, extensionPath: string, context: XkbOptionContext = {}): boolean {
+  if (rektangel.get_string(superKeySetting) !== 'capslock' || rektangel.get_boolean(xkbOptionInstalledSetting)) {
+    return false;
+  }
+  const changed = installXkbOption(extensionPath, context);
+  rektangel.set_boolean(xkbOptionInstalledSetting, true);
+  return changed;
 }
 
 /**

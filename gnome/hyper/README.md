@@ -2,7 +2,7 @@
 
 Caps Lock mode makes Caps Lock the Super key of the Rektangel shortcuts. Hold Caps Lock instead of Super: Super+Left becomes Caps+Left. Super keeps its GNOME function. See ADR 0008, ADR 0009 and ADR 0011.
 
-The mode is the default. When `super-key` is `capslock`, the extension installs the XKB option itself when it is enabled, and the preferences window installs it when you select Caps Lock. You do not need the scripts in this directory for the default.
+The mode is the default. When `super-key` is `capslock`, the extension installs the XKB option itself one time, when it is enabled, and the preferences window installs it when you select Caps Lock. The setting `xkb-option-installed` records the install, so the extension does not add the option again after the lock screen or after you removed it in Tweaks. You do not need the scripts in this directory for the default.
 
 ## How it works
 
@@ -49,9 +49,9 @@ bash "$dir/uninstall.sh"
 
 1. It copies the three XKB files to `~/.config/xkb`, or adds the Rektangel lines to the user files that are there.
 2. It adds `rektangel:caps_hyper` to `xkb-options`. It keeps the other options. It stops before step 1 if a `caps:` option is set, because two options for one key conflict.
-3. It sets `super-key` to `capslock`.
+3. It sets `xkb-option-installed` to `true` and `super-key` to `capslock`.
 
-`uninstall.sh` sets `super-key` to `super`, removes `rektangel:caps_hyper` from `xkb-options` (other options stay), and removes the Rektangel XKB files and lines. You can run each script again: a step that is done already does nothing.
+`uninstall.sh` sets `super-key` to `super`, removes `rektangel:caps_hyper` from `xkb-options` (other options stay), removes the Rektangel XKB files and lines, and sets `xkb-option-installed` to `false`. You can run each script again: a step that is done already does nothing.
 
 To change only the Rektangel side, set the key yourself:
 

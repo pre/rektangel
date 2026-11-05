@@ -19,6 +19,7 @@ check_schema
 check_backend
 
 xkb_option install
+set_xkb_option_installed true
 set_super_key capslock
 
 if $dry_run; then

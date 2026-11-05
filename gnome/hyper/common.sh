@@ -76,3 +76,9 @@ xkb_option() {
 set_super_key() {
   run "$gsettings" --schemadir "$schema_dir" set "$rektangel_schema" super-key "$1"
 }
+
+# true after an install, false after a remove. The extension installs the
+# option at enable only while this is false.
+set_xkb_option_installed() {
+  run "$gsettings" --schemadir "$schema_dir" set "$rektangel_schema" xkb-option-installed "$1"
+}

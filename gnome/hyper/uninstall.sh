@@ -18,6 +18,7 @@ check_backend
 
 set_super_key super
 xkb_option remove
+set_xkb_option_installed false
 
 if $dry_run; then
   echo "Dry run: nothing changed."
