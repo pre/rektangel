@@ -140,9 +140,14 @@ function fitToContent(window: Adw.PreferencesWindow, page: Adw.PreferencesPage):
   };
   // Before the window is on screen, Wayland does not tell which monitor it
   // goes to. Fit to the first monitor, then again to the monitor that the
-  // window enters first.
-  window.connect('realize', () => {
-    fit(window.get_display().get_monitors().get_item(0) as Gdk.Monitor);
+  // window enters first. Only at the first realize, so that a second
+  // realize does not connect enter-monitor again.
+  const realizeId = window.connect('realize', () => {
+    window.disconnect(realizeId);
+    const first = window.get_display().get_monitors().get_item(0) as Gdk.Monitor | null;
+    if (first !== null) {
+      fit(first);
+    }
     const surface = window.get_surface() as Gdk.Surface;
     const id = surface.connect('enter-monitor', (_surface, monitor: Gdk.Monitor) => {
       surface.disconnect(id);
