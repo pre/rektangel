@@ -5,7 +5,7 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import { TranslatedSettings } from '../build/translated-settings.js';
-import { ensureXkbOption, installXkbOption, isXkbOptionInstalled, removeXkbOption } from '../build/capslock-mode.js';
+import { ensureXkbOption, installXkbOption, removeXkbOption } from '../build/capslock-mode.js';
 
 function check(name, actual, expected) {
   const actualJson = JSON.stringify(actual);
@@ -58,12 +58,14 @@ try {
   inputSources.set_strv('xkb-options', ['compose:ralt']);
   installXkbOption(gnomeDir, context);
   check('install: option', inputSources.get_strv('xkb-options'), ['compose:ralt', 'rektangel:caps_hyper']);
-  check('install: isXkbOptionInstalled', isXkbOptionInstalled(inputSources), true);
   check('install: rules', readFile(`${xkbDir}/rules/evdev`), readFile(`${gnomeDir}/hyper/xkb/rules/evdev`));
   installXkbOption(gnomeDir, context);
   check('install two times: option', inputSources.get_strv('xkb-options'), ['compose:ralt', 'rektangel:caps_hyper']);
 
   check('ensure: installed already', ensureXkbOption('capslock', gnomeDir, context), false);
+  Gio.File.new_for_path(`${xkbDir}/symbols/rektangel`).delete(null);
+  check('ensure: missing file', ensureXkbOption('capslock', gnomeDir, context), true);
+  check('ensure: file again', readFile(`${xkbDir}/symbols/rektangel`), readFile(`${gnomeDir}/hyper/xkb/symbols/rektangel`));
 
   removeXkbOption(context);
   check('remove: option', inputSources.get_strv('xkb-options'), ['compose:ralt']);

@@ -26,20 +26,14 @@ export interface XkbOptionContext {
   readonly log?: (line: string) => void;
 }
 
-/** True when xkb-options has rektangel:caps_hyper. */
-export function isXkbOptionInstalled(inputSources?: Gio.Settings): boolean {
-  return (inputSources ?? new Gio.Settings({ schema_id: inputSourcesSchema }))
-    .get_strv('xkb-options')
-    .includes(xkbOption);
-}
-
 /**
  * Turns on the Caps Lock key of Caps Lock mode: copies or merges the XKB
  * files of extensionPath/hyper/xkb into $XDG_CONFIG_HOME/xkb, then adds
- * rektangel:caps_hyper to xkb-options. Throws an Error, before it changes
- * something, if xkb-options has a caps: option.
+ * rektangel:caps_hyper to xkb-options. Writes only the files that are
+ * missing or different. Returns true when it changed something. Throws an
+ * Error, before it changes something, if xkb-options has a caps: option.
  */
-export function installXkbOption(extensionPath: string, context: XkbOptionContext = {}): void {
+export function installXkbOption(extensionPath: string, context: XkbOptionContext = {}): boolean {
   const { inputSources, act } = resolve(context);
   const options = inputSources.get_strv('xkb-options');
   const conflict = conflictingCapsOption(options);
@@ -49,30 +43,30 @@ export function installXkbOption(extensionPath: string, context: XkbOptionContex
 
   // All files are read before the first write, so that a missing shipped
   // file stops the install before it changes something.
-  for (const { path, text } of xkbFileWrites(extensionPath, userXkbDir(context))) {
+  const writes = xkbFileWrites(extensionPath, userXkbDir(context));
+  for (const { path, text } of writes) {
     act(`write ${path}`, () => writeText(path, text));
   }
 
-  if (!options.includes(xkbOption)) {
+  const addOption = !options.includes(xkbOption);
+  if (addOption) {
     const updated = withXkbOption(options);
     act(`set ${inputSourcesSchema} xkb-options ${JSON.stringify(updated)}`, () =>
       inputSources.set_strv('xkb-options', updated),
     );
   }
+  return writes.length > 0 || addOption;
 }
 
 /**
- * Installs the XKB option when superKey is 'capslock' and xkb-options does
- * not have the option. Returns true when it installed the option. The
- * extension calls it at enable and when super-key changes, so that Caps
- * Lock, the default Super key, works without a script.
+ * Installs the XKB option when superKey is 'capslock': writes the files
+ * that are missing or different and adds the option if xkb-options does
+ * not have it. Returns true when it changed something. The extension
+ * calls it, so that Caps Lock, the default Super key, works without a
+ * script.
  */
 export function ensureXkbOption(superKey: SuperKey, extensionPath: string, context: XkbOptionContext = {}): boolean {
-  if (superKey !== 'capslock' || isXkbOptionInstalled(context.inputSources)) {
-    return false;
-  }
-  installXkbOption(extensionPath, context);
-  return true;
+  return superKey === 'capslock' && installXkbOption(extensionPath, context);
 }
 
 /**
