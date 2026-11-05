@@ -95,6 +95,18 @@ try {
   check('caps: conflict changes nothing', inputSources.get_strv('xkb-options'), ['caps:escape']);
 
   inputSources.set_strv('xkb-options', []);
+  const partialExtension = `${configDir}/partial-extension`;
+  writeFile(`${partialExtension}/hyper/xkb/rules/evdev`, readFile(`${gnomeDir}/hyper/xkb/rules/evdev`));
+  message = '';
+  try {
+    installXkbOption(partialExtension, context);
+  } catch (error) {
+    message = error.message;
+  }
+  check('missing shipped file: error', message.includes('rules/evdev.lst'), true);
+  check('missing shipped file: rules file kept', readFile(`${xkbDir}/rules/evdev`), userRules);
+  check('missing shipped file: options', inputSources.get_strv('xkb-options'), []);
+
   installXkbOption(gnomeDir, { ...context, dryRun: true });
   check('dry run: option', inputSources.get_strv('xkb-options'), []);
   check('dry run: no symbols file', GLib.file_test(`${xkbDir}/symbols/rektangel`, GLib.FileTest.EXISTS), false);

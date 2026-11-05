@@ -47,18 +47,10 @@ export function installXkbOption(extensionPath: string, context: XkbOptionContex
     throw new Error(`xkb-options has ${conflict}, which also changes Caps Lock. Remove it first.`);
   }
 
-  const xkbDir = userXkbDir(context);
-  for (const name of xkbFiles) {
-    const shipped = readText(GLib.build_filenamev([extensionPath, 'hyper', 'xkb', name]));
-    if (shipped === null) {
-      throw new Error(`No ${name} in ${extensionPath}/hyper/xkb`);
-    }
-    const path = GLib.build_filenamev([xkbDir, name]);
-    const existing = readText(path);
-    const updated = name.startsWith('symbols/') ? shipped : addXkbLines(existing, shipped);
-    if (updated !== existing) {
-      act(`write ${path}`, () => writeText(path, updated));
-    }
+  // All files are read before the first write, so that a missing shipped
+  // file stops the install before it changes something.
+  for (const { path, text } of xkbFileWrites(extensionPath, userXkbDir(context))) {
+    act(`write ${path}`, () => writeText(path, text));
   }
 
   if (!options.includes(xkbOption)) {
@@ -114,6 +106,20 @@ export function removeXkbOption(extensionPath: string, context: XkbOptionContext
       act(`write ${path}`, () => writeText(path, updated));
     }
   }
+}
+
+/** The user XKB files that must change for the install, with their new text. */
+function xkbFileWrites(extensionPath: string, xkbDir: string): { path: string; text: string }[] {
+  return xkbFiles.flatMap((name) => {
+    const shipped = readText(GLib.build_filenamev([extensionPath, 'hyper', 'xkb', name]));
+    if (shipped === null) {
+      throw new Error(`No ${name} in ${extensionPath}/hyper/xkb`);
+    }
+    const path = GLib.build_filenamev([xkbDir, name]);
+    const existing = readText(path);
+    const text = name.startsWith('symbols/') ? shipped : addXkbLines(existing, shipped);
+    return text === existing ? [] : [{ path, text }];
+  });
 }
 
 function resolve(context: XkbOptionContext) {
