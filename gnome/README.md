@@ -9,7 +9,7 @@ The shortcuts are stored with `<Super>`. The gsettings key `super-key` (`'capslo
 `src/accelerator.ts` has no imports:
 
 - `translateSuper(accelerator, superKey)`: the accelerator that Mutter grabs. With `'capslock'`, `<Super>` becomes `<Mod3>`.
-- `canonicalSuper(accelerator)`: the stored form of an accelerator that was captured in Caps Lock mode. `<Mod3>` and `<Hyper>` become `<Super>`.
+- `canonicalSuper(accelerator)`: the stored form of an accelerator that was captured in Caps Lock mode. `<Mod3>` and `<Hyper>` become `<Super>`, and the result has one `<Super>`, because GTK can name a Caps Lock press as both `<Super>` and `<Hyper>`.
 - `superKeySetting`: the name of the gsettings key, `'super-key'`.
 
 `src/capslock-mode.ts` uses only Gio and GLib, so the preferences process can import it. The hyper scripts run it with `gjs` through `hyper/capslock-mode.js`.

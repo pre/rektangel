@@ -91,6 +91,10 @@ describe('checkCapture', () => {
     assert.deepEqual(checkCapture('<Shift><Mod3>Up', 'capslock', free), { accelerator: '<Shift><Super>Up', problem: null });
   });
 
+  test('stores one Super when the capture names Caps Lock as Super and Hyper', () => {
+    assert.deepEqual(checkCapture('<Super><Hyper>1', 'capslock', free), { accelerator: '<Super>1', problem: null });
+  });
+
   test('keeps Hyper with the Windows key as Super', () => {
     assert.deepEqual(checkCapture('<Hyper>Left', 'super', free), { accelerator: '<Hyper>Left', problem: null });
   });

@@ -38,4 +38,10 @@ describe('canonicalSuper', () => {
   test('keeps Super and the other modifiers', () => {
     assert.equal(canonicalSuper('<Super><Alt>Left'), '<Super><Alt>Left');
   });
+
+  test('gives one Super when GTK names Caps Lock as both Super and Hyper', () => {
+    assert.equal(canonicalSuper('<Super><Hyper>1'), '<Super>1');
+    assert.equal(canonicalSuper('<Shift><Super><Mod3>Up'), '<Shift><Super>Up');
+    assert.equal(canonicalSuper('<Hyper><Super>w'), '<Super>w');
+  });
 });

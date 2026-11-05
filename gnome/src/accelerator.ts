@@ -18,8 +18,17 @@ export function translateSuper(accelerator: string, superKey: SuperKey): string 
 
 /**
  * The stored form of an accelerator that was captured while Caps Lock
- * mode is on. GTK names the Caps Lock modifier <Hyper> or <Mod3>.
+ * mode is on. GTK names the Caps Lock modifier <Hyper> or <Mod3>, and
+ * can name it <Super> and <Hyper> at the same time. The result has one
+ * <Super>.
  */
 export function canonicalSuper(accelerator: string): string {
-  return accelerator.replace(/<(mod3|hyper)>/gi, '<Super>');
+  let seen = false;
+  return accelerator.replace(/<(super|mod3|hyper)>/gi, () => {
+    if (seen) {
+      return '';
+    }
+    seen = true;
+    return '<Super>';
+  });
 }
