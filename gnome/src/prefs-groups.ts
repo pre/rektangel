@@ -10,7 +10,10 @@ import { capsLockModeProblem } from './xkb-merge.ts';
 
 const superKeyChoices = ['super', 'capslock'] as const;
 
-export function superKeyGroup(settings: Gio.Settings, extensionDir: Gio.File): Adw.PreferencesGroup {
+/** Connects a handler that the preferences window disconnects when it closes. */
+export type Watch = (settings: Gio.Settings, signal: string, handler: () => void) => void;
+
+export function superKeyGroup(settings: Gio.Settings, extensionDir: Gio.File, watch: Watch): Adw.PreferencesGroup {
   const group = new Adw.PreferencesGroup({ title: 'Super Key' });
   const row = new Adw.ComboRow({
     title: 'Super key',
@@ -57,8 +60,8 @@ export function superKeyGroup(settings: Gio.Settings, extensionDir: Gio.File): A
     reinstall.visible = problem !== null && sessionType !== 'x11';
   };
   sync();
-  settings.connect('changed::super-key', sync);
-  inputSources.connect('changed::xkb-options', sync);
+  watch(settings, 'changed::super-key', sync);
+  watch(inputSources, 'changed::xkb-options', sync);
 
   const showNote = (text: string, isError: boolean): void => {
     changeNote.label = text;

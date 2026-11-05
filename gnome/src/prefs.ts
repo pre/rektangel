@@ -16,7 +16,7 @@ import {
 } from './gnome-conflicts.ts';
 import { gnomeKeybindingSettings, readGnomeKeybindings, removeFromGnome } from './gnome-keybindings.ts';
 import { keyName } from './key-names.ts';
-import { gnomeNoteGroup, resetAllButton, superKeyGroup } from './prefs-groups.ts';
+import { gnomeNoteGroup, resetAllButton, superKeyGroup, type Watch } from './prefs-groups.ts';
 import { findConflict, shortcutLayout, type ShortcutGroup } from './shortcuts.ts';
 
 /** The space that the window leaves free above and below on the monitor. */
@@ -30,6 +30,11 @@ const pageMaximumWidth = 1100;
 export default class RektangelPreferences extends ExtensionPreferences {
   override fillPreferencesWindow(window: Adw.PreferencesWindow): void {
     const settings = this.getSettings();
+    // The handlers on settings objects, disconnected when the window closes.
+    const connections: { settings: Gio.Settings; id: number }[] = [];
+    const watch: Watch = (watched, signal, handler) => {
+      connections.push({ settings: watched, id: watched.connect(signal, handler) });
+    };
     const page = new Adw.PreferencesPage({
       title: 'Shortcuts',
       icon_name: 'preferences-desktop-keyboard-shortcuts-symbolic',
@@ -68,7 +73,7 @@ export default class RektangelPreferences extends ExtensionPreferences {
     };
     // Cells align at the top, so the titles of the groups in a row are on one line.
     const grid = new Gtk.Grid({ column_spacing: 24, row_spacing: 24, column_homogeneous: true });
-    const superKey = superKeyGroup(settings, this.dir);
+    const superKey = superKeyGroup(settings, this.dir, watch);
     superKey.valign = Gtk.Align.START;
     grid.attach(superKey, 0, 0, 1, 1);
     grid.attach(resetAllButton(window, settings), 1, 0, 1, 1);
@@ -86,10 +91,10 @@ export default class RektangelPreferences extends ExtensionPreferences {
     refreshAll();
 
     // A change of one shortcut can add or remove a conflict on other rows.
-    settings.connect('changed', refreshAll);
-    const gnomeIds = gnomeSettings.map((gnome) => gnome.connect('changed', reloadGnome));
+    watch(settings, 'changed', refreshAll);
+    gnomeSettings.forEach((gnome) => watch(gnome, 'changed', reloadGnome));
     window.connect('close-request', () => {
-      gnomeSettings.forEach((gnome, index) => gnome.disconnect(gnomeIds[index] ?? 0));
+      connections.forEach(({ settings: watched, id }) => watched.disconnect(id));
       return false;
     });
     window.default_width = defaultWidth;
