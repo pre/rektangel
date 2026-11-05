@@ -8,6 +8,12 @@ export interface TrackableWindow {
   disconnect(id: number): void;
 }
 
+/** The part of Meta.Display that the store uses. */
+export interface GrabDisplay {
+  connect(signal: 'grab-op-begin', callback: (display: unknown, window: TrackableWindow) => void): number;
+  disconnect(id: number): void;
+}
+
 interface Entry {
   window: TrackableWindow;
   history: WindowHistory;
@@ -25,6 +31,23 @@ interface Entry {
 export class HistoryStore {
   /** Keyed by window id. */
   private readonly entries = new Map<number, Entry>();
+  private display: GrabDisplay | null = null;
+  private grabSignal = 0;
+
+  /**
+   * When the user starts to move or resize a window by hand, the frame
+   * of the last action does not come any more, so the store stops the
+   * wait. One handler on the display serves all windows.
+   */
+  enable(display: GrabDisplay): void {
+    this.display = display;
+    this.grabSignal = display.connect('grab-op-begin', (_display, window) => {
+      const entry = this.entries.get(window.get_id());
+      if (entry !== undefined) {
+        disconnectFrameSignals(entry);
+      }
+    });
+  }
 
   get(window: TrackableWindow): WindowHistory | undefined {
     return this.entries.get(window.get_id())?.history;
@@ -66,10 +89,14 @@ export class HistoryStore {
     entry.frameSignals = [window.connect('size-changed', record), window.connect('position-changed', record)];
   }
 
-  clear(): void {
+  /** Forgets all windows and disconnects all handlers. */
+  disable(): void {
     for (const id of [...this.entries.keys()]) {
       this.forget(id);
     }
+    this.display?.disconnect(this.grabSignal);
+    this.display = null;
+    this.grabSignal = 0;
   }
 
   private forget(id: number): void {

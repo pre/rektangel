@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { beforeEach, describe, test } from 'node:test';
 import type { Rect, WindowHistory } from '@rektangel/core';
-import { HistoryStore, type TrackableWindow } from '../src/history-store.ts';
+import { HistoryStore, type GrabDisplay, type TrackableWindow } from '../src/history-store.ts';
 
 class FakeWindow implements TrackableWindow {
   frame: Rect = { x: 0, y: 0, width: 100, height: 100 };
@@ -39,6 +39,31 @@ class FakeWindow implements TrackableWindow {
   }
 }
 
+class FakeDisplay implements GrabDisplay {
+  private readonly handlers = new Map<number, (display: unknown, window: TrackableWindow) => void>();
+  private nextId = 1;
+
+  connect(_signal: 'grab-op-begin', callback: (display: unknown, window: TrackableWindow) => void): number {
+    const id = this.nextId++;
+    this.handlers.set(id, callback);
+    return id;
+  }
+
+  disconnect(id: number): void {
+    this.handlers.delete(id);
+  }
+
+  beginGrab(window: TrackableWindow): void {
+    for (const callback of [...this.handlers.values()]) {
+      callback(this, window);
+    }
+  }
+
+  handlerCount(): number {
+    return this.handlers.size;
+  }
+}
+
 const requested: Rect = { x: 0, y: 27, width: 1504, height: 1665 };
 const actual: Rect = { x: 0, y: 27, width: 1500, height: 1665 };
 
@@ -52,10 +77,13 @@ function history(): WindowHistory {
 describe('HistoryStore', () => {
   let store: HistoryStore;
   let window: FakeWindow;
+  let display: FakeDisplay;
 
   beforeEach(() => {
     store = new HistoryStore();
     window = new FakeWindow();
+    display = new FakeDisplay();
+    store.enable(display);
   });
 
   test('records the frame that Mutter gives after a size change', () => {
@@ -138,13 +166,46 @@ describe('HistoryStore', () => {
     assert.deepEqual(window.connectedSignals(), []);
   });
 
-  test('clear disconnects all handlers', () => {
+  test('a grab of the window stops the wait for the frame', () => {
     store.set(window, history());
     store.recordFrameAfterChange(window, requested);
 
-    store.clear();
+    display.beginGrab(window);
+    window.frame = actual;
+    window.emit('size-changed');
+
+    assert.deepEqual(window.connectedSignals(), ['unmanaged']);
+    assert.deepEqual(store.get(window)?.lastAction?.rect, requested);
+  });
+
+  test('a grab of another window keeps the wait', () => {
+    store.set(window, history());
+    store.recordFrameAfterChange(window, requested);
+
+    display.beginGrab(new (class extends FakeWindow {
+      override get_id(): number {
+        return 8;
+      }
+    })());
+
+    assert.deepEqual(window.connectedSignals(), ['position-changed', 'size-changed', 'unmanaged']);
+  });
+
+  test('connects one grab handler for all windows', () => {
+    store.set(window, history());
+    store.recordFrameAfterChange(window, requested);
+
+    assert.equal(display.handlerCount(), 1);
+  });
+
+  test('disable disconnects all handlers', () => {
+    store.set(window, history());
+    store.recordFrameAfterChange(window, requested);
+
+    store.disable();
 
     assert.equal(store.get(window), undefined);
     assert.deepEqual(window.connectedSignals(), []);
+    assert.equal(display.handlerCount(), 0);
   });
 });

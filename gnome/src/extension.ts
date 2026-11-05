@@ -35,6 +35,7 @@ export default class RektangelExtension extends Extension {
 
   override enable(): void {
     this.config = loadConfig();
+    this.history.enable(global.display);
     const stored = this.getSettings();
     const inputSources = new Gio.Settings({ schema_id: 'org.gnome.desktop.input-sources' });
     this.stored = stored;
@@ -69,7 +70,7 @@ export default class RektangelExtension extends Extension {
     this.superKeyHandlerId = 0;
     this.xkbOptionsHandlerId = 0;
     this.loggedProblem = null;
-    this.history.clear();
+    this.history.disable();
     this.config = defaultConfig;
     console.log('Rektangel: disabled');
   }
