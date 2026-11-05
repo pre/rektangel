@@ -81,7 +81,7 @@ export function ensureXkbOption(superKey: SuperKey, extensionPath: string, conte
  * and files from $XDG_CONFIG_HOME/xkb. Other options and lines stay. The
  * directories stay, also when they are empty.
  */
-export function removeXkbOption(extensionPath: string, context: XkbOptionContext = {}): void {
+export function removeXkbOption(context: XkbOptionContext = {}): void {
   const { inputSources, act } = resolve(context);
   const options = inputSources.get_strv('xkb-options');
   if (options.includes(xkbOption)) {
@@ -91,15 +91,16 @@ export function removeXkbOption(extensionPath: string, context: XkbOptionContext
     );
   }
 
+  // The files and lines are found by path and name, not by the text of
+  // the shipped files, so that the files of an older version go too.
   const xkbDir = userXkbDir(context);
   for (const name of xkbFiles) {
     const path = GLib.build_filenamev([xkbDir, name]);
     const existing = readText(path);
-    const shipped = readText(GLib.build_filenamev([extensionPath, 'hyper', 'xkb', name]));
-    if (existing === null || shipped === null) {
+    if (existing === null) {
       continue;
     }
-    const updated = name.startsWith('symbols/') ? (existing === shipped ? null : existing) : removeXkbLines(existing, shipped);
+    const updated = name.startsWith('symbols/') ? null : removeXkbLines(existing);
     if (updated === null) {
       act(`remove ${path}`, () => Gio.File.new_for_path(path).delete(null));
     } else if (updated !== existing) {

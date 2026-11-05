@@ -38,28 +38,46 @@ export function addXkbLines(existing: string | null, shipped: string): string {
   return `${existing}${separator}\n${block.join('\n')}\n`;
 }
 
+/** A Rektangel line has the word rektangel. The shipped comments have it too. */
+function isRektangelLine(line: string): boolean {
+  return /rektangel/i.test(line);
+}
+
+function isRule(line: string): boolean {
+  const trimmed = line.trim();
+  return trimmed !== '' && !trimmed.startsWith('//') && !trimmed.startsWith('!');
+}
+
+/** True for a section header, such as "! option = symbols", with no rules below it. */
+function isEmptySection(lines: readonly string[], index: number): boolean {
+  if (!/^\s*!/.test(lines[index] ?? '') || /^\s*! include/.test(lines[index] ?? '')) {
+    return false;
+  }
+  const next = lines.slice(index + 1).findIndex((line) => line.trim().startsWith('!'));
+  const body = next < 0 ? lines.slice(index + 1) : lines.slice(index + 1, index + 1 + next);
+  return !body.some((line) => isRule(line) && !isRektangelLine(line));
+}
+
 /**
  * The text of a user XKB file without the Rektangel lines, or null when
- * the file must be removed because it is the shipped file.
+ * the file must be removed because it has no other rules. The Rektangel
+ * lines are found by their name, not by the text of the shipped file,
+ * so that the lines of an older version are also removed.
  */
-export function removeXkbLines(existing: string, shipped: string): string | null {
-  if (existing === shipped) {
-    return null;
-  }
+export function removeXkbLines(existing: string): string | null {
   const lines = existing.split('\n');
-  const block = blockLines(shipped);
-  let start = findBlock(lines, block);
-  if (start < 0) {
-    return existing;
-  }
-  let count = block.length;
-  // Also remove the blank line that addXkbLines put before the block.
-  if (start > 0 && lines[start - 1] === '') {
-    start--;
-    count++;
-  }
-  lines.splice(start, count);
-  return lines.join('\n');
+  const kept: string[] = [];
+  lines.forEach((line, index) => {
+    if (isRektangelLine(line) || isEmptySection(lines, index)) {
+      // Also remove the blank line that addXkbLines put before the block.
+      if (kept.at(-1) === '') {
+        kept.pop();
+      }
+    } else {
+      kept.push(line);
+    }
+  });
+  return kept.some(isRule) ? kept.join('\n') : null;
 }
 
 /** The first xkb-option that also changes the Caps Lock key, or null. */

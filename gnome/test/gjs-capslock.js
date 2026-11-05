@@ -65,7 +65,7 @@ try {
 
   check('ensure: installed already', ensureXkbOption('capslock', gnomeDir, context), false);
 
-  removeXkbOption(gnomeDir, context);
+  removeXkbOption(context);
   check('remove: option', inputSources.get_strv('xkb-options'), ['compose:ralt']);
   check('remove: symbols file', GLib.file_test(`${xkbDir}/symbols/rektangel`, GLib.FileTest.EXISTS), false);
   check('remove: rules file', GLib.file_test(`${xkbDir}/rules/evdev`, GLib.FileTest.EXISTS), false);
@@ -74,15 +74,21 @@ try {
   writeFile(`${xkbDir}/rules/evdev`, userRules);
   installXkbOption(gnomeDir, context);
   check('merge: user rule kept', readFile(`${xkbDir}/rules/evdev`).startsWith(userRules), true);
-  removeXkbOption(gnomeDir, context);
+  removeXkbOption(context);
   check('merge: user rules file back', readFile(`${xkbDir}/rules/evdev`), userRules);
   check('merge: symbols removed', GLib.file_test(`${xkbDir}/symbols/rektangel`, GLib.FileTest.EXISTS), false);
+
+  writeFile(`${xkbDir}/symbols/rektangel`, '// Rektangel symbols of an older version\n');
+  writeFile(`${xkbDir}/rules/evdev.lst`, '! option\n  rektangel Rektangel, older text\n');
+  removeXkbOption(context);
+  check('older version: symbols removed', GLib.file_test(`${xkbDir}/symbols/rektangel`, GLib.FileTest.EXISTS), false);
+  check('older version: list removed', GLib.file_test(`${xkbDir}/rules/evdev.lst`, GLib.FileTest.EXISTS), false);
 
   check('ensure: super does nothing', ensureXkbOption('super', gnomeDir, context), false);
   check('ensure: super keeps options', inputSources.get_strv('xkb-options'), ['compose:ralt']);
   check('ensure: capslock installs', ensureXkbOption('capslock', gnomeDir, context), true);
   check('ensure: option', inputSources.get_strv('xkb-options'), ['compose:ralt', 'rektangel:caps_hyper']);
-  removeXkbOption(gnomeDir, context);
+  removeXkbOption(context);
 
   inputSources.set_strv('xkb-options', ['caps:escape']);
   let message = '';

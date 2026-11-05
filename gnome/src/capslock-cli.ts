@@ -16,7 +16,7 @@ try {
   if (command === 'install') {
     installXkbOption(extensionPath, context);
   } else if (command === 'remove') {
-    removeXkbOption(extensionPath, context);
+    removeXkbOption(context);
   } else {
     throw new Error('Usage: gjs -m capslock-mode.js install|remove [--dry-run]');
   }

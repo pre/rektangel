@@ -27,7 +27,7 @@ Rektangel registers `<Mod3>`, not `<Hyper>`. Mutter changes `<Hyper>` to all rea
 | `install.sh` | not installed, run it from the extension directory |
 | `uninstall.sh` | not installed, run it from the extension directory |
 
-If `~/.config/xkb/rules/evdev` or `evdev.lst` exists already, the XKB step does not replace it. It adds the Rektangel lines at the end, if they are not there. The remove step removes only these lines. It removes a file only if the file is the Rektangel file.
+If `~/.config/xkb/rules/evdev` or `evdev.lst` exists already, the XKB step does not replace it. It adds the Rektangel lines at the end, if they are not there. The install always writes `symbols/rektangel`. The remove step removes `symbols/rektangel` and each line that has the word `rektangel`, also the lines of an older version. It removes a rules file when no other rule stays in it. The directories stay.
 
 ## Install and uninstall
 

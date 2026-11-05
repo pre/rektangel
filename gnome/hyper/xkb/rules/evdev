@@ -1,6 +1,5 @@
-// Rektangel user rules. libxkbcommon reads this file from
-// $XDG_CONFIG_HOME/xkb/rules/evdev. It includes the system rules and
-// adds one option. %S is the system XKB directory.
+// Rektangel: libxkbcommon reads these user rules from $XDG_CONFIG_HOME/xkb.
+// Rektangel: they include the system rules (%S) and add one option.
 ! include %S/evdev
 
 ! option = symbols

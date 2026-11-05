@@ -56,7 +56,7 @@ export function superKeyGroup(settings: Gio.Settings, extensionDir: Gio.File): A
         installXkbOption(extensionDir.get_path() ?? "");
         showNote('Caps Lock is Super now, usually at once, at the latest after you log out and in.', false);
       } else {
-        removeXkbOption(extensionDir.get_path() ?? "");
+        removeXkbOption();
         showNote('Caps Lock is a normal key again, usually at once, at the latest after you log out and in.', false);
       }
       settings.set_string('super-key', value);

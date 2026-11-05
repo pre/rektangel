@@ -40,23 +40,34 @@ describe('addXkbLines', () => {
 });
 
 describe('removeXkbLines', () => {
-  test('gives null for the shipped file, so that the file is removed', () => {
-    assert.equal(removeXkbLines(shippedRules, shippedRules), null);
+  test('gives null for the shipped files, so that the files are removed', () => {
+    assert.equal(removeXkbLines(shippedRules), null);
+    assert.equal(removeXkbLines(shippedList), null);
+  });
+
+  test('gives null for a rules file of an older version with other comments', () => {
+    const older = '// Rektangel rules, version 0\n! include %S/evdev\n\n! option = symbols\n  rektangel:caps_hyper = +rektangel(caps_hyper)\n';
+    assert.equal(removeXkbLines(older), null);
+  });
+
+  test('keeps the include and the rules that the user added to the shipped file', () => {
+    const added = `${shippedRules}  my:option = +my(option)\n`;
+    assert.equal(removeXkbLines(added), '! include %S/evdev\n\n! option = symbols\n  my:option = +my(option)\n');
   });
 
   test('gives the user file back after addXkbLines', () => {
-    assert.equal(removeXkbLines(addXkbLines(userRules, shippedRules), shippedRules), userRules);
+    assert.equal(removeXkbLines(addXkbLines(userRules, shippedRules)), userRules);
     const userList = '! layout\n  us English\n';
-    assert.equal(removeXkbLines(addXkbLines(userList, shippedList), shippedList), userList);
+    assert.equal(removeXkbLines(addXkbLines(userList, shippedList)), userList);
   });
 
   test('keeps a user file without the Rektangel lines', () => {
-    assert.equal(removeXkbLines(userRules, shippedRules), userRules);
+    assert.equal(removeXkbLines(userRules), userRules);
   });
 
   test('keeps the other sections of the user file', () => {
     const merged = `${addXkbLines(userRules, shippedRules)}! model = keycodes\n  my = my\n`;
-    assert.equal(removeXkbLines(merged, shippedRules), `${userRules}! model = keycodes\n  my = my\n`);
+    assert.equal(removeXkbLines(merged), `${userRules}! model = keycodes\n  my = my\n`);
   });
 });
 
