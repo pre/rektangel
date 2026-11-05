@@ -20,16 +20,23 @@ export function superKeyGroup(settings: Gio.Settings, extensionDir: Gio.File): A
     margin_top: 12,
     css_classes: ['dim-label'],
   });
+  const capsLockNote = new Gtk.Label({
+    label: 'Shift+Caps Lock still toggles the native caps lock.',
+    wrap: true,
+    xalign: 0,
+    margin_top: 6,
+    css_classes: ['dim-label'],
+  });
   const changeNote = new Gtk.Label({ wrap: true, xalign: 0, margin_top: 6, visible: false });
-  [row, storedNote, changeNote].forEach((widget) => group.add(widget));
+  [row, capsLockNote, storedNote, changeNote].forEach((widget) => group.add(widget));
 
   const sync = (): void => {
-    const value = settings.get_string('super-key');
-    group.description =
-      value === 'capslock'
-        ? 'Super is Caps Lock.'
-        : 'Super is the Windows key (the key with the Windows logo, Cmd on a Mac keyboard).';
-    row.selected = value === 'capslock' ? 1 : 0;
+    const isCapsLock = settings.get_string('super-key') === 'capslock';
+    group.description = isCapsLock
+      ? 'Super is Caps Lock. Hold it like a modifier; Shift+Caps Lock toggles caps lock.'
+      : 'Super is the Windows key (the key with the Windows logo, Cmd on a Mac keyboard).';
+    capsLockNote.visible = isCapsLock;
+    row.selected = isCapsLock ? 1 : 0;
   };
   sync();
   settings.connect('changed::super-key', sync);
@@ -47,10 +54,10 @@ export function superKeyGroup(settings: Gio.Settings, extensionDir: Gio.File): A
     try {
       if (value === 'capslock') {
         installXkbOption(extensionDir.get_path() ?? "");
-        showNote('Caps Lock becomes a modifier after you log out and in. Shift+Caps Lock toggles caps lock.', false);
+        showNote('Caps Lock is Super now, usually at once, at the latest after you log out and in.', false);
       } else {
         removeXkbOption(extensionDir.get_path() ?? "");
-        showNote('Caps Lock is a normal key again after you log out and in.', false);
+        showNote('Caps Lock is a normal key again, usually at once, at the latest after you log out and in.', false);
       }
       settings.set_string('super-key', value);
     } catch (error) {
