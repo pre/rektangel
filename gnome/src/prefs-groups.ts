@@ -1,10 +1,12 @@
 import Adw from 'gi://Adw';
-import type Gio from 'gi://Gio';
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk?version=4.0';
 import { allActions } from '@rektangel/core';
 import { xkbOptionInstalledSetting } from './accelerator.ts';
 import { installXkbOption, removeXkbOption } from './capslock-mode.ts';
 import { keyName } from './key-names.ts';
+import { capsLockModeProblem } from './xkb-merge.ts';
 
 const superKeyChoices = ['super', 'capslock'] as const;
 
@@ -28,9 +30,18 @@ export function superKeyGroup(settings: Gio.Settings, extensionDir: Gio.File): A
     margin_top: 6,
     css_classes: ['dim-label'],
   });
+  const problemNote = new Gtk.Label({ wrap: true, xalign: 0, margin_top: 6, css_classes: ['error'], visible: false });
+  const reinstall = new Gtk.Button({
+    label: 'Install the Caps Lock option again',
+    halign: Gtk.Align.START,
+    margin_top: 6,
+    visible: false,
+  });
   const changeNote = new Gtk.Label({ wrap: true, xalign: 0, margin_top: 6, visible: false });
-  [row, capsLockNote, storedNote, changeNote].forEach((widget) => group.add(widget));
+  [row, capsLockNote, problemNote, reinstall, storedNote, changeNote].forEach((widget) => group.add(widget));
 
+  const inputSources = new Gio.Settings({ schema_id: 'org.gnome.desktop.input-sources' });
+  const sessionType = GLib.getenv('XDG_SESSION_TYPE');
   const sync = (): void => {
     const isCapsLock = settings.get_string('super-key') === 'capslock';
     group.description = isCapsLock
@@ -38,15 +49,30 @@ export function superKeyGroup(settings: Gio.Settings, extensionDir: Gio.File): A
       : 'Super is the Windows key (the key with the Windows logo, Cmd on a Mac keyboard).';
     capsLockNote.visible = isCapsLock;
     row.selected = isCapsLock ? 1 : 0;
+    const problem = isCapsLock
+      ? capsLockModeProblem({ xkbOptions: inputSources.get_strv('xkb-options'), sessionType })
+      : null;
+    problemNote.label = `Caps Lock mode is not active: ${problem}. Shortcuts use the Windows key until this is fixed.`;
+    problemNote.visible = problem !== null;
+    reinstall.visible = problem !== null && sessionType !== 'x11';
   };
   sync();
   settings.connect('changed::super-key', sync);
+  inputSources.connect('changed::xkb-options', sync);
 
   const showNote = (text: string, isError: boolean): void => {
     changeNote.label = text;
     changeNote.css_classes = isError ? ['error'] : [];
     changeNote.visible = true;
   };
+  reinstall.connect('clicked', () => {
+    try {
+      installXkbOption(extensionDir.get_path() ?? "");
+      settings.set_boolean(xkbOptionInstalledSetting, true);
+    } catch (error) {
+      showNote(`Cannot install the Caps Lock option: ${error}`, true);
+    }
+  });
   row.connect('notify::selected', () => {
     const value = superKeyChoices[row.selected];
     if (value === undefined || value === settings.get_string('super-key')) {
