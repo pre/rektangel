@@ -159,6 +159,14 @@ npm run prefs-sandbox         # uses temporary settings, nothing real changes
 
 The script `gnome/prefs-dev.sh` builds `gnome/dist` and opens `gnome/dist/prefs.js` with `gnome/test/prefs-launcher.js`. The window uses the schema in `gnome/dist/schemas`, not the installed schema. Without `--sandbox`, a change in the window changes the settings of your session, the same as the installed preferences window. With `--sandbox`, the settings go to a keyfile in a temporary directory under `$HOME/tmp`, and the script deletes the directory when you close the window. The script needs the gnome-shell typelibs in `/usr/lib*/gnome-shell/girepository-1.0`.
 
+## Publish a release
+
+```sh
+bin/release-github v1.2.3    # or major, minor or patch
+```
+
+The script makes a draft GitHub release at HEAD, with notes from the conventional commits since the previous `v*` tag. Then it starts `.github/workflows/release.yml`. The workflow runs the tests, writes the version to `version-name` in `metadata.json`, packs `rektangel@repo.pet.zip` and attaches the zip to the draft. When the build is done, the script opens the draft. Examine the draft and press **Publish release**. Publishing creates the git tag. Then upload the same zip at https://extensions.gnome.org/upload/.
+
 ## Repository layout
 
 - `core/`: the window calculations, shared by all platforms. See `core/README.md`.

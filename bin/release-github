@@ -1,0 +1,166 @@
+#!/usr/bin/env bash
+# Creates a DRAFT GitHub release pinned to the current HEAD, with release notes
+# generated from conventional commits since the previous v* tag (grouped into
+# Features / Fixes / Tests / Chores / Other), then dispatches
+# .github/workflows/release.yml to test the extension, pack
+# rektangel@repo.pet.zip and attach it to the draft. The script then waits for
+# the build (elapsed-time counter) and opens the draft in the browser: review
+# and press "Publish release": publishing creates the tag. Upload the same zip
+# to extensions.gnome.org.
+#
+# Usage: bin/release-github <version-tag>|major|minor|patch [--dry-run]
+#        major/minor/patch increments the previous v* tag by one.
+#        --dry-run prints the generated notes without touching GitHub.
+set -euo pipefail
+
+REPO="pre/rektangel"
+
+if [[ $# -lt 1 ]]; then
+  >&2 cat <<EOF
+
+Usage: $0 <version-tag>|major|minor|patch [--dry-run]
+
+Previous releases:
+  https://github.com/pre/rektangel/releases
+
+EOF
+
+  exit 2
+fi
+VERSION="$1"
+DRY_RUN="${2:-}"
+
+# Publishing a draft creates the tag on GitHub only, so sync tags first or the
+# previous-tag lookup below misses them and the notes repeat older releases.
+git fetch -q --tags origin
+
+PREV_TAG="$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || true)"
+
+if [[ "$VERSION" =~ ^(major|minor|patch)$ ]]; then
+  [[ "$PREV_TAG" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]] \
+    || { echo "previous tag '${PREV_TAG:-none}' is not vX.Y.Z; pass an explicit version" >&2; exit 2; }
+  case "$VERSION" in
+    major) VERSION="v$((BASH_REMATCH[1] + 1)).0.0" ;;
+    minor) VERSION="v${BASH_REMATCH[1]}.$((BASH_REMATCH[2] + 1)).0" ;;
+    patch) VERSION="v${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.$((BASH_REMATCH[3] + 1))" ;;
+  esac
+  echo "previous release: $PREV_TAG -> releasing $VERSION" >&2
+elif [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  # The version goes to version-name in metadata.json, and extensions.gnome.org
+  # accepts only letters, digits, spaces and periods there.
+  echo "version must look like v1.2.3, got: $VERSION" >&2
+  exit 2
+fi
+
+if [[ "$DRY_RUN" != "--dry-run" ]]; then
+  command -v gh >/dev/null || { echo "gh CLI is required" >&2; exit 1; }
+
+  DRAFT_URL="$(gh api "repos/$REPO/releases" --paginate \
+    --jq ".[] | select(.draft and .tag_name == \"$VERSION\") | .html_url")"
+  if [[ -n "$DRAFT_URL" ]]; then
+    echo "draft release $VERSION already exists: $DRAFT_URL" >&2
+    exit 1
+  fi
+
+  if [[ -n "$(git ls-remote --tags origin "refs/tags/$VERSION")" ]]; then
+    echo "release $VERSION already exists on origin" >&2
+    exit 1
+  fi
+fi
+
+HEAD_SHA="$(git rev-parse HEAD)"
+RANGE="${PREV_TAG:+$PREV_TAG..}HEAD"
+SUBJECTS="$(git log --no-merges --pretty='%s' "$RANGE")"
+[[ -n "$SUBJECTS" ]] || { echo "no new commits since ${PREV_TAG:-start}; nothing to release" >&2; exit 1; }
+
+NOTES="Install with \`gnome-extensions install rektangel@repo.pet.zip\`, log out and in, then run \`gnome-extensions enable rektangel@repo.pet\`."$'\n\n'
+section() { # append a "## title" section with subjects matching the prefix regex
+  local title="$1" re="$2" body
+  body="$(grep -E "$re" <<<"$SUBJECTS" | sed -E 's/^[a-z]+(\([^)]*\))?!?: */- /' || true)"
+  [[ -n "$body" ]] && NOTES+="## $title"$'\n'"$body"$'\n\n'
+  return 0
+}
+section "Features" '^feat(\(|!|:)'
+section "Fixes"    '^fix(\(|!|:)'
+section "Tests"    '^test(\(|!|:)'
+section "Chores"   '^chore(\(|!|:)'
+OTHER="$(grep -Ev '^(feat|fix|test|chore)(\(|!|:)' <<<"$SUBJECTS" | sed 's/^/- /' || true)"
+[[ -n "$OTHER" ]] && NOTES+="## Other"$'\n'"$OTHER"$'\n\n'
+NOTES+="Commits: ${PREV_TAG:-start}..$VERSION ($HEAD_SHA)"
+
+if [[ "$DRY_RUN" == "--dry-run" ]]; then
+  printf -- '--- draft notes for %s (target %s) ---\n%s\n' "$VERSION" "$HEAD_SHA" "$NOTES"
+  exit 0
+fi
+
+# The draft is pinned to HEAD, so HEAD must exist on origin.
+if ! git merge-base --is-ancestor "$HEAD_SHA" origin/main; then
+  echo "HEAD ($HEAD_SHA) is not on origin/main; push first." >&2
+  exit 1
+fi
+
+URL="$(gh release create "$VERSION" \
+  --repo "$REPO" \
+  --draft \
+  --target "$HEAD_SHA" \
+  --title "$VERSION" \
+  --notes "$NOTES")"
+
+latest_run() {
+  gh run list --repo "$REPO" --workflow release.yml --limit 1 \
+    --json databaseId -q '.[0].databaseId' 2>/dev/null || true
+}
+
+# Identify our dispatched run without clock comparisons: remember the newest
+# run before dispatching and wait for a newer one to appear.
+PREV_RUN="$(latest_run)"
+gh workflow run release.yml --repo "$REPO" -f tag="$VERSION" -f sha="$HEAD_SHA"
+RUN_ID=""
+for _ in {1..30}; do
+  sleep 2
+  RUN_ID="$(latest_run)"
+  [[ -n "$RUN_ID" && "$RUN_ID" != "$PREV_RUN" ]] && break
+  RUN_ID=""
+done
+[[ -n "$RUN_ID" ]] || {
+  echo "dispatched run did not appear; check https://github.com/$REPO/actions" >&2
+  exit 1
+}
+RUN_URL="https://github.com/$REPO/actions/runs/$RUN_ID"
+
+cat >&2 <<EOF
+
+Draft release (invisible to others until published):
+
+  Release:  $URL
+  Build:    $RUN_URL
+
+Waiting for the build to attach rektangel@repo.pet.zip to the draft…
+EOF
+
+START=$SECONDS
+STATE="queued/"
+TICK=0
+while :; do
+  if (( TICK % 10 == 0 )); then # tick the clock every second, poll gh every 10th
+    NEW="$(gh run view "$RUN_ID" --repo "$REPO" --json status,conclusion \
+      -q '.status + "/" + .conclusion' 2>/dev/null || true)"
+    [[ -n "$NEW" ]] && STATE="$NEW"
+  fi
+  ELAPSED=$((SECONDS - START))
+  printf '\r  %d:%02d  %s   ' $((ELAPSED / 60)) $((ELAPSED % 60)) "${STATE%/}" >&2
+  [[ "$STATE" == completed/* ]] && break
+  TICK=$((TICK + 1))
+  sleep 1
+done
+printf '\n' >&2
+
+if [[ "$STATE" == "completed/success" ]]; then
+  echo "Build done. Review the draft, then press \"Publish release\":" >&2
+  echo "publishing creates tag $VERSION at $HEAD_SHA." >&2
+  echo "Upload the zip of the draft to https://extensions.gnome.org/upload/" >&2
+  xdg-open "$URL"
+else
+  echo "Build ended with '${STATE#completed/}'; draft is missing the zip: $RUN_URL" >&2
+  exit 1
+fi

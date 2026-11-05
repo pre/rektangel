@@ -1,0 +1,48 @@
+# Packs rektangel@repo.pet.zip for a DRAFT release. bin/release-github creates
+# a draft pinned to HEAD with generated notes and dispatches this workflow,
+# which tests the extension, packs the zip with the release version in
+# version-name and attaches the zip to the draft. The same zip goes to
+# extensions.gnome.org. Publishing the reviewed draft creates the tag.
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag of the draft release (vX.Y.Z)
+        required: true
+      sha:
+        description: Commit the draft release is pinned to
+        required: true
+
+# The default GITHUB_TOKEN is read-only; draft asset upload uses the bot's PAT.
+permissions:
+  contents: read
+
+jobs:
+  pack-and-attach:
+    runs-on: ubuntu-24.04
+    env:
+      TAG: ${{ inputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The draft has no tag yet; build exactly the commit it is pinned to.
+          ref: ${{ inputs.sha }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends gjs libglib2.0-bin
+      - run: npm ci
+      - run: npm test
+      - name: Set version-name in metadata.json
+        run: |
+          jq --arg v "${TAG#v}" '. + {"version-name": $v}' gnome/metadata.json > metadata.json.tmp
+          mv metadata.json.tmp gnome/metadata.json
+      - run: npm run pack
+      - name: Attach the zip to the draft
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN }}
+        # gh resolves drafts by tag name (falls back to the release list).
+        run: gh release upload "$TAG" rektangel@repo.pet.zip --repo "$GITHUB_REPOSITORY" --clobber
