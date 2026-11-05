@@ -3,6 +3,8 @@ import { describe, test } from 'node:test';
 import { Action } from '@rektangel/core';
 import {
   addBackupRecord,
+  conflictSections,
+  conflictWording,
   findGnomeConflicts,
   rowConflicts,
   schemaShortName,
@@ -177,5 +179,51 @@ describe('IBus emoji hotkeys', () => {
 
   test('names the schema IBus emoji', () => {
     assert.equal(schemaTitle('org.freedesktop.ibus.panel.emoji'), 'IBus emoji');
+  });
+});
+
+describe('conflictWording', () => {
+  test('says what the IBus emoji picker does with the shortcut', () => {
+    assert.deepEqual(conflictWording({ schema: 'org.freedesktop.ibus.panel.emoji', key: 'hotkey' }, 'Super .'), {
+      explanation:
+        'IBus opens its emoji picker with this shortcut before Rektangel sees it. ' +
+        'In terminals the text turns underlined until you press Esc.',
+      entry: 'IBus emoji picker (Super .)',
+      button: 'Turn off the IBus emoji shortcut',
+    });
+  });
+
+  test('keeps the GNOME texts for the other keys', () => {
+    assert.deepEqual(conflictWording({ schema: 'org.gnome.mutter.keybindings', key: 'toggle-tiled-left' }, 'Super ←'), {
+      explanation: 'GNOME handles this shortcut before Rektangel. Remove it from GNOME to let Rektangel use it.',
+      entry: 'Mutter keybindings › toggle-tiled-left (Super ←)',
+      button: 'Remove from GNOME',
+    });
+  });
+
+  test('uses the GNOME texts for the IBus unicode hotkey, which is not the emoji picker', () => {
+    const wording = conflictWording({ schema: 'org.freedesktop.ibus.panel.emoji', key: 'unicode-hotkey' }, 'Ctrl+Shift+U');
+    assert.equal(wording.entry, 'IBus emoji › unicode-hotkey (Ctrl+Shift+U)');
+    assert.equal(wording.button, 'Remove from GNOME');
+  });
+});
+
+describe('conflictSections', () => {
+  const ibus = { schema: 'org.freedesktop.ibus.panel.emoji', key: 'hotkey' };
+  const shell = { schema: 'org.gnome.shell.keybindings', key: 'toggle-overview' };
+  const mutter = { schema: 'org.gnome.mutter.keybindings', key: 'toggle-tiled-left' };
+
+  test('puts IBus and GNOME keys in their own sections, in the order of the keys', () => {
+    const sections = conflictSections([shell, ibus, mutter], () => 'Super .');
+    assert.deepEqual(
+      sections.map((section) => section.entries.map((entry) => entry.binding)),
+      [[shell, mutter], [ibus]],
+    );
+    assert.match(sections[1]?.explanation ?? '', /^IBus opens its emoji picker/);
+    assert.equal(sections[1]?.entries[0]?.wording.button, 'Turn off the IBus emoji shortcut');
+  });
+
+  test('returns no sections for no keys', () => {
+    assert.deepEqual(conflictSections([], () => ''), []);
   });
 });

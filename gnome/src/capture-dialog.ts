@@ -1,7 +1,7 @@
 import Adw from 'gi://Adw';
 import Gdk from 'gi://Gdk?version=4.0';
 import Gtk from 'gi://Gtk?version=4.0';
-import { schemaShortName, type GnomeBinding } from './gnome-conflicts.ts';
+import { conflictWording, isIbusEmojiPicker, schemaShortName, type GnomeBinding } from './gnome-conflicts.ts';
 import { hasCommandModifier, prettyAccelLabel } from './shortcuts.ts';
 
 export interface CaptureRequest {
@@ -62,11 +62,7 @@ export function presentCaptureDialog(parent: Gtk.Widget, request: CaptureRequest
   });
   const inhibitState = new Gtk.Label({ label: inhibitStateText(false), wrap: true, css_classes: ['dim-label'] });
   const problem = new Gtk.Label({ wrap: true, css_classes: ['error'], visible: false });
-  const gnomeUse = new Gtk.Label({ wrap: true, css_classes: ['warning'] });
-  const removeButton = new Gtk.Button({ label: 'Remove from GNOME', halign: Gtk.Align.CENTER });
   const gnomeBox = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL, spacing: 6, visible: false });
-  gnomeBox.append(gnomeUse);
-  gnomeBox.append(removeButton);
   const content = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL, spacing: 12 });
   [shortcut, hint, inhibitState, problem, gnomeBox].forEach((widget) => content.append(widget));
 
@@ -82,15 +78,46 @@ export function presentCaptureDialog(parent: Gtk.Widget, request: CaptureRequest
   dialog.set_response_enabled('set', false);
 
   let pending: string | null = null;
-  let recorded = '';
+  // One section for the IBus emoji picker and one for the other GNOME
+  // keys, each with a button that removes only its own keys.
   const showGnomeUse = (accelerator: string): void => {
+    for (let child = gnomeBox.get_first_child(); child !== null; child = gnomeBox.get_first_child()) {
+      gnomeBox.remove(child);
+    }
     const bindings = request.gnomeConflictsOf(accelerator);
-    gnomeUse.label = bindings.map((b) => `Used by GNOME: ${schemaShortName(b.schema)} ${b.key}`).join('\n');
-    removeButton.visible = true;
+    const [ibus] = bindings.filter(isIbusEmojiPicker);
+    const gnome = bindings.filter((binding) => !isIbusEmojiPicker(binding));
+    if (ibus !== undefined) {
+      const wording = conflictWording(ibus, acceleratorLabel(accelerator));
+      addSection(accelerator, [ibus], [wording.explanation, wording.entry], wording.button);
+    }
+    if (gnome.length > 0) {
+      const used = gnome.map((b) => `Used by GNOME: ${schemaShortName(b.schema)} ${b.key}`);
+      addSection(accelerator, gnome, used, 'Remove from GNOME');
+    }
     gnomeBox.visible = bindings.length > 0;
   };
+  const addSection = (
+    accelerator: string,
+    bindings: readonly GnomeBinding[],
+    lines: readonly string[],
+    buttonLabel: string,
+  ): void => {
+    const text = new Gtk.Label({ label: lines.join('\n'), wrap: true, css_classes: ['warning'] });
+    const button = new Gtk.Button({ label: buttonLabel, halign: Gtk.Align.CENTER });
+    button.connect('clicked', () => {
+      try {
+        request.removeFromGnome(accelerator, bindings);
+        showGnomeUse(accelerator);
+      } catch (error) {
+        text.label = `Cannot remove the shortcut: ${error}`;
+        button.visible = false;
+      }
+    });
+    gnomeBox.append(text);
+    gnomeBox.append(button);
+  };
   const offer = (accelerator: string): void => {
-    recorded = accelerator;
     shortcut.label = acceleratorLabel(accelerator);
     const conflict = request.conflictOf(accelerator);
     let reason = '';
@@ -105,16 +132,6 @@ export function presentCaptureDialog(parent: Gtk.Widget, request: CaptureRequest
     dialog.set_response_enabled('set', pending !== null);
     showGnomeUse(accelerator);
   };
-
-  removeButton.connect('clicked', () => {
-    try {
-      request.removeFromGnome(recorded, request.gnomeConflictsOf(recorded));
-      showGnomeUse(recorded);
-    } catch (error) {
-      gnomeUse.label = `Cannot remove the GNOME shortcut: ${error}`;
-      removeButton.visible = false;
-    }
-  });
 
   // The capture phase gets the keys before the buttons of the dialog do.
   const keys = new Gtk.EventControllerKey({ propagation_phase: Gtk.PropagationPhase.CAPTURE });

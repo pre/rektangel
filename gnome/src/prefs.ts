@@ -6,9 +6,9 @@ import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/
 import { allActions, type Action } from '@rektangel/core';
 import { acceleratorLabel, presentCaptureDialog } from './capture-dialog.ts';
 import {
+  conflictSections,
   findGnomeConflicts,
   rowConflicts,
-  schemaTitle,
   type GnomeBinding,
   type KeybindingTables,
   type RowConflict,
@@ -166,12 +166,6 @@ function gnomeConflictsOf(settings: Gio.Settings, accelerator: string): GnomeBin
   return withGnomeConflicts(settings) ? findGnomeConflicts(accelerator, readGnomeKeybindings()) : [];
 }
 
-function conflictText(settings: Gio.Settings, conflict: RowConflict): string {
-  return conflict.kind === 'gnome'
-    ? `${schemaTitle(conflict.schema)} › ${conflict.key} (${acceleratorLabel(conflict.accelerator)})`
-    : `Also used by Rektangel: ${actionTitle(settings, conflict.action)}`;
-}
-
 /**
  * A red warning button that is visible when the row has conflicts. Its
  * popover lists them, with a remove button for each GNOME key.
@@ -202,22 +196,22 @@ function conflictBadge(
       margin_start: 6,
       margin_end: 6,
     });
-    if (hasGnome) {
-      box.append(
-        label('GNOME handles this shortcut before Rektangel. Remove it from GNOME to let Rektangel use it.', [
-          'dim-label',
-        ]),
-      );
-    }
-    for (const conflict of conflicts) {
-      box.append(label(conflictText(settings, conflict), ['heading']));
-      if (conflict.kind === 'gnome') {
-        const remove = new Gtk.Button({ label: 'Remove from GNOME', halign: Gtk.Align.START });
+    const gnomeConflicts = conflicts.filter((conflict) => conflict.kind === 'gnome');
+    for (const section of conflictSections(gnomeConflicts, (conflict) => acceleratorLabel(conflict.accelerator))) {
+      box.append(label(section.explanation, ['dim-label']));
+      for (const { binding, wording } of section.entries) {
+        box.append(label(wording.entry, ['heading']));
+        const remove = new Gtk.Button({ label: wording.button, halign: Gtk.Align.START });
         remove.connect('clicked', () => {
           popover.popdown();
-          removeConflict(conflict);
+          removeConflict(binding);
         });
         box.append(remove);
+      }
+    }
+    for (const conflict of conflicts) {
+      if (conflict.kind === 'rektangel') {
+        box.append(label(`Also used by Rektangel: ${actionTitle(settings, conflict.action)}`, ['heading']));
       }
     }
     popover.child = box;

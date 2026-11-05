@@ -98,3 +98,56 @@ export function addBackupRecord(
   }
   return { ...backup, [schema]: { ...backup[schema], [key]: { value: [...value], user_set: userSet } } };
 }
+
+/** The texts that the preferences window shows for a GNOME key that uses a Rektangel shortcut. */
+export interface ConflictWording {
+  /** What happens to the shortcut. The keys with the same explanation share one section. */
+  readonly explanation: string;
+  readonly entry: string;
+  readonly button: string;
+}
+
+const ibusEmojiSchema = 'org.freedesktop.ibus.panel.emoji';
+
+/** The IBus hotkey that opens the emoji picker. */
+export function isIbusEmojiPicker(binding: GnomeBinding): boolean {
+  return binding.schema === ibusEmojiSchema && binding.key === 'hotkey';
+}
+
+/** The texts for the key. `shortcut` is the display text of the accelerator, for example "Super .". */
+export function conflictWording(binding: GnomeBinding, shortcut: string): ConflictWording {
+  if (isIbusEmojiPicker(binding)) {
+    return {
+      explanation:
+        'IBus opens its emoji picker with this shortcut before Rektangel sees it. ' +
+        'In terminals the text turns underlined until you press Esc.',
+      entry: `IBus emoji picker (${shortcut})`,
+      button: 'Turn off the IBus emoji shortcut',
+    };
+  }
+  return {
+    explanation: 'GNOME handles this shortcut before Rektangel. Remove it from GNOME to let Rektangel use it.',
+    entry: `${schemaTitle(binding.schema)} › ${binding.key} (${shortcut})`,
+    button: 'Remove from GNOME',
+  };
+}
+
+export interface ConflictSection<T extends GnomeBinding> {
+  readonly explanation: string;
+  readonly entries: readonly { readonly binding: T; readonly wording: ConflictWording }[];
+}
+
+/** Groups the keys by explanation, in the order of the first key of each group. */
+export function conflictSections<T extends GnomeBinding>(
+  bindings: readonly T[],
+  shortcutOf: (binding: T) => string,
+): ConflictSection<T>[] {
+  const sections = new Map<string, { binding: T; wording: ConflictWording }[]>();
+  for (const binding of bindings) {
+    const wording = conflictWording(binding, shortcutOf(binding));
+    const entries = sections.get(wording.explanation) ?? [];
+    entries.push({ binding, wording });
+    sections.set(wording.explanation, entries);
+  }
+  return [...sections].map(([explanation, entries]) => ({ explanation, entries }));
+}
