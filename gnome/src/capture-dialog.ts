@@ -2,11 +2,14 @@ import Adw from 'gi://Adw';
 import Gdk from 'gi://Gdk?version=4.0';
 import Gtk from 'gi://Gtk?version=4.0';
 import { conflictWording, isIbusEmojiPicker, schemaShortName, type GnomeBinding } from './gnome-conflicts.ts';
-import { hasCommandModifier, prettyAccelLabel } from './shortcuts.ts';
+import type { SuperKey } from './accelerator.ts';
+import { checkCapture, prettyAccelLabel } from './shortcuts.ts';
 
 export interface CaptureRequest {
   readonly actionTitle: string;
   readonly current: string;
+  /** The super-key setting. In Caps Lock mode a Caps Lock press is stored as Super. */
+  readonly superKey: SuperKey;
   /** The title of the other action that uses the accelerator, or null. */
   readonly conflictOf: (accelerator: string) => string | null;
   /** The GNOME keys that use the accelerator. */
@@ -117,18 +120,12 @@ export function presentCaptureDialog(parent: Gtk.Widget, request: CaptureRequest
     gnomeBox.append(text);
     gnomeBox.append(button);
   };
-  const offer = (accelerator: string): void => {
+  const offer = (captured: string): void => {
+    const { accelerator, problem: reason } = checkCapture(captured, request.superKey, request.conflictOf);
     shortcut.label = acceleratorLabel(accelerator);
-    const conflict = request.conflictOf(accelerator);
-    let reason = '';
-    if (accelerator !== '' && !hasCommandModifier(accelerator)) {
-      reason = 'Use at least one of Ctrl, Alt or Super.';
-    } else if (conflict !== null) {
-      reason = `${conflict} already uses this shortcut.`;
-    }
-    problem.label = reason;
-    problem.visible = reason !== '';
-    pending = reason === '' ? accelerator : null;
+    problem.label = reason ?? '';
+    problem.visible = reason !== null;
+    pending = reason === null ? accelerator : null;
     dialog.set_response_enabled('set', pending !== null);
     showGnomeUse(accelerator);
   };

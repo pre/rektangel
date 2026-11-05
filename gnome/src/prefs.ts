@@ -4,6 +4,7 @@ import type Gio from 'gi://Gio';
 import Gtk from 'gi://Gtk?version=4.0';
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 import { allActions, type Action } from '@rektangel/core';
+import { superKeySetting, type SuperKey } from './accelerator.ts';
 import { acceleratorLabel, presentCaptureDialog } from './capture-dialog.ts';
 import {
   conflictSections,
@@ -256,6 +257,7 @@ function shortcutRow(
     presentCaptureDialog(window, {
       actionTitle: title,
       current: settings.get_strv(key)[0] ?? '',
+      superKey: settings.get_string(superKeySetting) as SuperKey,
       conflictOf: (accelerator) => {
         const other = findConflict(accelerator, action, currentBindings(settings));
         return other === null ? null : actionTitle(settings, other);

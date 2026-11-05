@@ -1,4 +1,5 @@
 import { Action } from '@rektangel/core';
+import { canonicalSuper, type SuperKey } from './accelerator.ts';
 
 export interface ShortcutGroup {
   readonly title: string;
@@ -76,6 +77,26 @@ export function normalizeAccelerator(accelerator: string): string {
  */
 export function hasCommandModifier(accelerator: string): boolean {
   return /<(Control|Alt|Super|Meta|Hyper)>/.test(normalizeAccelerator(accelerator));
+}
+
+/**
+ * The accelerator to store for a key press that the capture dialog got,
+ * and why it cannot be used, or null. In Caps Lock mode GTK names the
+ * Caps Lock modifier Hyper or Mod3, and the stored form is always Super.
+ * `conflictOf` gets the stored form and gives the title of the other
+ * action that uses it, or null.
+ */
+export function checkCapture(
+  captured: string,
+  superKey: SuperKey,
+  conflictOf: (accelerator: string) => string | null,
+): { accelerator: string; problem: string | null } {
+  const accelerator = superKey === 'capslock' ? canonicalSuper(captured) : captured;
+  if (accelerator !== '' && !hasCommandModifier(accelerator)) {
+    return { accelerator, problem: 'Use at least one of Ctrl, Alt or Super.' };
+  }
+  const conflict = conflictOf(accelerator);
+  return { accelerator, problem: conflict === null ? null : `${conflict} already uses this shortcut.` };
 }
 
 /** The other action that already uses the accelerator, or null. */

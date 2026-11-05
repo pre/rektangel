@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import { Action, allActions } from '@rektangel/core';
 import {
+  checkCapture,
   findConflict,
   hasCommandModifier,
   normalizeAccelerator,
@@ -50,6 +51,32 @@ describe('hasCommandModifier', () => {
   test('rejects a bare key and Shift only', () => {
     assert.equal(hasCommandModifier('a'), false);
     assert.equal(hasCommandModifier('<Shift>Left'), false);
+  });
+});
+
+describe('checkCapture', () => {
+  const free = (): string | null => null;
+
+  test('stores a Caps Lock press as Super in Caps Lock mode', () => {
+    assert.deepEqual(checkCapture('<Hyper>Left', 'capslock', free), { accelerator: '<Super>Left', problem: null });
+    assert.deepEqual(checkCapture('<Shift><Mod3>Up', 'capslock', free), { accelerator: '<Shift><Super>Up', problem: null });
+  });
+
+  test('keeps Hyper with the Windows key as Super', () => {
+    assert.deepEqual(checkCapture('<Hyper>Left', 'super', free), { accelerator: '<Hyper>Left', problem: null });
+  });
+
+  test('asks for a modifier other than Shift', () => {
+    assert.equal(checkCapture('<Shift>Left', 'capslock', free).problem, 'Use at least one of Ctrl, Alt or Super.');
+  });
+
+  test('names the action that uses the shortcut, in the stored form', () => {
+    const conflictOf = (accelerator: string): string | null => (accelerator === '<Super>Left' ? 'Left half' : null);
+    assert.equal(checkCapture('<Hyper>Left', 'capslock', conflictOf).problem, 'Left half already uses this shortcut.');
+  });
+
+  test('accepts the empty accelerator, which disables the action', () => {
+    assert.deepEqual(checkCapture('', 'capslock', free), { accelerator: '', problem: null });
   });
 });
 
