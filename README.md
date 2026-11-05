@@ -154,11 +154,12 @@ npm install
 npm run build   # core with tsc, extension with esbuild, to gnome/dist/
 npm test        # unit tests, and the GJS smoke and Caps Lock tests
 npm run pack    # writes rektangel@repo.pet.zip
+npm run reload  # packs, installs the zip, disables and enables the extension
 ```
 
 To check the Caps Lock mode XKB files offline, run `npm run test:xkb --workspace gnome`. It needs `xkbcomp`.
 
-`gnome/install.sh` builds the extension and copies it to `~/.local/share/gnome-shell/extensions/`. Use it for development only.
+`gnome/install.sh` builds the extension and copies it to `~/.local/share/gnome-shell/extensions/`. Use it for development only. `npm run reload` installs the zip over the installed extension and then disables and enables it. The shell reads the schema again at enable, so a new default shortcut works at once. The shell keeps the extension and prefs code until the next login.
 
 ### Preview the preferences window
 

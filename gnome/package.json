@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
     "test": "node --test \"test/**/*.test.ts\" && test/gnome-keys-normalize.sh && node esbuild.mjs && XDG_CONFIG_HOME=test/fixtures/config gjs -m test/gjs-smoke.js && gjs -m test/gjs-capslock.js",
     "pack": "./pack.sh",
+    "reload": "./reload.sh",
     "test:coverage": "node --test --experimental-test-coverage --test-coverage-include=\"src/**\" \"test/**/*.test.ts\"",
     "test:xkb": "test/xkb-check.sh",
     "prefs": "./prefs-dev.sh",

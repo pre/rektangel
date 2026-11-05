@@ -13,6 +13,7 @@
     "build": "npm run build --workspace core --workspace gnome",
     "test": "npm test --workspace core --workspace gnome",
     "pack": "gnome/pack.sh",
+    "reload": "gnome/reload.sh",
     "prefs": "gnome/prefs-dev.sh",
     "prefs-sandbox": "gnome/prefs-dev.sh --sandbox"
   },
