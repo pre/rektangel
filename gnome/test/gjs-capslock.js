@@ -1,11 +1,12 @@
 // Run with: gjs -m test/gjs-capslock.js (after node esbuild.mjs). Checks
-// the Hyper translation and the XKB option steps in GJS. All settings
-// use memory backends and the files go to a new temporary directory, so
-// the test does not change the session.
+// the Hyper translation, the migration and the XKB option steps in GJS.
+// All settings use memory backends and the files go to a new temporary
+// directory, so the test does not change the session.
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import { TranslatedSettings } from '../build/translated-settings.js';
 import { ensureXkbOption, installXkbOption, removeXkbOption } from '../build/capslock-mode.js';
+import { migrateStoredShortcuts } from '../build/migrate.js';
 
 function check(name, actual, expected) {
   const actualJson = JSON.stringify(actual);
@@ -32,10 +33,9 @@ const gnomeDir = GLib.path_get_dirname(GLib.path_get_dirname(GLib.filename_from_
 
 const schemas = Gio.SettingsSchemaSource.new_from_directory(`${gnomeDir}/dist/schemas`, null, false);
 const stored = memorySettings(schemas, 'org.gnome.shell.extensions.rektangel');
-stored.set_strv('left-half', ['<Hyper>Left']);
-stored.set_strv('restore', ['<Hyper>BackSpace']);
 const translated = new TranslatedSettings(stored, ['left-half', 'restore'], 'capslock');
 check('default super-key', stored.get_string('super-key'), 'capslock');
+check('default left-half', stored.get_strv('left-half'), ['<Hyper>Left']);
 check('capslock: left-half', translated.settings.get_strv('left-half'), ['<Mod3>Left']);
 translated.setSuperKey('super');
 check('super: left-half', translated.settings.get_strv('left-half'), ['<Super>Left']);
@@ -53,6 +53,19 @@ check('super again: left-half', translated.settings.get_strv('left-half'), ['<Su
 translated.destroy();
 stored.set_strv('left-half', ['<Hyper>x']);
 check('after destroy: no copy', translated.settings.get_strv('left-half'), ['<Super><Alt>Left', '<Control><Super>h']);
+
+const v010 = memorySettings(schemas, 'org.gnome.shell.extensions.rektangel');
+const v010Keys = ['left-half', 'restore', 'center'];
+v010.set_strv('left-half', ['<Super>u', '<Control><Super>Left']);
+v010.set_strv('center', ['<Alt>c']);
+migrateStoredShortcuts(v010, v010Keys);
+check('migrate: user-set Super', v010.get_strv('left-half'), ['<Hyper>u', '<Control><Hyper>Left']);
+check('migrate: user-set without Super', v010.get_strv('center'), ['<Alt>c']);
+check('migrate: default', v010.get_user_value('restore'), null);
+check('migrate: storage-version', v010.get_int('storage-version'), 1);
+v010.set_strv('left-half', ['<Super>u']);
+migrateStoredShortcuts(v010, v010Keys);
+check('migrate two times: Windows key kept', v010.get_strv('left-half'), ['<Super>u']);
 
 const inputSources = memorySettings(Gio.SettingsSchemaSource.get_default(), 'org.gnome.desktop.input-sources');
 const configDir = GLib.dir_make_tmp('rektangel-XXXXXX');
@@ -134,4 +147,4 @@ try {
   GLib.spawn_command_line_sync(`rm -rf ${GLib.shell_quote(configDir)}`);
 }
 
-print('gjs capslock test passed: Hyper translation, XKB option install and remove');
+print('gjs capslock test passed: Hyper translation, migration, XKB option install and remove');

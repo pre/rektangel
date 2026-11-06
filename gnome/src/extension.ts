@@ -18,6 +18,7 @@ import { ensureXkbOption } from './capslock-mode.ts';
 import { loadConfig } from './config-file.ts';
 import { HistoryStore } from './history-store.ts';
 import { keyName } from './key-names.ts';
+import { migrateStoredShortcuts } from './migrate.ts';
 import { TranslatedSettings } from './translated-settings.ts';
 import { capsLockModeProblem } from './xkb-merge.ts';
 
@@ -40,6 +41,7 @@ export default class RektangelExtension extends Extension {
     const inputSources = new Gio.Settings({ schema_id: 'org.gnome.desktop.input-sources' });
     this.stored = stored;
     this.inputSources = inputSources;
+    migrateStoredShortcuts(stored, allActions.map(keyName));
     this.ensureCapsLockKey(stored);
     this.keybindings = new TranslatedSettings(stored, allActions.map(keyName), this.activeSuperKey(stored, inputSources));
     const updateSuperKey = (): void => this.keybindings?.setSuperKey(this.activeSuperKey(stored, inputSources));

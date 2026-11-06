@@ -34,4 +34,11 @@ describe('schema defaults', () => {
     assert.equal(schemaDefaults.length, 25);
     assert.equal(new Set(normalized).size, normalized.length);
   });
+
+  test('use Hyper, not the Windows key', () => {
+    assert.deepEqual(
+      schemaDefaults.filter((accelerator) => !accelerator.startsWith('<Hyper>')),
+      [],
+    );
+  });
 });

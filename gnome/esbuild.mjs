@@ -34,6 +34,7 @@ await build({
     'config-file': 'src/config-file.ts',
     'translated-settings': 'src/translated-settings.ts',
     'capslock-mode': 'src/capslock-mode.ts',
+    migrate: 'src/migrate.ts',
   },
   outdir: 'build',
   external: ['gi://*'],

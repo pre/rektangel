@@ -2,23 +2,23 @@
 <schemalist>
   <schema id="org.gnome.shell.extensions.rektangel" path="/org/gnome/shell/extensions/rektangel/">
     <key name="left-half" type="as">
-      <default><![CDATA[['<Super>Left']]]></default>
+      <default><![CDATA[['<Hyper>Left']]]></default>
       <summary>Left half</summary>
     </key>
     <key name="right-half" type="as">
-      <default><![CDATA[['<Super>Right']]]></default>
+      <default><![CDATA[['<Hyper>Right']]]></default>
       <summary>Right half</summary>
     </key>
     <key name="top-half" type="as">
-      <default><![CDATA[['<Super>Up']]]></default>
+      <default><![CDATA[['<Hyper>Up']]]></default>
       <summary>Top half</summary>
     </key>
     <key name="bottom-half" type="as">
-      <default><![CDATA[['<Super>Down']]]></default>
+      <default><![CDATA[['<Hyper>Down']]]></default>
       <summary>Bottom half</summary>
     </key>
     <key name="maximize-window" type="as">
-      <default><![CDATA[['<Super>space']]]></default>
+      <default><![CDATA[['<Hyper>space']]]></default>
       <summary>Maximize</summary>
     </key>
     <key name="almost-maximize" type="as">
@@ -26,83 +26,83 @@
       <summary>Almost maximize</summary>
     </key>
     <key name="center" type="as">
-      <default><![CDATA[['<Super>period']]]></default>
+      <default><![CDATA[['<Hyper>period']]]></default>
       <summary>Center</summary>
     </key>
     <key name="maximize-height" type="as">
-      <default><![CDATA[['<Super>Return']]]></default>
+      <default><![CDATA[['<Hyper>Return']]]></default>
       <summary>Maximize height</summary>
     </key>
     <key name="larger" type="as">
-      <default><![CDATA[['<Super>plus']]]></default>
+      <default><![CDATA[['<Hyper>plus']]]></default>
       <summary>Make larger</summary>
     </key>
     <key name="smaller" type="as">
-      <default><![CDATA[['<Super>minus']]]></default>
+      <default><![CDATA[['<Hyper>minus']]]></default>
       <summary>Make smaller</summary>
     </key>
     <key name="previous-display" type="as">
-      <default><![CDATA[['<Super><Shift>apostrophe']]]></default>
+      <default><![CDATA[['<Hyper><Shift>apostrophe']]]></default>
       <summary>Move to previous display</summary>
     </key>
     <key name="next-display" type="as">
-      <default><![CDATA[['<Super>apostrophe']]]></default>
+      <default><![CDATA[['<Hyper>apostrophe']]]></default>
       <summary>Move to next display</summary>
     </key>
     <key name="top-left" type="as">
-      <default><![CDATA[['<Super><Shift>Left']]]></default>
+      <default><![CDATA[['<Hyper><Shift>Left']]]></default>
       <summary>Top left corner</summary>
     </key>
     <key name="top-right" type="as">
-      <default><![CDATA[['<Super><Shift>Up']]]></default>
+      <default><![CDATA[['<Hyper><Shift>Up']]]></default>
       <summary>Top right corner</summary>
     </key>
     <key name="bottom-left" type="as">
-      <default><![CDATA[['<Super><Shift>Down']]]></default>
+      <default><![CDATA[['<Hyper><Shift>Down']]]></default>
       <summary>Bottom left corner</summary>
     </key>
     <key name="bottom-right" type="as">
-      <default><![CDATA[['<Super><Shift>Right']]]></default>
+      <default><![CDATA[['<Hyper><Shift>Right']]]></default>
       <summary>Bottom right corner</summary>
     </key>
     <key name="restore" type="as">
-      <default><![CDATA[['<Super>BackSpace']]]></default>
+      <default><![CDATA[['<Hyper>BackSpace']]]></default>
       <summary>Restore</summary>
     </key>
     <key name="first-third" type="as">
-      <default><![CDATA[['<Super>1']]]></default>
+      <default><![CDATA[['<Hyper>1']]]></default>
       <summary>First third</summary>
     </key>
     <key name="last-third" type="as">
-      <default><![CDATA[['<Super>2']]]></default>
+      <default><![CDATA[['<Hyper>2']]]></default>
       <summary>Last third</summary>
     </key>
     <key name="first-two-thirds" type="as">
-      <default><![CDATA[['<Super>3']]]></default>
+      <default><![CDATA[['<Hyper>3']]]></default>
       <summary>First two thirds</summary>
     </key>
     <key name="last-two-thirds" type="as">
-      <default><![CDATA[['<Super>4']]]></default>
+      <default><![CDATA[['<Hyper>4']]]></default>
       <summary>Last two thirds</summary>
     </key>
     <key name="center-third" type="as">
-      <default><![CDATA[['<Super>5']]]></default>
+      <default><![CDATA[['<Hyper>5']]]></default>
       <summary>Center third</summary>
     </key>
     <key name="move-up" type="as">
-      <default><![CDATA[['<Super>w']]]></default>
+      <default><![CDATA[['<Hyper>w']]]></default>
       <summary>Move to top edge</summary>
     </key>
     <key name="move-left" type="as">
-      <default><![CDATA[['<Super>a']]]></default>
+      <default><![CDATA[['<Hyper>a']]]></default>
       <summary>Move to left edge</summary>
     </key>
     <key name="move-down" type="as">
-      <default><![CDATA[['<Super>s']]]></default>
+      <default><![CDATA[['<Hyper>s']]]></default>
       <summary>Move to bottom edge</summary>
     </key>
     <key name="move-right" type="as">
-      <default><![CDATA[['<Super>d']]]></default>
+      <default><![CDATA[['<Hyper>d']]]></default>
       <summary>Move to right edge</summary>
     </key>
     <key name="super-key" type="s">
@@ -111,8 +111,13 @@
         <choice value="capslock"/>
       </choices>
       <default>'capslock'</default>
-      <summary>Super key</summary>
-      <description>The key for the &lt;Super&gt; modifier of the shortcuts. The shortcuts are always stored with &lt;Super&gt;. "super": the Super key. "capslock" (the default): Caps Lock, which needs the XKB option rektangel:caps_hyper. Rektangel then registers the shortcuts with &lt;Mod3&gt;, and the extension adds the XKB option one time when it is enabled, see xkb-option-installed.</description>
+      <summary>Hyper key</summary>
+      <description>The physical key of the &lt;Hyper&gt; modifier of the shortcuts: "super" the Windows key, "capslock" (the default) Caps Lock, which needs the XKB option rektangel:caps_hyper. Rektangel then registers the shortcuts with &lt;Mod3&gt;, and the extension adds the XKB option one time when it is enabled, see xkb-option-installed.</description>
+    </key>
+    <key name="storage-version" type="i">
+      <default>0</default>
+      <summary>Storage version of the shortcuts</summary>
+      <description>1 after the extension changed user values from the v0.1.0 form, in which &lt;Super&gt; meant the Rektangel key, to &lt;Hyper&gt;.</description>
     </key>
     <key name="xkb-option-installed" type="b">
       <default>false</default>
