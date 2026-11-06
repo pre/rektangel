@@ -1,20 +1,21 @@
 # Caps Lock mode
 
-Caps Lock mode makes Caps Lock the Super key of the Rektangel shortcuts. Hold Caps Lock instead of Super: Super+Left becomes Caps+Left. Super keeps its GNOME function. See ADR 0008, ADR 0009 and ADR 0011.
+Caps Lock mode makes Caps Lock the Hyper key. Hyper is the modifier of the Rektangel default shortcuts. Hold Caps Lock for Hyper: Hyper+Left is Caps+Left. The Windows key keeps its GNOME function. See ADR 0008, ADR 0009, ADR 0011 and ADR 0013.
 
 The mode is the default. When `super-key` is `capslock`, the extension installs the XKB option itself one time, when it is enabled, and the preferences window installs it when you select Caps Lock. The setting `xkb-option-installed` records the install, so the extension does not add the option again after the lock screen or after you removed it in Tweaks. You do not need the scripts in this directory for the default.
 
 ## How it works
 
-- The shortcuts are always stored with `<Super>`. The setting `super-key` tells Rektangel which key that is: `capslock` (the default) or `super`.
-- With `capslock`, Rektangel registers each stored shortcut with `<Mod3>` in place of `<Super>`. The stored values do not change. When you set `super-key` back to `super`, the Super shortcuts work again, and you do not edit a shortcut.
+- The default shortcuts are stored with `<Hyper>`. The setting `super-key` tells Rektangel which physical key Hyper is: `capslock` (the default) or `super` (the Windows key).
+- With `capslock`, Rektangel registers each `<Hyper>` shortcut with `<Mod3>`. With `super`, it registers them with `<Super>`. The stored values do not change. When you change `super-key`, the Hyper shortcuts move to the other key, and you do not edit a shortcut.
+- A shortcut that you set in the preferences window stores the key that you pressed: `<Mod3>` for Caps Lock and `<Super>` for the Windows key. A change of `super-key` does not move it.
 - A user XKB option, `rektangel:caps_hyper`, gives the Caps Lock key two levels: `[ Hyper_L, Caps_Lock ]` with type `TWO_LEVEL`.
 - Caps Lock alone (level 1) is `Hyper_L` on the real modifier Mod3 while you hold it.
 - Shift+Caps Lock (level 2) toggles caps lock. The Caps Lock LED shows the real caps lock state.
 - If you press and release Caps Lock alone, it also turns caps lock off. This is the XKB `clearLocks` behavior of a modifier key.
 - GNOME (Mutter) loads the option from `org.gnome.desktop.input-sources xkb-options`. libxkbcommon reads the option files from `$XDG_CONFIG_HOME/xkb` (normally `~/.config/xkb`). There is no extra process and no root step.
 
-Rektangel registers `<Mod3>`, not `<Hyper>`. Mutter changes `<Hyper>` to all real modifiers that the Hyper virtual modifier maps to. With this keymap that is Lock, Mod3 and Mod4: Lock because the key also has the `Caps_Lock` symbol, and Mod4 because the standard `pc` symbols put `Hyper_L` on Mod4. Mutter ignores Lock in key events, so a `<Hyper>` binding never matches. `<Mod3>` matches only Mod3.
+In the stored shortcuts, Hyper is only a Rektangel name. Rektangel registers `<Mod3>`, not `<Hyper>`. Mutter changes `<Hyper>` to all real modifiers that the Hyper virtual modifier maps to. With this keymap that is Lock, Mod3 and Mod4: Lock because the key also has the `Caps_Lock` symbol, and Mod4 because the standard `pc` symbols put `Hyper_L` on Mod4. Mutter ignores Lock in key events, so a `<Hyper>` binding never matches. `<Mod3>` matches only Mod3.
 
 ## Files
 
@@ -60,20 +61,20 @@ schemas=~/.local/share/gnome-shell/extensions/rektangel@repo.pet/schemas
 /usr/bin/gsettings --schemadir "$schemas" set org.gnome.shell.extensions.rektangel super-key capslock
 ```
 
-When `super-key` changes to `capslock`, the extension installs the XKB option if it is not there. Without the XKB option, Caps Lock does not set Mod3, so the shortcuts then do not work.
+When `super-key` changes to `capslock`, the extension installs the XKB option one time, if it is not there. Without the XKB option, Caps Lock does not set Mod3. Then the extension registers the Hyper shortcuts with the Windows key, and a shortcut that you set with Caps Lock does not work.
 
 ## Shortcuts in Caps Lock mode
 
-Each shortcut is the stored shortcut with Caps Lock in place of Super. A shortcut without Super does not change. With the defaults:
+Each Hyper shortcut uses Caps Lock. A shortcut with the Windows key or without Hyper does not change. With the defaults:
 
 | Action           | Default                  | Caps Lock mode           |
 |------------------|--------------------------|--------------------------|
-| Left half        | Super+Left               | Caps+Left                |
-| Top left         | Super+Shift+Left         | Caps+Shift+Left          |
-| Maximize         | Super+Space              | Caps+Space               |
-| Restore          | Super+BackSpace          | Caps+BackSpace           |
+| Left half        | Hyper+Left               | Caps+Left                |
+| Top left         | Hyper+Shift+Left         | Caps+Shift+Left          |
+| Maximize         | Hyper+Space              | Caps+Space               |
+| Restore          | Hyper+BackSpace          | Caps+BackSpace           |
 
-All defaults use Super, so in Caps Lock mode all defaults use Caps Lock, and Super is free for GNOME. In Caps Lock mode you do not need `gnome-keys.sh`. But `gnome-keys.sh` compares the stored form, so if you run it, it removes the GNOME Super+Left (tile the window to the left) and the other conflicts also in Caps Lock mode. Then you need no new run when you set `super-key` to `super`. To get the GNOME shortcuts back in Caps Lock mode, run `gnome-keys.sh --undo`.
+All defaults use Hyper, so in Caps Lock mode all defaults use Caps Lock, and the Windows key is free for GNOME. In Caps Lock mode you need `gnome-keys.sh` only for the shortcuts that you set with the Windows key. The script compares each Hyper shortcut as the key that `super-key` gives it, and it does not compare the shortcuts with Caps Lock. When you set `super-key` to `super`, run `gnome-keys.sh` again. To get the GNOME shortcuts back, run `gnome-keys.sh --undo`.
 
 ## Known limits
 

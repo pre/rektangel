@@ -43,67 +43,67 @@ Opening the preference window via command line:
 gnome-extensions prefs rektangel@repo.pet
 ```
 
-To attach to Caps Lock, the extension writes a user XKB option to `~/.config/xkb` and adds `rektangel:caps_hyper` to `xkb-options`. The change usually has an effect at once, at the latest after you log out and in. The Windows key keeps its GNOME function. To use the Windows key for the Rektangel shortcuts and get a normal Caps Lock back, select Windows key in the Super Key group of the preferences window. See Caps Lock mode below.
+To attach to Caps Lock, the extension writes a user XKB option to `~/.config/xkb` and adds `rektangel:caps_hyper` to `xkb-options`. The change usually has an effect at once, at the latest after you log out and in. The Windows key keeps its GNOME function. To make the Windows key the Hyper key and get a normal Caps Lock back, select Windows key in the Hyper key group of the preferences window. See Caps Lock mode below.
 
 ## Default shortcuts
 
 | Action           | Shortcut                 |
 |------------------|--------------------------|
-| Top half         | Super+Up                 |
-| Left half        | Super+Left               |
-| Bottom half      | Super+Down               |
-| Right half       | Super+Right              |
-| Top right        | Super+Shift+Up           |
-| Top left         | Super+Shift+Left         |
-| Bottom left      | Super+Shift+Down         |
-| Bottom right     | Super+Shift+Right        |
-| First third      | Super+1                  |
-| Last third       | Super+2                  |
-| First two thirds | Super+3                  |
-| Last two thirds  | Super+4                  |
-| Center third     | Super+5                  |
-| Maximize         | Super+Space              |
-| Maximize height  | Super+Return             |
-| Larger           | Super+Plus               |
-| Smaller          | Super+Minus              |
-| Center           | Super+Period             |
-| Top edge         | Super+W                  |
-| Left edge        | Super+A                  |
-| Bottom edge      | Super+S                  |
-| Right edge       | Super+D                  |
-| Next display     | Super+Apostrophe         |
-| Previous display | Super+Shift+Apostrophe   |
-| Restore          | Super+Backspace          |
+| Top half         | Hyper+Up                 |
+| Left half        | Hyper+Left               |
+| Bottom half      | Hyper+Down               |
+| Right half       | Hyper+Right              |
+| Top right        | Hyper+Shift+Up           |
+| Top left         | Hyper+Shift+Left         |
+| Bottom left      | Hyper+Shift+Down         |
+| Bottom right     | Hyper+Shift+Right        |
+| First third      | Hyper+1                  |
+| Last third       | Hyper+2                  |
+| First two thirds | Hyper+3                  |
+| Last two thirds  | Hyper+4                  |
+| Center third     | Hyper+5                  |
+| Maximize         | Hyper+Space              |
+| Maximize height  | Hyper+Return             |
+| Larger           | Hyper+Plus               |
+| Smaller          | Hyper+Minus              |
+| Center           | Hyper+Period             |
+| Top edge         | Hyper+W                  |
+| Left edge        | Hyper+A                  |
+| Bottom edge      | Hyper+S                  |
+| Right edge       | Hyper+D                  |
+| Next display     | Hyper+Apostrophe         |
+| Previous display | Hyper+Shift+Apostrophe   |
+| Restore          | Hyper+Backspace          |
 
-Super is Caps Lock by default, so Super+Left is Caps Lock+Left. The table has the order of the preferences window, which lists the halves, the corners and the edges by their arrow or WASD key: Up, Left, Down, Right. The corners go clockwise from the arrow key: Left is top left, Up is top right, Right is bottom right and Down is bottom left. The keys are for a Finnish keyboard, on which Plus and Minus have no Shift and Apostrophe is the key to the right of Ä. On a Finnish keyboard, Shift+Apostrophe is the asterisk, so the previous display shortcut shows as Super+*. Mutter compares the key and the modifiers, so the stored form is `<Super><Shift>apostrophe`, not `<Super>asterisk`. On other layouts, the same key names can be on other keys, or need Shift. See ADR 0010 and ADR 0012.
+Hyper is the Rektangel modifier. It is Caps Lock by default, so Hyper+Left is Caps Lock+Left. The setting `super-key` makes Hyper Caps Lock or the Windows key (see Caps Lock mode). The table has the order of the preferences window, which lists the halves, the corners and the edges by their arrow or WASD key: Up, Left, Down, Right. The corners go clockwise from the arrow key: Left is top left, Up is top right, Right is bottom right and Down is bottom left. The keys are for a Finnish keyboard, on which Plus and Minus have no Shift and Apostrophe is the key to the right of Ä. On a Finnish keyboard, Shift+Apostrophe is the asterisk, so the previous display shortcut shows as Hyper+*. Mutter compares the key and the modifiers, so the stored form is `<Hyper><Shift>apostrophe`, not `<Hyper>asterisk`. On other layouts, the same key names can be on other keys, or need Shift. See ADR 0010 and ADR 0012.
 
-Almost maximize has no default shortcut. Each shortcut is a gsettings key in `org.gnome.shell.extensions.rektangel`. To change one, use the preferences window (see below), `gsettings` or dconf-editor. The schema is in the extension directory, so give `gsettings` the schema directory:
+Almost maximize has no default shortcut. Each shortcut is a gsettings key in `org.gnome.shell.extensions.rektangel`. To change one, use the preferences window (see below), `gsettings` or dconf-editor. In a value, `<Hyper>` is the Rektangel modifier, `<Mod3>` is Caps Lock and `<Super>` is the Windows key. The schema is in the extension directory, so give `gsettings` the schema directory. This example sets Caps Lock+E for the first third:
 
 ```sh
 schemas=~/.local/share/gnome-shell/extensions/rektangel@repo.pet/schemas
-gsettings --schemadir "$schemas" set org.gnome.shell.extensions.rektangel first-third "['<Super><Alt>e']"
+gsettings --schemadir "$schemas" set org.gnome.shell.extensions.rektangel first-third "['<Mod3>e']"
 ```
 
 ### GNOME conflicts with the Windows key
 
-With Caps Lock as the Super key, the default shortcuts do not conflict with GNOME. If you select the Windows key, some default shortcuts are also GNOME shortcuts. On GNOME 46 these GNOME defaults conflict:
+GNOME shortcuts use the Windows key, which GNOME calls Super. A Hyper default conflicts with GNOME only when Hyper is the Windows key. With Caps Lock as the Hyper key, the default shortcuts do not conflict with GNOME. A shortcut that you set with the Windows key can conflict with GNOME in each mode. When Hyper is the Windows key, on GNOME 46 these GNOME defaults conflict:
 
 | Rektangel default        | GNOME key                                                        |
 |--------------------------|------------------------------------------------------------------|
-| Super+Left, Super+Right  | `org.gnome.mutter.keybindings` `toggle-tiled-left`, `toggle-tiled-right` |
-| Super+Up                 | `org.gnome.desktop.wm.keybindings` `maximize`                    |
-| Super+Down               | `org.gnome.desktop.wm.keybindings` `unmaximize`                  |
-| Super+Shift+arrow keys   | `org.gnome.desktop.wm.keybindings` `move-to-monitor-left`, `-right`, `-up`, `-down` |
-| Super+Space              | `org.gnome.desktop.wm.keybindings` `switch-input-source`         |
-| Super+Period             | `org.freedesktop.ibus.panel.emoji` `hotkey` (IBus emoji)         |
-| Super+1 to Super+5       | `org.gnome.shell.keybindings` `switch-to-application-1` to `-5` (dash favorites) |
-| Super+A                  | `org.gnome.shell.keybindings` `toggle-application-view` (show applications) |
-| Super+S                  | `org.gnome.shell.keybindings` `toggle-quick-settings`            |
-| Super+D                  | `org.gnome.desktop.wm.keybindings` `show-desktop` (Ubuntu only)  |
+| Hyper+Left, Hyper+Right  | `org.gnome.mutter.keybindings` `toggle-tiled-left`, `toggle-tiled-right` |
+| Hyper+Up                 | `org.gnome.desktop.wm.keybindings` `maximize`                    |
+| Hyper+Down               | `org.gnome.desktop.wm.keybindings` `unmaximize`                  |
+| Hyper+Shift+arrow keys   | `org.gnome.desktop.wm.keybindings` `move-to-monitor-left`, `-right`, `-up`, `-down` |
+| Hyper+Space              | `org.gnome.desktop.wm.keybindings` `switch-input-source`         |
+| Hyper+Period             | `org.freedesktop.ibus.panel.emoji` `hotkey` (IBus emoji)         |
+| Hyper+1 to Hyper+5       | `org.gnome.shell.keybindings` `switch-to-application-1` to `-5` (dash favorites) |
+| Hyper+A                  | `org.gnome.shell.keybindings` `toggle-application-view` (show applications) |
+| Hyper+S                  | `org.gnome.shell.keybindings` `toggle-quick-settings`            |
+| Hyper+D                  | `org.gnome.desktop.wm.keybindings` `show-desktop` (Ubuntu only)  |
 
-Ubuntu sets `maximize` and `unmaximize` to empty in the Ubuntu session, so on Ubuntu Super+Up and Super+Down are free. Ubuntu also adds Super+D for `show-desktop`, which GNOME leaves empty. The other defaults (Super+Return, Super+Plus, Super+Minus, Super+Apostrophe, Super+Shift+Apostrophe, Super+Backspace and Super+W) have no GNOME 46 shortcut. IBus is not a part of GNOME Shell, but in some applications, for example GNOME Terminal, the IBus emoji hotkey gets Super+Period before Rektangel does. IBus also has Super+Semicolon for emoji and Ctrl+Shift+U for Unicode input. Other extensions can also use these keys, for example Tiling Assistant uses Super+Up and Super+Down.
+Ubuntu sets `maximize` and `unmaximize` to empty in the Ubuntu session, so on Ubuntu Windows+Up and Windows+Down are free. Ubuntu also adds Windows+D for `show-desktop`, which GNOME leaves empty. The other defaults (Hyper+Return, Hyper+Plus, Hyper+Minus, Hyper+Apostrophe, Hyper+Shift+Apostrophe, Hyper+Backspace and Hyper+W) have no GNOME 46 shortcut. IBus is not a part of GNOME Shell, but in some applications, for example GNOME Terminal, the IBus emoji hotkey gets Windows+Period before Rektangel does. IBus also has Windows+Semicolon for emoji and Ctrl+Shift+U for Unicode input. Other extensions can also use these keys, for example Tiling Assistant uses Windows+Up and Windows+Down.
 
-With the Windows key, use `gnome-keys.sh` to remove the GNOME conflicts. The script is in the zip, and it removes only the conflicting GNOME entries. It reads the current Rektangel shortcuts, so run it again after you change a shortcut. It removes each GNOME entry that is equal to a Rektangel shortcut from these schemas: `org.gnome.desktop.wm.keybindings`, `org.gnome.mutter.keybindings`, `org.gnome.mutter.wayland.keybindings`, `org.gnome.shell.keybindings`, `org.gnome.settings-daemon.plugins.media-keys` and `org.freedesktop.ibus.panel.emoji` (IBus emoji). The script skips a schema that is not installed, for example the IBus schema on a system without IBus. The other entries of a key stay, so Super+Semicolon stays for the IBus emoji picker. The order of the modifiers does not matter, and neither does the case of a modifier or of a one-letter key. The script needs `gsettings`, `dconf` and `jq`. It saves the old values to `~/.config/rektangel/gnome-keys-backup.json` before it changes them. A key that is in the backup from an earlier run keeps its first value. `--undo` sets the old values again, or resets a key that had the GNOME default.
+When Hyper is the Windows key, or when you set a shortcut with the Windows key, use `gnome-keys.sh` to remove the GNOME conflicts. The script is in the zip, and it removes only the conflicting GNOME entries. It reads the current Rektangel shortcuts, so run it again after you change a shortcut. It removes each GNOME entry that is equal to a Rektangel shortcut from these schemas: `org.gnome.desktop.wm.keybindings`, `org.gnome.mutter.keybindings`, `org.gnome.mutter.wayland.keybindings`, `org.gnome.shell.keybindings`, `org.gnome.settings-daemon.plugins.media-keys` and `org.freedesktop.ibus.panel.emoji` (IBus emoji). The script skips a schema that is not installed, for example the IBus schema on a system without IBus. The other entries of a key stay, so Windows+Semicolon stays for the IBus emoji picker. The order of the modifiers does not matter, and neither does the case of a modifier or of a one-letter key. The script needs `gsettings`, `dconf` and `jq`. It saves the old values to `~/.config/rektangel/gnome-keys-backup.json` before it changes them. A key that is in the backup from an earlier run keeps its first value. `--undo` sets the old values again, or resets a key that had the GNOME default.
 
 ```sh
 dir=~/.local/share/gnome-shell/extensions/rektangel@repo.pet
@@ -112,7 +112,7 @@ bash "$dir/gnome-keys.sh"             # do the changes
 bash "$dir/gnome-keys.sh" --undo      # restore the old values
 ```
 
-The script reads the Rektangel schema from the installed extension. To use another compiled schema, give `--schemadir DIR`. When `super-key` is `capslock`, Rektangel grabs the Super shortcuts with Caps Lock, so the script compares only the shortcuts without Super. The conflict badges and the dialog of the preferences window use the same rule (see Caps Lock mode).
+The script reads the Rektangel schema from the installed extension. To use another compiled schema, give `--schemadir DIR`. The script compares each Hyper shortcut as the key that `super-key` gives it: Caps Lock with `capslock` and the Windows key with `super`. No GNOME key uses Caps Lock, so the script does not compare the shortcuts with Caps Lock (`<Mod3>`). It always compares the shortcuts with the Windows key (`<Super>`). When you change `super-key` to `super`, run the script again. The conflict badges and the dialog of the preferences window use the same rule (see Caps Lock mode).
 
 The scripts use `/usr/bin/gsettings` and `/usr/bin/dconf` when they exist. A `gsettings` from Homebrew or linuxbrew GLib often has no dconf backend. It then writes to a keyfile, and GNOME Shell does not see the change. Before a script changes a value, it compares `gsettings` with `dconf` and stops if they do not agree. When you run `gsettings` yourself, use `/usr/bin/gsettings`.
 
@@ -139,11 +139,15 @@ The file uses a subset of TOML: `key = value` lines, numbers, quoted strings, on
 
 ## Caps Lock mode
 
-Caps Lock mode is the default. It makes Caps Lock the Super key of the Rektangel shortcuts: hold Caps Lock instead of Super. Shift+Caps Lock toggles caps lock. Super keeps its GNOME function.
+Caps Lock mode is the default. Hyper is the name of the Rektangel modifier, and Caps Lock or the Windows key is the physical key. The setting `super-key` (`capslock`, the default, or `super`) selects the key. In Caps Lock mode, hold Caps Lock for Hyper. Shift+Caps Lock toggles caps lock. The Windows key keeps its GNOME function.
 
-The shortcuts are always stored with Super. The setting `super-key` (`capslock`, the default, or `super`) selects the key, so one change switches all shortcuts. Rektangel registers the shortcuts with Caps Lock when the value is `capslock`. Caps Lock mode also needs a user XKB option. When `super-key` is `capslock`, the extension installs the option one time, when it is enabled or when the setting changes. The setting `xkb-option-installed` records the install, so the extension does not add the option again after the lock screen or after you removed it in Tweaks. The extension does not remove the option when it is disabled.
+The default shortcuts are stored with `<Hyper>`, so one change of `super-key` switches all default shortcuts. A shortcut that you set in the preferences window stores the physical key that you pressed: `<Mod3>` for Caps Lock and `<Super>` for the Windows key. The window shows these keys as Caps Lock and Windows. A change of `super-key` does not change such a shortcut. After a change of `super-key`, a shortcut that you set can be the same key as a Hyper default, for example Caps Lock+1 and Hyper+1 in Caps Lock mode. The preferences window then shows a conflict. Rektangel registers the key for one of the two actions only, and writes the other action to the journal.
 
-To switch back to the Windows key, select Windows key in the preferences window. It removes the option and sets `super-key` to `super`. Without the preferences window, run `hyper/uninstall.sh`. Caps Lock mode cannot work when `xkb-options` has another `caps:` option, for example `caps:escape`, when `xkb-options` does not have `rektangel:caps_hyper`, or in an X11 session, because the X server does not read user XKB rules. Then the extension writes the reason to the journal one time and registers the shortcuts with the Windows key. When you select Caps Lock, the Super Key group of the preferences window shows the reason in red and a button that installs the option again (not on X11). When the problem is gone, the shortcuts use Caps Lock again. See `gnome/hyper/README.md`, ADR 0009 and ADR 0011.
+In v0.1.0, a stored `<Super>` was the Rektangel key. When you enable the extension the first time after the update, it changes `<Super>` to `<Hyper>` in each shortcut that you set. It does this one time, and the setting `storage-version` records it.
+
+Rektangel registers the Hyper shortcuts with Caps Lock when the value is `capslock`. Caps Lock mode also needs a user XKB option. When `super-key` is `capslock`, the extension installs the option one time, when it is enabled or when the setting changes. The setting `xkb-option-installed` records the install, so the extension does not add the option again after the lock screen or after you removed it in Tweaks. The extension does not remove the option when it is disabled.
+
+To switch back to the Windows key, select Windows key in the preferences window. It removes the option and sets `super-key` to `super`. Without the preferences window, run `hyper/uninstall.sh`. Caps Lock mode cannot work when `xkb-options` has another `caps:` option, for example `caps:escape`, when `xkb-options` does not have `rektangel:caps_hyper`, or in an X11 session, because the X server does not read user XKB rules. Then the extension writes the reason to the journal one time and registers the Hyper shortcuts with the Windows key. A shortcut that you set with Caps Lock does not work then. When you select Caps Lock, the Hyper key group of the preferences window shows the reason in red and a button that installs the option again (not on X11). When the problem is gone, the Hyper shortcuts use Caps Lock again. See `gnome/hyper/README.md`, ADR 0009, ADR 0011 and ADR 0013.
 
 ## Build from source
 

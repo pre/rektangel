@@ -1,5 +1,7 @@
 # Shortcuts are stored with Super and translated at registration
 
+Status: superseded by ADR-0013 for the storage form; the translation stays.
+
 The shortcuts are always stored in gsettings with `<Super>`. A setting `super-key` (`super` or `capslock`) selects the key for that modifier. With `capslock`, the extension gives Mutter a copy of the shortcuts in a memory settings backend, in which each `<Super>` is `<Mod3>`, the modifier of the Caps Lock key of ADR 0008. One change of `super-key` switches all shortcuts, and the user does not edit 26 shortcuts.
 
 ## Considered Options

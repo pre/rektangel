@@ -112,7 +112,7 @@
       </choices>
       <default>'capslock'</default>
       <summary>Hyper key</summary>
-      <description>The physical key of the &lt;Hyper&gt; modifier of the shortcuts: "super" the Windows key, "capslock" (the default) Caps Lock, which needs the XKB option rektangel:caps_hyper. Rektangel then registers the shortcuts with &lt;Mod3&gt;, and the extension adds the XKB option one time when it is enabled, see xkb-option-installed.</description>
+      <description>The physical key of the &lt;Hyper&gt; modifier of the shortcuts: "super" the Windows key, "capslock" (the default) Caps Lock, which needs the XKB option rektangel:caps_hyper. Rektangel then registers the &lt;Hyper&gt; shortcuts with &lt;Mod3&gt;, and the extension adds the XKB option one time when it is enabled, see xkb-option-installed.</description>
     </key>
     <key name="storage-version" type="i">
       <default>0</default>
