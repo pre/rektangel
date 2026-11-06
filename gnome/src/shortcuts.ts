@@ -92,6 +92,30 @@ export function hasCommandModifier(accelerator: string): boolean {
   return /<(Control|Alt|Super|Meta|Hyper|Mod3)>/.test(normalizeAccelerator(accelerator));
 }
 
+/** The modifier keys that the capture dialog saw held at a key press. */
+export interface HeldModifiers {
+  readonly shift: boolean;
+  readonly control: boolean;
+  readonly alt: boolean;
+  readonly windows: boolean;
+  readonly capsLock: boolean;
+}
+
+/**
+ * The stored form of a key press: the physical Windows key is <Super> and
+ * the physical Caps Lock is <Mod3>. `key` is the keyval name of the key.
+ */
+export function capturedAccelerator(held: HeldModifiers, key: string): string {
+  const modifiers: [boolean, string][] = [
+    [held.shift, '<Shift>'],
+    [held.control, '<Control>'],
+    [held.alt, '<Alt>'],
+    [held.windows, '<Super>'],
+    [held.capsLock, '<Mod3>'],
+  ];
+  return modifiers.map(([isHeld, token]) => (isHeld ? token : '')).join('') + key;
+}
+
 /**
  * The accelerator to store for a key press that the capture dialog got,
  * and why it cannot be used, or null. `conflictOf` gets the stored form
@@ -102,8 +126,12 @@ export function checkCapture(
   superKey: SuperKey,
   conflictOf: (accelerator: string) => string | null,
 ): { accelerator: string; problem: string | null } {
+  const normalized = normalizeAccelerator(accelerator);
+  if (normalized.includes('<Super>') && normalized.includes('<Mod3>')) {
+    return { accelerator, problem: 'Use one of Caps Lock and the Windows key.' };
+  }
   if (accelerator !== '' && !hasCommandModifier(accelerator)) {
-    return { accelerator, problem: 'Use at least one of Ctrl, Alt or Super.' };
+    return { accelerator, problem: 'Use at least one of Ctrl, Alt or Hyper.' };
   }
   const conflict = conflictOf(accelerator);
   return { accelerator, problem: conflict === null ? null : `${conflict} already uses this shortcut.` };

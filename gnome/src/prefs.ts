@@ -165,7 +165,9 @@ type GnomeConflict = Extract<RowConflict, { kind: 'gnome' }>;
 /** The GNOME keys that can take the accelerator before Rektangel. */
 function gnomeConflictsOf(settings: Gio.Settings, accelerator: string): GnomeBinding[] {
   const superKey = settings.get_string(superKeySetting) as SuperKey;
-  return canConflictWithGnome(accelerator, superKey) ? findGnomeConflicts(accelerator, readGnomeKeybindings()) : [];
+  return canConflictWithGnome(accelerator, superKey)
+    ? findGnomeConflicts(accelerator, readGnomeKeybindings(), superKey)
+    : [];
 }
 
 /**

@@ -17,13 +17,15 @@ const superKeyChoices = [
 export type Watch = (settings: Gio.Settings, signal: string, handler: () => void) => void;
 
 export function superKeyGroup(settings: Gio.Settings, extensionPath: string, watch: Watch): Adw.PreferencesGroup {
-  const group = new Adw.PreferencesGroup({ title: 'Super Key' });
+  const group = new Adw.PreferencesGroup({ title: 'Hyper key' });
   const row = new Adw.ComboRow({
-    title: 'Super key',
+    title: 'Hyper key',
     model: Gtk.StringList.new(superKeyChoices.map((choice) => choice.label)),
   });
   const storedNote = new Gtk.Label({
-    label: 'Shortcuts below are stored with Super. Changing the Super key changes all of them at once.',
+    label:
+      'The default shortcuts use Hyper. Changing the Hyper key changes all of them at once. ' +
+      'A shortcut that you set keeps the key that you pressed.',
     wrap: true,
     xalign: 0,
     margin_top: 12,
@@ -52,14 +54,14 @@ export function superKeyGroup(settings: Gio.Settings, extensionPath: string, wat
     const superKey = settings.get_string('super-key');
     const isCapsLock = superKey === 'capslock';
     group.description = isCapsLock
-      ? 'Super is Caps Lock. Hold it like a modifier; Shift+Caps Lock toggles caps lock.'
-      : 'Super is the Windows key (the key with the Windows logo, Cmd on a Mac keyboard).';
+      ? 'Hyper is Caps Lock. Hold it like a modifier; Shift+Caps Lock toggles caps lock.'
+      : 'Hyper is the Windows key (GNOME calls it Super; Cmd on a Mac keyboard).';
     capsLockNote.visible = isCapsLock;
     row.selected = superKeyChoices.findIndex((choice) => choice.value === superKey);
     const problem = isCapsLock
       ? capsLockModeProblem({ xkbOptions: inputSources.get_strv('xkb-options'), sessionType })
       : null;
-    problemNote.label = `Caps Lock mode is not active: ${problem}. Shortcuts use the Windows key until this is fixed.`;
+    problemNote.label = `Caps Lock mode is not active: ${problem}. Hyper shortcuts use the Windows key until this is fixed.`;
     problemNote.visible = problem !== null;
     reinstall.visible = problem !== null && sessionType !== 'x11';
   };
@@ -89,7 +91,7 @@ export function superKeyGroup(settings: Gio.Settings, extensionPath: string, wat
       if (value === 'capslock') {
         installXkbOption(extensionPath);
         settings.set_boolean(xkbOptionInstalledSetting, true);
-        showNote('Caps Lock is Super now, usually at once, at the latest after you log out and in.', false);
+        showNote('Caps Lock is Hyper now, usually at once, at the latest after you log out and in.', false);
       } else {
         removeXkbOption();
         settings.set_boolean(xkbOptionInstalledSetting, false);
@@ -97,7 +99,7 @@ export function superKeyGroup(settings: Gio.Settings, extensionPath: string, wat
       }
       settings.set_string('super-key', value);
     } catch (error) {
-      showNote(`Cannot change the Super key: ${error}`, true);
+      showNote(`Cannot change the Hyper key: ${error}`, true);
       sync();
     }
   });
@@ -131,7 +133,7 @@ export function gnomeNoteGroup(scriptPath: string, settings: Gio.Settings, watch
   const sync = (): void => {
     const intro =
       settings.get_string('super-key') === 'capslock'
-        ? 'GNOME has its own shortcuts. With Caps Lock as Super, only Rektangel shortcuts without Super can use the same keys as GNOME. '
+        ? 'GNOME has its own shortcuts. With Caps Lock as Hyper, only shortcuts with the Windows key can use the same keys as GNOME. '
         : 'GNOME has its own shortcuts, and some of them use the same keys as the Rektangel defaults. ';
     text.label =
       intro +

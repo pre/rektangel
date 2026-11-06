@@ -4,6 +4,7 @@ import { describe, test } from 'node:test';
 import { Action, allActions } from '@rektangel/core';
 import {
   acceleratorLabelParts,
+  capturedAccelerator,
   checkCapture,
   effectiveAccelerator,
   findConflict,
@@ -112,7 +113,11 @@ describe('checkCapture', () => {
   });
 
   test('asks for a modifier other than Shift', () => {
-    assert.equal(checkCapture('<Shift>Left', 'capslock', free).problem, 'Use at least one of Ctrl, Alt or Super.');
+    assert.equal(checkCapture('<Shift>Left', 'capslock', free).problem, 'Use at least one of Ctrl, Alt or Hyper.');
+  });
+
+  test('asks for only one of Caps Lock and the Windows key', () => {
+    assert.equal(checkCapture('<Super><Mod3>u', 'capslock', free).problem, 'Use one of Caps Lock and the Windows key.');
   });
 
   test('names the action that uses the shortcut, in the stored form', () => {
@@ -122,6 +127,24 @@ describe('checkCapture', () => {
 
   test('accepts the empty accelerator, which disables the action', () => {
     assert.deepEqual(checkCapture('', 'capslock', free), { accelerator: '', problem: null });
+  });
+});
+
+describe('capturedAccelerator', () => {
+  const none = { shift: false, control: false, alt: false, windows: false, capsLock: false };
+
+  test('stores the Windows key as Super and Caps Lock as Mod3', () => {
+    assert.equal(capturedAccelerator({ ...none, windows: true }, 'u'), '<Super>u');
+    assert.equal(capturedAccelerator({ ...none, capsLock: true }, 'u'), '<Mod3>u');
+  });
+
+  test('puts the modifiers in the order Shift, Control, Alt, Super, Mod3', () => {
+    const all = { shift: true, control: true, alt: true, windows: true, capsLock: true };
+    assert.equal(capturedAccelerator(all, 'Left'), '<Shift><Control><Alt><Super><Mod3>Left');
+  });
+
+  test('gives the bare key when no modifier is held', () => {
+    assert.equal(capturedAccelerator(none, 'Left'), 'Left');
   });
 });
 

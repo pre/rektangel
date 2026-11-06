@@ -3,12 +3,12 @@ import Gdk from 'gi://Gdk?version=4.0';
 import Gtk from 'gi://Gtk?version=4.0';
 import { conflictWording, isIbusEmojiPicker, schemaShortName, type GnomeBinding } from './gnome-conflicts.ts';
 import type { SuperKey } from './accelerator.ts';
-import { checkCapture, prettyAccelLabel } from './shortcuts.ts';
+import { acceleratorLabelParts, capturedAccelerator, checkCapture, prettyAccelLabel } from './shortcuts.ts';
 
 export interface CaptureRequest {
   readonly actionTitle: string;
   readonly current: string;
-  /** The super-key setting. In Caps Lock mode a Caps Lock press is stored as Super. */
+  /** The super-key setting: the physical key of <Hyper>. */
   readonly superKey: SuperKey;
   /** The title of the other action that uses the accelerator, or null. */
   readonly conflictOf: (accelerator: string) => string | null;
@@ -20,29 +20,16 @@ export interface CaptureRequest {
   readonly onSave: (accelerator: string) => void;
 }
 
-/** The modifier names in the order that GTK uses. */
-const modifierLabels: readonly (readonly [Gdk.ModifierType, string])[] = [
-  [Gdk.ModifierType.SHIFT_MASK, 'Shift'],
-  [Gdk.ModifierType.CONTROL_MASK, 'Ctrl'],
-  [Gdk.ModifierType.ALT_MASK, 'Alt'],
-  [Gdk.ModifierType.SUPER_MASK, 'Super'],
-  [Gdk.ModifierType.HYPER_MASK, 'Hyper'],
-  [Gdk.ModifierType.META_MASK, 'Meta'],
-];
-
-/** The display text of an accelerator, for example "Super Left", or "Disabled". */
+/** The display text of an accelerator, for example "Hyper Left" or "Windows U", or "Disabled". */
 export function acceleratorLabel(accelerator: string): string {
   if (accelerator === '') {
     return 'Disabled';
   }
-  const [ok, key, modifiers] = Gtk.accelerator_parse(accelerator);
-  if (!ok || modifiers === null) {
-    return accelerator;
-  }
-  const names = modifierLabels.filter(([mask]) => (modifiers & mask) !== 0).map(([, name]) => name);
-  return prettyAccelLabel([...names, Gtk.accelerator_get_label(key, 0)]);
+  const { modifiers, key } = acceleratorLabelParts(accelerator);
+  const keyval = Gdk.keyval_from_name(key);
+  const keyLabel = keyval === Gdk.KEY_VoidSymbol ? key : Gtk.accelerator_get_label(keyval, 0);
+  return prettyAccelLabel([...modifiers, keyLabel]);
 }
-
 
 function inhibitStateText(inhibited: boolean): string {
   return inhibited
@@ -130,21 +117,45 @@ export function presentCaptureDialog(parent: Gtk.Widget, request: CaptureRequest
     showGnomeUse(accelerator);
   };
 
+  // GTK does not name the Super and Hyper modifier masks reliably: a Caps
+  // Lock press gave <Super><Hyper>. So the dialog follows the keyvals of
+  // the physical keys, and takes only Shift, Ctrl and Alt from the mask.
+  let windowsHeld = false;
+  let capsHeld = false;
+  const trackModifier = (keyval: number, isHeld: boolean): void => {
+    if (keyval === Gdk.KEY_Super_L || keyval === Gdk.KEY_Super_R) {
+      windowsHeld = isHeld;
+    } else if (keyval === Gdk.KEY_Hyper_L) {
+      capsHeld = isHeld;
+    }
+  };
+  const shiftCtrlAlt = Gdk.ModifierType.SHIFT_MASK | Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.ALT_MASK;
+
   // The capture phase gets the keys before the buttons of the dialog do.
   const keys = new Gtk.EventControllerKey({ propagation_phase: Gtk.PropagationPhase.CAPTURE });
   keys.connect('key-pressed', (_controller, keyval, _keycode, state) => {
-    const modifiers = state & Gtk.accelerator_get_default_mod_mask();
+    trackModifier(keyval, true);
+    const modifiers = state & Gtk.accelerator_get_default_mod_mask() & shiftCtrlAlt;
     const key = Gdk.keyval_to_lower(keyval);
-    if (modifiers === 0 && key === Gdk.KEY_Escape) {
+    const isPlain = modifiers === 0 && !windowsHeld && !capsHeld;
+    if (isPlain && key === Gdk.KEY_Escape) {
       dialog.close();
-    } else if (modifiers === 0 && key === Gdk.KEY_BackSpace) {
+    } else if (isPlain && key === Gdk.KEY_BackSpace) {
       offer('');
     } else if (Gtk.accelerator_valid(key, modifiers)) {
-      offer(Gtk.accelerator_name(key, modifiers));
+      const held = {
+        shift: (modifiers & Gdk.ModifierType.SHIFT_MASK) !== 0,
+        control: (modifiers & Gdk.ModifierType.CONTROL_MASK) !== 0,
+        alt: (modifiers & Gdk.ModifierType.ALT_MASK) !== 0,
+        windows: windowsHeld,
+        capsLock: capsHeld,
+      };
+      offer(capturedAccelerator(held, Gdk.keyval_name(key) ?? ''));
     }
     // A bare modifier is not a valid accelerator: wait for the next key.
     return true;
   });
+  keys.connect('key-released', (_controller, keyval) => trackModifier(keyval, false));
   dialog.add_controller(keys);
 
   // Without the inhibit, GNOME Shell takes its own and the Rektangel

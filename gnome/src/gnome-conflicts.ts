@@ -1,6 +1,6 @@
 import type { Action } from '@rektangel/core';
-import type { SuperKey } from './accelerator.ts';
-import { normalizeAccelerator } from './shortcuts.ts';
+import { translateHyper, type SuperKey } from './accelerator.ts';
+import { effectiveAccelerator, normalizeAccelerator } from './shortcuts.ts';
 
 /** Schema id -> key -> accelerators. Only keys of type `as`. */
 export type KeybindingTables = ReadonlyMap<string, ReadonlyMap<string, readonly string[]>>;
@@ -41,17 +41,18 @@ export type RowConflict =
   | { readonly kind: 'rektangel'; readonly action: Action; readonly accelerator: string };
 
 /**
- * True when a GNOME key can take the accelerator before Rektangel. In Caps
- * Lock mode Rektangel grabs a <Super> shortcut with Caps Lock (<Mod3>),
- * which no GNOME key uses, so only the shortcuts without Super can conflict.
+ * True when a GNOME key can take the accelerator before Rektangel. No
+ * GNOME key uses Caps Lock (<Mod3>), so a shortcut that Mutter grabs with
+ * Caps Lock cannot conflict.
  */
 export function canConflictWithGnome(accelerator: string, superKey: SuperKey): boolean {
-  return superKey === 'super' || !normalizeAccelerator(accelerator).includes('<Super>');
+  return !effectiveAccelerator(accelerator, superKey).includes('<Mod3>');
 }
 
 /**
  * The conflicts of each accelerator of the action: first the GNOME keys,
- * then the other Rektangel actions that use it.
+ * then the other Rektangel actions that use it. A GNOME conflict has the
+ * accelerator in the form that GNOME uses, <Hyper> translated.
  */
 export function rowConflicts(
   action: Action,
@@ -61,13 +62,14 @@ export function rowConflicts(
 ): RowConflict[] {
   const conflicts: RowConflict[] = [];
   for (const accelerator of bindings.get(action) ?? []) {
-    const gnomeBindings = canConflictWithGnome(accelerator, superKey) ? findGnomeConflicts(accelerator, gnome) : [];
-    for (const binding of gnomeBindings) {
-      conflicts.push({ kind: 'gnome', ...binding, accelerator });
+    if (canConflictWithGnome(accelerator, superKey)) {
+      for (const binding of findGnomeConflicts(accelerator, gnome, superKey)) {
+        conflicts.push({ kind: 'gnome', ...binding, accelerator: translateHyper(accelerator, superKey) });
+      }
     }
-    const wanted = normalizeAccelerator(accelerator);
+    const wanted = effectiveAccelerator(accelerator, superKey);
     for (const [other, accelerators] of bindings) {
-      if (other !== action && accelerators.some((value) => normalizeAccelerator(value) === wanted)) {
+      if (other !== action && accelerators.some((value) => effectiveAccelerator(value, superKey) === wanted)) {
         conflicts.push({ kind: 'rektangel', action: other, accelerator });
       }
     }
@@ -75,12 +77,12 @@ export function rowConflicts(
   return conflicts;
 }
 
-/** The GNOME keys that have the accelerator as one of their entries. */
-export function findGnomeConflicts(accelerator: string, tables: KeybindingTables): GnomeBinding[] {
+/** The GNOME keys that have the effective form of the accelerator as one of their entries. */
+export function findGnomeConflicts(accelerator: string, tables: KeybindingTables, superKey: SuperKey): GnomeBinding[] {
   if (accelerator === '') {
     return [];
   }
-  const wanted = normalizeAccelerator(accelerator);
+  const wanted = effectiveAccelerator(accelerator, superKey);
   const conflicts: GnomeBinding[] = [];
   for (const [schema, keys] of tables) {
     for (const [key, accelerators] of keys) {
@@ -126,7 +128,7 @@ export function isIbusEmojiPicker(binding: GnomeBinding): boolean {
   return binding.schema === ibusEmojiSchema && binding.key === 'hotkey';
 }
 
-/** The texts for the key. `shortcut` is the display text of the accelerator, for example "Super .". */
+/** The texts for the key. `shortcut` is the display text of the accelerator, for example "Windows .". */
 export function conflictWording(binding: GnomeBinding, shortcut: string): ConflictWording {
   if (isIbusEmojiPicker(binding)) {
     return {

@@ -28,7 +28,7 @@ const tables: KeybindingTables = new Map([
 
 describe('findGnomeConflicts', () => {
   test('finds a key with the same accelerator in another modifier order and case', () => {
-    assert.deepEqual(findGnomeConflicts('<alt><SUPER>Left', tables), [
+    assert.deepEqual(findGnomeConflicts('<alt><SUPER>Left', tables, 'super'), [
       { schema: 'org.gnome.desktop.wm.keybindings', key: 'switch-to-workspace-left' },
     ]);
   });
@@ -38,18 +38,25 @@ describe('findGnomeConflicts', () => {
       ['a.b', new Map([['one', ['<Control>x']]])],
       ['c.d', new Map([['two', ['<Primary>X']]])],
     ]);
-    assert.deepEqual(findGnomeConflicts('<Ctrl>x', both), [
+    assert.deepEqual(findGnomeConflicts('<Ctrl>x', both, 'super'), [
       { schema: 'a.b', key: 'one' },
       { schema: 'c.d', key: 'two' },
     ]);
   });
 
   test('returns nothing for a free accelerator', () => {
-    assert.deepEqual(findGnomeConflicts('<Super><Alt>e', tables), []);
+    assert.deepEqual(findGnomeConflicts('<Super><Alt>e', tables, 'super'), []);
+  });
+
+  test('finds the GNOME Super key of a Hyper shortcut when Hyper is the Windows key', () => {
+    assert.deepEqual(findGnomeConflicts('<Hyper><Alt>Left', tables, 'super'), [
+      { schema: 'org.gnome.desktop.wm.keybindings', key: 'switch-to-workspace-left' },
+    ]);
+    assert.deepEqual(findGnomeConflicts('<Hyper><Alt>Left', tables, 'capslock'), []);
   });
 
   test('returns nothing for an empty accelerator', () => {
-    assert.deepEqual(findGnomeConflicts('', new Map([['a.b', new Map([['one', ['']]])]])), []);
+    assert.deepEqual(findGnomeConflicts('', new Map([['a.b', new Map([['one', ['']]])]]), 'super'), []);
   });
 });
 
@@ -106,14 +113,21 @@ describe('schemaTitle', () => {
 });
 
 describe('canConflictWithGnome', () => {
-  test('checks every shortcut when the Windows key is Super', () => {
+  test('checks every shortcut when Hyper is the Windows key, except the Caps Lock shortcuts', () => {
+    assert.equal(canConflictWithGnome('<Hyper>Left', 'super'), true);
     assert.equal(canConflictWithGnome('<Super>Left', 'super'), true);
     assert.equal(canConflictWithGnome('<Control><Alt>Left', 'super'), true);
+    assert.equal(canConflictWithGnome('<Mod3>Left', 'super'), false);
   });
 
-  test('skips the Super shortcuts in Caps Lock mode, because Rektangel grabs them with Caps Lock', () => {
-    assert.equal(canConflictWithGnome('<Super>Left', 'capslock'), false);
-    assert.equal(canConflictWithGnome('<shift><super>up', 'capslock'), false);
+  test('skips the Hyper and Caps Lock shortcuts when Hyper is Caps Lock, because no GNOME key uses Mod3', () => {
+    assert.equal(canConflictWithGnome('<Hyper>Left', 'capslock'), false);
+    assert.equal(canConflictWithGnome('<shift><hyper>up', 'capslock'), false);
+    assert.equal(canConflictWithGnome('<Mod3>u', 'capslock'), false);
+  });
+
+  test('checks the Windows key shortcuts when Hyper is Caps Lock', () => {
+    assert.equal(canConflictWithGnome('<Super>Left', 'capslock'), true);
     assert.equal(canConflictWithGnome('<Control><Alt>Left', 'capslock'), true);
   });
 });
@@ -146,15 +160,49 @@ describe('rowConflicts', () => {
     ]);
   });
 
-  test('in Caps Lock mode, lists the GNOME keys only for shortcuts without Super', () => {
+  test('in Caps Lock mode, lists the GNOME keys only for shortcuts without Hyper and Caps Lock', () => {
     const withAlt: KeybindingTables = new Map([['org.gnome.desktop.wm.keybindings', new Map([['close', ['<Alt>F4']]])]]);
     const bindings = new Map([
-      [Action.LeftHalf, ['<Super>Left']],
+      [Action.LeftHalf, ['<Hyper>Left']],
+      [Action.RightHalf, ['<Mod3>Left']],
       [Action.Restore, ['<Alt>F4']],
     ]);
-    assert.deepEqual(rowConflicts(Action.LeftHalf, bindings, gnome, 'capslock'), []);
     assert.deepEqual(rowConflicts(Action.Restore, bindings, withAlt, 'capslock'), [
       { kind: 'gnome', schema: 'org.gnome.desktop.wm.keybindings', key: 'close', accelerator: '<Alt>F4' },
+    ]);
+    assert.deepEqual(
+      rowConflicts(Action.LeftHalf, bindings, gnome, 'capslock').filter((conflict) => conflict.kind === 'gnome'),
+      [],
+    );
+  });
+
+  test('in Caps Lock mode, lists the GNOME keys of a Windows key shortcut', () => {
+    const bindings = new Map([[Action.LeftHalf, ['<Super>Left']]]);
+    assert.deepEqual(rowConflicts(Action.LeftHalf, bindings, gnome, 'capslock'), [
+      { kind: 'gnome', schema: 'org.gnome.mutter.keybindings', key: 'toggle-tiled-left', accelerator: '<Super>Left' },
+      { kind: 'gnome', schema: 'org.gnome.shell.keybindings', key: 'toggle-overview', accelerator: '<Super>Left' },
+    ]);
+  });
+
+  test('gives the GNOME conflict of a Hyper shortcut in the form that GNOME has', () => {
+    const bindings = new Map([[Action.LeftHalf, ['<Hyper>Left']]]);
+    assert.deepEqual(rowConflicts(Action.LeftHalf, bindings, gnome, 'super'), [
+      { kind: 'gnome', schema: 'org.gnome.mutter.keybindings', key: 'toggle-tiled-left', accelerator: '<Super>Left' },
+      { kind: 'gnome', schema: 'org.gnome.shell.keybindings', key: 'toggle-overview', accelerator: '<Super>Left' },
+    ]);
+  });
+
+  test('compares the Rektangel shortcuts in the effective form', () => {
+    const bindings = new Map([
+      [Action.FirstThird, ['<Hyper>1']],
+      [Action.LastThird, ['<Mod3>1']],
+      [Action.CenterThird, ['<Super>1']],
+    ]);
+    assert.deepEqual(rowConflicts(Action.FirstThird, bindings, new Map(), 'capslock'), [
+      { kind: 'rektangel', action: Action.LastThird, accelerator: '<Hyper>1' },
+    ]);
+    assert.deepEqual(rowConflicts(Action.FirstThird, bindings, new Map(), 'super'), [
+      { kind: 'rektangel', action: Action.CenterThird, accelerator: '<Hyper>1' },
     ]);
   });
 
@@ -194,7 +242,7 @@ describe('IBus emoji hotkeys', () => {
   });
 
   test('finds the unicode hotkey in another modifier order', () => {
-    assert.deepEqual(findGnomeConflicts('<Shift><Control>U', ibus), [
+    assert.deepEqual(findGnomeConflicts('<Shift><Control>U', ibus, 'super'), [
       { schema: 'org.freedesktop.ibus.panel.emoji', key: 'unicode-hotkey' },
     ]);
   });
