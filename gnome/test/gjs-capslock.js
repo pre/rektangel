@@ -1,5 +1,6 @@
 // Run with: gjs -m test/gjs-capslock.js (after node esbuild.mjs). Checks
-// the Hyper translation, the migration and the XKB option steps in GJS.
+// the Hyper translation, one owner per shortcut, the migration and the XKB
+// option steps in GJS.
 // All settings use memory backends and the files go to a new temporary
 // directory, so the test does not change the session.
 import Gio from 'gi://Gio';
@@ -7,6 +8,7 @@ import GLib from 'gi://GLib';
 import { TranslatedSettings } from '../build/translated-settings.js';
 import { ensureXkbOption, installXkbOption, removeXkbOption } from '../build/capslock-mode.js';
 import { migrateStoredShortcuts } from '../build/migrate.js';
+import { allActions } from '../build/core.js';
 
 function check(name, actual, expected) {
   const actualJson = JSON.stringify(actual);
@@ -53,6 +55,23 @@ check('super again: left-half', translated.settings.get_strv('left-half'), ['<Su
 translated.destroy();
 stored.set_strv('left-half', ['<Hyper>x']);
 check('after destroy: no copy', translated.settings.get_strv('left-half'), ['<Super><Alt>Left', '<Control><Super>h']);
+
+const allKeys = allActions.map((action) => (action === 'maximize' ? 'maximize-window' : action));
+const logLines = [];
+const shared = memorySettings(schemas, 'org.gnome.shell.extensions.rektangel');
+shared.set_strv('restore', ['<Mod3>1']);
+const sharedCopy = new TranslatedSettings(shared, allKeys, 'capslock', (line) => logLines.push(line));
+check('same key: restore keeps it', sharedCopy.settings.get_strv('restore'), ['<Mod3>1']);
+check('same key: first-third empty', sharedCopy.settings.get_strv('first-third'), []);
+check('same key: log', logLines, ['Rektangel: first-third and restore are both <Mod3>1, first-third is not registered']);
+sharedCopy.setSuperKey('super');
+check('same key, super: first-third', sharedCopy.settings.get_strv('first-third'), ['<Super>1']);
+sharedCopy.setSuperKey('capslock');
+check('same key again: first-third empty', sharedCopy.settings.get_strv('first-third'), []);
+check('same key again: one log line', logLines.length, 1);
+shared.set_strv('restore', ['<Mod3>BackSpace']);
+check('restore changed: first-third back', sharedCopy.settings.get_strv('first-third'), ['<Mod3>1']);
+sharedCopy.destroy();
 
 const v010 = memorySettings(schemas, 'org.gnome.shell.extensions.rektangel');
 const v010Keys = ['left-half', 'restore', 'center'];
@@ -147,4 +166,4 @@ try {
   GLib.spawn_command_line_sync(`rm -rf ${GLib.shell_quote(configDir)}`);
 }
 
-print('gjs capslock test passed: Hyper translation, migration, XKB option install and remove');
+print('gjs capslock test passed: Hyper translation, one owner per shortcut, migration, XKB option install and remove');
