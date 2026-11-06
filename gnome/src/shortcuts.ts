@@ -1,5 +1,5 @@
 import { Action } from '@rektangel/core';
-import { canonicalSuper, type SuperKey } from './accelerator.ts';
+import { translateHyper, type SuperKey } from './accelerator.ts';
 
 export interface ShortcutGroup {
   readonly title: string;
@@ -57,6 +57,7 @@ const modifierAliases: Readonly<Record<string, string>> = {
   shft: 'Shift',
   meta: 'Meta',
   hyper: 'Hyper',
+  mod3: 'Mod3',
 };
 
 /**
@@ -76,26 +77,31 @@ export function normalizeAccelerator(accelerator: string): string {
 }
 
 /**
+ * The form to compare two shortcuts, or a shortcut and a GNOME shortcut:
+ * the normalized accelerator that Mutter grabs.
+ */
+export function effectiveAccelerator(accelerator: string, superKey: SuperKey): string {
+  return normalizeAccelerator(translateHyper(accelerator, superKey));
+}
+
+/**
  * True when the accelerator has a modifier other than Shift. A global
  * shortcut without one would take a key that the user types in text.
  */
 export function hasCommandModifier(accelerator: string): boolean {
-  return /<(Control|Alt|Super|Meta|Hyper)>/.test(normalizeAccelerator(accelerator));
+  return /<(Control|Alt|Super|Meta|Hyper|Mod3)>/.test(normalizeAccelerator(accelerator));
 }
 
 /**
  * The accelerator to store for a key press that the capture dialog got,
- * and why it cannot be used, or null. In Caps Lock mode GTK names the
- * Caps Lock modifier Hyper or Mod3, and the stored form is always Super.
- * `conflictOf` gets the stored form and gives the title of the other
- * action that uses it, or null.
+ * and why it cannot be used, or null. `conflictOf` gets the stored form
+ * and gives the title of the other action that uses it, or null.
  */
 export function checkCapture(
-  captured: string,
+  accelerator: string,
   superKey: SuperKey,
   conflictOf: (accelerator: string) => string | null,
 ): { accelerator: string; problem: string | null } {
-  const accelerator = superKey === 'capslock' ? canonicalSuper(captured) : captured;
   if (accelerator !== '' && !hasCommandModifier(accelerator)) {
     return { accelerator, problem: 'Use at least one of Ctrl, Alt or Super.' };
   }
@@ -103,22 +109,50 @@ export function checkCapture(
   return { accelerator, problem: conflict === null ? null : `${conflict} already uses this shortcut.` };
 }
 
-/** The other action that already uses the accelerator, or null. */
+/** The other action that already uses the key that Mutter grabs, or null. */
 export function findConflict(
   accelerator: string,
   action: Action,
   bindings: ReadonlyMap<Action, readonly string[]>,
+  superKey: SuperKey,
 ): Action | null {
   if (accelerator === '') {
     return null;
   }
-  const wanted = normalizeAccelerator(accelerator);
+  const wanted = effectiveAccelerator(accelerator, superKey);
   for (const [other, accelerators] of bindings) {
-    if (other !== action && accelerators.some((value) => normalizeAccelerator(value) === wanted)) {
+    if (other !== action && accelerators.some((value) => effectiveAccelerator(value, superKey) === wanted)) {
       return other;
     }
   }
   return null;
+}
+
+const modifierLabels: Readonly<Record<string, string>> = {
+  hyper: 'Hyper',
+  super: 'Windows',
+  mod4: 'Windows',
+  mod3: 'Caps Lock',
+  shift: 'Shift',
+  control: 'Ctrl',
+  primary: 'Ctrl',
+  alt: 'Alt',
+  mod1: 'Alt',
+  meta: 'Meta',
+};
+
+/**
+ * The names of the modifiers of an accelerator, in the order of the
+ * tokens, and its key token, for example "Caps Lock" and "u" for
+ * <Mod3>u. An unknown modifier token keeps its name.
+ */
+export function acceleratorLabelParts(accelerator: string): { modifiers: string[]; key: string } {
+  const modifiers = new Set<string>();
+  const key = accelerator.replace(/<([^>]+)>/g, (_, name: string) => {
+    modifiers.add(modifierLabels[name.toLowerCase()] ?? name);
+    return '';
+  });
+  return { modifiers: [...modifiers], key: key.trim() };
 }
 
 /** GTK shows the keysym name for these keys. */

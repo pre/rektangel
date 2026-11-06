@@ -1,47 +1,33 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { canonicalSuper, translateSuper } from '../src/accelerator.ts';
+import { translateHyper } from '../src/accelerator.ts';
 
-describe('translateSuper', () => {
-  test('keeps the accelerator when the Super key is Super', () => {
-    assert.equal(translateSuper('<Super><Alt>Left', 'super'), '<Super><Alt>Left');
+describe('translateHyper', () => {
+  test('gives Mod3 for Hyper in Caps Lock mode', () => {
+    assert.equal(translateHyper('<Control><Hyper>Left', 'capslock'), '<Control><Mod3>Left');
   });
 
-  test('replaces Super with Mod3 in Caps Lock mode', () => {
-    assert.equal(translateSuper('<Control><Super>Left', 'capslock'), '<Control><Mod3>Left');
+  test('gives Super for Hyper when the Windows key is the Hyper key', () => {
+    assert.equal(translateHyper('<Hyper><Alt>Left', 'super'), '<Super><Alt>Left');
   });
 
   test('ignores the case of the modifier name', () => {
-    assert.equal(translateSuper('<super>c', 'capslock'), '<Mod3>c');
+    assert.equal(translateHyper('<hyper>c', 'capslock'), '<Mod3>c');
+    assert.equal(translateHyper('<HYPER>c', 'super'), '<Super>c');
   });
 
-  test('keeps an accelerator without Super', () => {
-    assert.equal(translateSuper('<Control><Alt>BackSpace', 'capslock'), '<Control><Alt>BackSpace');
+  test('keeps the physical keys Super and Mod3', () => {
+    for (const superKey of ['super', 'capslock'] as const) {
+      assert.equal(translateHyper('<Super>u', superKey), '<Super>u', superKey);
+      assert.equal(translateHyper('<Mod3>u', superKey), '<Mod3>u', superKey);
+    }
+  });
+
+  test('keeps an accelerator without Hyper', () => {
+    assert.equal(translateHyper('<Control><Alt>BackSpace', 'capslock'), '<Control><Alt>BackSpace');
   });
 
   test('keeps an empty accelerator', () => {
-    assert.equal(translateSuper('', 'capslock'), '');
-  });
-});
-
-describe('canonicalSuper', () => {
-  test('gives Super for Mod3 and Hyper', () => {
-    assert.equal(canonicalSuper('<Mod3><Shift>Up'), '<Super><Shift>Up');
-    assert.equal(canonicalSuper('<hyper>f'), '<Super>f');
-  });
-
-  test('is the reverse of translateSuper', () => {
-    const stored = '<Control><Shift><Super>Right';
-    assert.equal(canonicalSuper(translateSuper(stored, 'capslock')), stored);
-  });
-
-  test('keeps Super and the other modifiers', () => {
-    assert.equal(canonicalSuper('<Super><Alt>Left'), '<Super><Alt>Left');
-  });
-
-  test('gives one Super when GTK names Caps Lock as both Super and Hyper', () => {
-    assert.equal(canonicalSuper('<Super><Hyper>1'), '<Super>1');
-    assert.equal(canonicalSuper('<Shift><Super><Mod3>Up'), '<Shift><Super>Up');
-    assert.equal(canonicalSuper('<Hyper><Super>w'), '<Super>w');
+    assert.equal(translateHyper('', 'capslock'), '');
   });
 });

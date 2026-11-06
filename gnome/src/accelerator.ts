@@ -1,8 +1,8 @@
 /**
- * The values of the gsettings key super-key. The shortcuts are always
- * stored with <Super>. With 'capslock', the extension registers them
- * with <Mod3>, the modifier of the Caps Lock key in the XKB option
- * rektangel:caps_hyper. See ADR 0009.
+ * The values of the gsettings key super-key: the physical key of the
+ * <Hyper> modifier. A stored <Hyper> is the Rektangel modifier, <Super>
+ * the Windows key and <Mod3> Caps Lock, the modifier of the XKB option
+ * rektangel:caps_hyper. Mutter never gets <Hyper>. See ADR 0009.
  */
 export type SuperKey = 'super' | 'capslock';
 
@@ -12,23 +12,6 @@ export const superKeySetting = 'super-key';
 export const xkbOptionInstalledSetting = 'xkb-option-installed';
 
 /** The accelerator that Mutter must grab for a stored accelerator. */
-export function translateSuper(accelerator: string, superKey: SuperKey): string {
-  return superKey === 'capslock' ? accelerator.replace(/<super>/gi, '<Mod3>') : accelerator;
-}
-
-/**
- * The stored form of an accelerator that was captured while Caps Lock
- * mode is on. GTK names the Caps Lock modifier <Hyper> or <Mod3>, and
- * can name it <Super> and <Hyper> at the same time. The result has one
- * <Super>.
- */
-export function canonicalSuper(accelerator: string): string {
-  let seen = false;
-  return accelerator.replace(/<(super|mod3|hyper)>/gi, () => {
-    if (seen) {
-      return '';
-    }
-    seen = true;
-    return '<Super>';
-  });
+export function translateHyper(accelerator: string, superKey: SuperKey): string {
+  return accelerator.replace(/<hyper>/gi, superKey === 'capslock' ? '<Mod3>' : '<Super>');
 }

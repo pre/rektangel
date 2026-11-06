@@ -3,7 +3,9 @@ import { readFileSync } from 'node:fs';
 import { describe, test } from 'node:test';
 import { Action, allActions } from '@rektangel/core';
 import {
+  acceleratorLabelParts,
   checkCapture,
+  effectiveAccelerator,
   findConflict,
   hasCommandModifier,
   normalizeAccelerator,
@@ -70,9 +72,27 @@ describe('normalizeAccelerator', () => {
   });
 });
 
+describe('effectiveAccelerator', () => {
+  test('gives the key that Mutter grabs for Hyper, in the normalized form', () => {
+    assert.equal(effectiveAccelerator('<Hyper><Shift>A', 'capslock'), '<Mod3><Shift>a');
+    assert.equal(effectiveAccelerator('<Hyper><Shift>A', 'super'), '<Shift><Super>a');
+  });
+
+  test('keeps the physical keys in both modes', () => {
+    for (const superKey of ['super', 'capslock'] as const) {
+      assert.equal(effectiveAccelerator('<Mod4>u', superKey), '<Super>u', superKey);
+      assert.equal(effectiveAccelerator('<mod3>u', superKey), '<Mod3>u', superKey);
+    }
+  });
+
+  test('keeps an empty accelerator', () => {
+    assert.equal(effectiveAccelerator('', 'super'), '');
+  });
+});
+
 describe('hasCommandModifier', () => {
-  test('accepts Control, Alt, Super, Meta and Hyper', () => {
-    for (const modifier of ['Control', 'Alt', 'Super', 'Meta', 'Hyper', 'Primary']) {
+  test('accepts Control, Alt, Super, Meta, Hyper and Mod3', () => {
+    for (const modifier of ['Control', 'Alt', 'Super', 'Meta', 'Hyper', 'Primary', 'Mod3', 'Mod4']) {
       assert.equal(hasCommandModifier(`<${modifier}>Left`), true, modifier);
     }
   });
@@ -86,17 +106,9 @@ describe('hasCommandModifier', () => {
 describe('checkCapture', () => {
   const free = (): string | null => null;
 
-  test('stores a Caps Lock press as Super in Caps Lock mode', () => {
-    assert.deepEqual(checkCapture('<Hyper>Left', 'capslock', free), { accelerator: '<Super>Left', problem: null });
-    assert.deepEqual(checkCapture('<Shift><Mod3>Up', 'capslock', free), { accelerator: '<Shift><Super>Up', problem: null });
-  });
-
-  test('stores one Super when the capture names Caps Lock as Super and Hyper', () => {
-    assert.deepEqual(checkCapture('<Super><Hyper>1', 'capslock', free), { accelerator: '<Super>1', problem: null });
-  });
-
-  test('keeps Hyper with the Windows key as Super', () => {
-    assert.deepEqual(checkCapture('<Hyper>Left', 'super', free), { accelerator: '<Hyper>Left', problem: null });
+  test('stores the captured accelerator without a change', () => {
+    assert.deepEqual(checkCapture('<Shift><Mod3>Up', 'capslock', free), { accelerator: '<Shift><Mod3>Up', problem: null });
+    assert.deepEqual(checkCapture('<Super>Left', 'capslock', free), { accelerator: '<Super>Left', problem: null });
   });
 
   test('asks for a modifier other than Shift', () => {
@@ -104,8 +116,8 @@ describe('checkCapture', () => {
   });
 
   test('names the action that uses the shortcut, in the stored form', () => {
-    const conflictOf = (accelerator: string): string | null => (accelerator === '<Super>Left' ? 'Left half' : null);
-    assert.equal(checkCapture('<Hyper>Left', 'capslock', conflictOf).problem, 'Left half already uses this shortcut.');
+    const conflictOf = (accelerator: string): string | null => (accelerator === '<Mod3>Left' ? 'Left half' : null);
+    assert.equal(checkCapture('<Mod3>Left', 'capslock', conflictOf).problem, 'Left half already uses this shortcut.');
   });
 
   test('accepts the empty accelerator, which disables the action', () => {
@@ -121,19 +133,27 @@ describe('findConflict', () => {
   ]);
 
   test('finds the other action that uses the accelerator', () => {
-    assert.equal(findConflict('<Alt><super>Left', Action.RightHalf, bindings), Action.LeftHalf);
+    assert.equal(findConflict('<Alt><super>Left', Action.RightHalf, bindings, 'capslock'), Action.LeftHalf);
   });
 
   test('ignores the action that is being changed', () => {
-    assert.equal(findConflict('<Super><Alt>Left', Action.LeftHalf, bindings), null);
+    assert.equal(findConflict('<Super><Alt>Left', Action.LeftHalf, bindings, 'super'), null);
   });
 
   test('returns null for a free accelerator', () => {
-    assert.equal(findConflict('<Super><Alt>Home', Action.FirstThird, bindings), null);
+    assert.equal(findConflict('<Super><Alt>Home', Action.FirstThird, bindings, 'super'), null);
   });
 
   test('never reports a conflict for an empty accelerator', () => {
-    assert.equal(findConflict('', Action.LeftHalf, new Map([[Action.FirstThird, ['']]])), null);
+    assert.equal(findConflict('', Action.LeftHalf, new Map([[Action.FirstThird, ['']]]), 'super'), null);
+  });
+
+  test('compares the keys that Mutter grabs for Hyper', () => {
+    const hyper = new Map<Action, readonly string[]>([[Action.FirstThird, ['<Hyper>1']]]);
+    assert.equal(findConflict('<Mod3>1', Action.LastThird, hyper, 'capslock'), Action.FirstThird);
+    assert.equal(findConflict('<Super>1', Action.LastThird, hyper, 'capslock'), null);
+    assert.equal(findConflict('<Super>1', Action.LastThird, hyper, 'super'), Action.FirstThird);
+    assert.equal(findConflict('<Mod3>1', Action.LastThird, hyper, 'super'), null);
   });
 });
 
@@ -159,6 +179,35 @@ describe('shortcutLayout', () => {
       [['Thirds'], ['Size']],
       [['Move'], ['Displays', 'Other']],
     ]);
+  });
+});
+
+describe('acceleratorLabelParts', () => {
+  test('names the three Rektangel modifier tokens', () => {
+    assert.deepEqual(acceleratorLabelParts('<Hyper>Left'), { modifiers: ['Hyper'], key: 'Left' });
+    assert.deepEqual(acceleratorLabelParts('<Super>u'), { modifiers: ['Windows'], key: 'u' });
+    assert.deepEqual(acceleratorLabelParts('<Mod4>u'), { modifiers: ['Windows'], key: 'u' });
+    assert.deepEqual(acceleratorLabelParts('<Mod3>u'), { modifiers: ['Caps Lock'], key: 'u' });
+  });
+
+  test('names Shift, Ctrl, Alt and Meta with their aliases', () => {
+    assert.deepEqual(acceleratorLabelParts('<Shift><Control><Alt><Meta>a'), {
+      modifiers: ['Shift', 'Ctrl', 'Alt', 'Meta'],
+      key: 'a',
+    });
+    assert.deepEqual(acceleratorLabelParts('<Primary><Mod1>BackSpace'), { modifiers: ['Ctrl', 'Alt'], key: 'BackSpace' });
+  });
+
+  test('ignores the case of the token', () => {
+    assert.deepEqual(acceleratorLabelParts('<hyper><shift>Up'), { modifiers: ['Hyper', 'Shift'], key: 'Up' });
+  });
+
+  test('keeps the order of the tokens and names each modifier once', () => {
+    assert.deepEqual(acceleratorLabelParts('<Mod3><Control><Primary>1'), { modifiers: ['Caps Lock', 'Ctrl'], key: '1' });
+  });
+
+  test('gives no modifiers for a bare key', () => {
+    assert.deepEqual(acceleratorLabelParts('F1'), { modifiers: [], key: 'F1' });
   });
 });
 

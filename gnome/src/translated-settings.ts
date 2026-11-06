@@ -1,8 +1,8 @@
 import Gio from 'gi://Gio';
-import { translateSuper, type SuperKey } from './accelerator.ts';
+import { translateHyper, type SuperKey } from './accelerator.ts';
 
 /**
- * A copy of the keybinding keys in a memory backend, with <Super>
+ * A copy of the keybinding keys in a memory backend, with <Hyper>
  * translated for the key that the shortcuts use now. Give `settings` to
  * Main.wm.addKeybinding. Mutter watches changed::<key> on that object
  * and grabs the new accelerators, so a change of the stored settings
@@ -43,7 +43,7 @@ export class TranslatedSettings {
   }
 
   private copy(key: string): void {
-    const accelerators = this.source.get_strv(key).map((accelerator) => translateSuper(accelerator, this.superKey));
+    const accelerators = this.source.get_strv(key).map((accelerator) => translateHyper(accelerator, this.superKey));
     this.settings.set_strv(key, accelerators);
   }
 }

@@ -254,13 +254,14 @@ function shortcutRow(
   };
 
   reset.connect('clicked', () => settings.reset(key));
-  shortcut.connect('clicked', () =>
+  shortcut.connect('clicked', () => {
+    const superKey = settings.get_string(superKeySetting) as SuperKey;
     presentCaptureDialog(window, {
       actionTitle: title,
       current: settings.get_strv(key)[0] ?? '',
-      superKey: settings.get_string(superKeySetting) as SuperKey,
+      superKey,
       conflictOf: (accelerator) => {
-        const other = findConflict(accelerator, action, currentBindings(settings));
+        const other = findConflict(accelerator, action, currentBindings(settings), superKey);
         return other === null ? null : actionTitle(settings, other);
       },
       gnomeConflictsOf: (accelerator) => gnomeConflictsOf(settings, accelerator),
@@ -276,8 +277,8 @@ function shortcutRow(
           );
         }
       },
-    }),
-  );
+    });
+  });
   return { row, refresh };
 }
 

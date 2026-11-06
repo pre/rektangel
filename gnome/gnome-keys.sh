@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Removes the GNOME keybindings that are equal to a current Rektangel
 # shortcut. Only the equal entries are removed, the other entries stay.
-# When super-key is capslock, Rektangel grabs the Super shortcuts with
-# Caps Lock, so only the shortcuts without Super are compared.
+# A <Hyper> shortcut is compared as the key that super-key gives it.
+# The shortcuts with Caps Lock (<Mod3>) are not compared.
 # The old values go to a backup file, and --undo writes them back.
 #
 # Usage: gnome-keys.sh [--dry-run] [--undo] [--schemadir DIR]
@@ -120,26 +120,27 @@ normalize_jq='
   def normalize:
     {control: "Control", ctrl: "Control", ctl: "Control", primary: "Control",
      alt: "Alt", mod1: "Alt", super: "Super", mod4: "Super", shift: "Shift",
-     shft: "Shift", meta: "Meta", hyper: "Hyper"} as $aliases
+     shft: "Shift", meta: "Meta", hyper: "Hyper", mod3: "Mod3"} as $aliases
     | [scan("<([^>]+)>") | .[0] | ascii_downcase | "<" + ($aliases[.] // .) + ">"] as $modifiers
     | sub("^(<[^>]+>)*"; "") as $key
     | ($modifiers | unique | join("")) + (if ($key | length) == 1 then $key | ascii_downcase else $key end);
 '
 
 # The current Rektangel shortcuts that GNOME can take, normalized, as a
-# JSON array. With super-key capslock, the shortcuts with Super are left out.
+# JSON array. <Hyper> becomes <Mod3> with super-key capslock, else <Super>.
+# The shortcuts with <Mod3> are left out, because no GNOME key uses Mod3.
 rektangel_accelerators() {
   if [[ ! -e "$schema_dir/gschemas.compiled" ]]; then
     echo "No compiled Rektangel schema in $schema_dir. Install the extension, or use --schemadir." >&2
     exit 1
   fi
-  local capslock=false
+  local hyper='<Super>'
   if [[ $("$gsettings" --schemadir "$schema_dir" get "$rektangel_schema" super-key) == "'capslock'" ]]; then
-    capslock=true
+    hyper='<Mod3>'
   fi
   "$gsettings" --schemadir "$schema_dir" list-recursively "$rektangel_schema" |
-    jq -R -n -c --argjson capslock "$capslock" "$normalize_jq$string_lists_jq"'
-      | [.[].value[] | normalize | select($capslock and contains("<Super>") | not)] | unique'
+    jq -R -n -c --arg hyper "$hyper" "$normalize_jq$string_lists_jq"'
+      | [.[].value[] | gsub("<hyper>"; $hyper; "i") | normalize | select(contains("<Mod3>") | not)] | unique'
 }
 
 # Prints {schema, key, value, updated} for each GNOME key with an entry

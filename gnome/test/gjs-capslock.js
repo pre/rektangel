@@ -1,5 +1,5 @@
 // Run with: gjs -m test/gjs-capslock.js (after node esbuild.mjs). Checks
-// the super-key translation and the XKB option steps in GJS. All settings
+// the Hyper translation and the XKB option steps in GJS. All settings
 // use memory backends and the files go to a new temporary directory, so
 // the test does not change the session.
 import Gio from 'gi://Gio';
@@ -32,6 +32,8 @@ const gnomeDir = GLib.path_get_dirname(GLib.path_get_dirname(GLib.filename_from_
 
 const schemas = Gio.SettingsSchemaSource.new_from_directory(`${gnomeDir}/dist/schemas`, null, false);
 const stored = memorySettings(schemas, 'org.gnome.shell.extensions.rektangel');
+stored.set_strv('left-half', ['<Hyper>Left']);
+stored.set_strv('restore', ['<Hyper>BackSpace']);
 const translated = new TranslatedSettings(stored, ['left-half', 'restore'], 'capslock');
 check('default super-key', stored.get_string('super-key'), 'capslock');
 check('capslock: left-half', translated.settings.get_strv('left-half'), ['<Mod3>Left']);
@@ -41,13 +43,15 @@ translated.setSuperKey('capslock');
 check('capslock again: left-half', translated.settings.get_strv('left-half'), ['<Mod3>Left']);
 check('capslock: restore', translated.settings.get_strv('restore'), ['<Mod3>BackSpace']);
 stored.set_strv('restore', ['<Control><Alt>BackSpace']);
-check('capslock: restore without Super', translated.settings.get_strv('restore'), ['<Control><Alt>BackSpace']);
-stored.set_strv('left-half', ['<Super><Alt>Left', '<Control><Super>h']);
+check('capslock: restore without Hyper', translated.settings.get_strv('restore'), ['<Control><Alt>BackSpace']);
+stored.set_strv('restore', ['<Super>BackSpace']);
+check('capslock: restore with the Windows key', translated.settings.get_strv('restore'), ['<Super>BackSpace']);
+stored.set_strv('left-half', ['<Hyper><Alt>Left', '<Control><Hyper>h']);
 check('capslock: changed left-half', translated.settings.get_strv('left-half'), ['<Mod3><Alt>Left', '<Control><Mod3>h']);
 translated.setSuperKey('super');
 check('super again: left-half', translated.settings.get_strv('left-half'), ['<Super><Alt>Left', '<Control><Super>h']);
 translated.destroy();
-stored.set_strv('left-half', ['<Super>x']);
+stored.set_strv('left-half', ['<Hyper>x']);
 check('after destroy: no copy', translated.settings.get_strv('left-half'), ['<Super><Alt>Left', '<Control><Super>h']);
 
 const inputSources = memorySettings(Gio.SettingsSchemaSource.get_default(), 'org.gnome.desktop.input-sources');
@@ -130,4 +134,4 @@ try {
   GLib.spawn_command_line_sync(`rm -rf ${GLib.shell_quote(configDir)}`);
 }
 
-print('gjs capslock test passed: super-key translation, XKB option install and remove');
+print('gjs capslock test passed: Hyper translation, XKB option install and remove');
