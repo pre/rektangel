@@ -6,6 +6,7 @@ import { allActions } from '@rektangel/core';
 import { xkbOptionInstalledSetting } from './accelerator.ts';
 import { installXkbOption, removeXkbOption } from './capslock-mode.ts';
 import { keyName } from './key-names.ts';
+import { versionLabel } from './version.ts';
 import { capsLockModeProblem } from './xkb-merge.ts';
 
 const superKeyChoices = [
@@ -134,6 +135,33 @@ export function gnomeNoteGroup(): Adw.PreferencesGroup {
       label: 'GNOME has its own shortcuts. To see the GNOME shortcuts, open Settings > Keyboard > View and Customize Shortcuts.',
       wrap: true,
       xalign: 0,
+    }),
+  );
+  return group;
+}
+
+let versionCss: Gtk.CssProvider | undefined;
+
+/**
+ * The version line at the bottom of the window, at 75 percent of the font size.
+ * The version comes from the installed metadata.json. The metadata that the
+ * shell gives the preferences process is the one that it read at login, so
+ * a new install would show the old version until the next login.
+ */
+export function versionGroup(window: Adw.PreferencesWindow, dir: Gio.File): Adw.PreferencesGroup {
+  const [, bytes] = dir.get_child('metadata.json').load_contents(null);
+  const metadata = JSON.parse(new TextDecoder().decode(bytes)) as { 'version-name'?: string };
+  if (versionCss === undefined) {
+    versionCss = new Gtk.CssProvider();
+    versionCss.load_from_string('.rektangel-version { font-size: 75%; }');
+  }
+  Gtk.StyleContext.add_provider_for_display(window.get_display(), versionCss, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+  const group = new Adw.PreferencesGroup();
+  group.add(
+    new Gtk.Label({
+      label: versionLabel(metadata['version-name']),
+      halign: Gtk.Align.CENTER,
+      css_classes: ['dim-label', 'rektangel-version'],
     }),
   );
   return group;

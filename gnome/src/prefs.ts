@@ -16,7 +16,7 @@ import {
 } from './gnome-conflicts.ts';
 import { gnomeKeybindingSettings, readGnomeKeybindings, removeFromGnome } from './gnome-keybindings.ts';
 import { keyName } from './key-names.ts';
-import { gnomeNoteGroup, resetAllButton, superKeyGroup, type Watch } from './prefs-groups.ts';
+import { gnomeNoteGroup, resetAllButton, superKeyGroup, versionGroup, type Watch } from './prefs-groups.ts';
 import { findConflict, shortcutLayout, type ShortcutGroup } from './shortcuts.ts';
 
 /** The space that the window leaves free above and below on the monitor. */
@@ -88,6 +88,7 @@ export default class RektangelPreferences extends ExtensionPreferences {
     gridGroup.add(grid);
     page.add(gridGroup);
     page.add(gnomeNoteGroup());
+    page.add(versionGroup(window, this.dir));
     refreshAll();
 
     // A change of one shortcut can add or remove a conflict on other rows.

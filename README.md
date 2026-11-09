@@ -37,6 +37,8 @@ Installing manually:
 2. Find User-installed Extensions > Rektangel
 3. Press the settings icon to open the preferences
 
+The bottom of the window shows the version: the release version, for example Rektangel v0.2.0, or Rektangel git-<commit> for a local build.
+
 Opening the preference window via command line:
 
 ```sh
@@ -163,6 +165,8 @@ npm run reload  # packs, installs the zip, disables and enables the extension
 ```
 
 To check the Caps Lock mode XKB files offline, run `npm run test:xkb --workspace gnome`. It needs `xkbcomp`.
+
+A local build writes `git-<commit>` to `version-name` in `dist/metadata.json`, and the release workflow writes the release version (see Publish a release). The preferences window reads the version from the installed `metadata.json`, so it shows a new install at once. GNOME Shell reads `metadata.json` at login, so the Extensions app shows the new version after the next login.
 
 `gnome/install.sh` builds the extension and copies it to `~/.local/share/gnome-shell/extensions/`. Use it for development only. `npm run reload` installs the zip over the installed extension and then disables and enables it. The shell reads the schema again at enable, so a new default shortcut works at once. The shell keeps the extension and prefs code until the next login.
 
