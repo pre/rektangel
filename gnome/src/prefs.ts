@@ -87,7 +87,7 @@ export default class RektangelPreferences extends ExtensionPreferences {
     const gridGroup = new Adw.PreferencesGroup();
     gridGroup.add(grid);
     page.add(gridGroup);
-    page.add(gnomeNoteGroup(`${this.path}/gnome-keys.sh`, settings, watch));
+    page.add(gnomeNoteGroup());
     refreshAll();
 
     // A change of one shortcut can add or remove a conflict on other rows.

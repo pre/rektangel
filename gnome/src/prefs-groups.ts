@@ -127,36 +127,14 @@ export function resetAllButton(window: Adw.PreferencesWindow, settings: Gio.Sett
   return resetAll;
 }
 
-export function gnomeNoteGroup(scriptPath: string, settings: Gio.Settings, watch: Watch): Adw.PreferencesGroup {
+export function gnomeNoteGroup(): Adw.PreferencesGroup {
   const group = new Adw.PreferencesGroup({ title: 'Keyboard Shortcuts in Use by GNOME' });
-  const text = new Gtk.Label({ wrap: true, xalign: 0 });
-  const sync = (): void => {
-    const intro =
-      settings.get_string('super-key') === 'capslock'
-        ? 'GNOME has its own shortcuts. With Caps Lock as Hyper, only shortcuts with the Windows key can use the same keys as GNOME. '
-        : 'GNOME has its own shortcuts, and some of them use the same keys as the Rektangel defaults. ';
-    text.label =
-      intro +
-      'When you set a shortcut that GNOME uses, the dialog tells you and can remove it from GNOME. ' +
-      'To remove all the GNOME shortcuts that conflict with the Rektangel shortcuts, run this script in a terminal ' +
-      '(add --dry-run to see the changes first):';
-  };
-  sync();
-  watch(settings, 'changed::super-key', sync);
-  const script = new Gtk.Label({
-    label: `bash ${scriptPath}`,
-    selectable: true,
-    wrap: true,
-    xalign: 0,
-    css_classes: ['monospace'],
-  });
-  const settingsHint = new Gtk.Label({
-    label: 'To see or change the GNOME shortcuts, open Settings > Keyboard > View and Customize Shortcuts.',
-    wrap: true,
-    xalign: 0,
-  });
-  const box = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL, spacing: 12 });
-  [text, script, settingsHint].forEach((label) => box.append(label));
-  group.add(box);
+  group.add(
+    new Gtk.Label({
+      label: 'GNOME has its own shortcuts. To see the GNOME shortcuts, open Settings > Keyboard > View and Customize Shortcuts.',
+      wrap: true,
+      xalign: 0,
+    }),
+  );
   return group;
 }
