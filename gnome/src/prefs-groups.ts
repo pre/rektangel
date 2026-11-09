@@ -8,7 +8,10 @@ import { installXkbOption, removeXkbOption } from './capslock-mode.ts';
 import { keyName } from './key-names.ts';
 import { capsLockModeProblem } from './xkb-merge.ts';
 
-const superKeyChoices = ['super', 'capslock'] as const;
+const superKeyChoices = [
+  { value: 'capslock', label: 'Caps Lock' },
+  { value: 'super', label: 'Windows key' },
+] as const;
 
 /** Connects a handler that the preferences window disconnects when it closes. */
 export type Watch = (settings: Gio.Settings, signal: string, handler: () => void) => void;
@@ -17,7 +20,7 @@ export function superKeyGroup(settings: Gio.Settings, extensionPath: string, wat
   const group = new Adw.PreferencesGroup({ title: 'Super Key' });
   const row = new Adw.ComboRow({
     title: 'Super key',
-    model: Gtk.StringList.new(['Windows key', 'Caps Lock']),
+    model: Gtk.StringList.new(superKeyChoices.map((choice) => choice.label)),
   });
   const storedNote = new Gtk.Label({
     label: 'Shortcuts below are stored with Super. Changing the Super key changes all of them at once.',
@@ -46,12 +49,13 @@ export function superKeyGroup(settings: Gio.Settings, extensionPath: string, wat
   const inputSources = new Gio.Settings({ schema_id: 'org.gnome.desktop.input-sources' });
   const sessionType = GLib.getenv('XDG_SESSION_TYPE');
   const sync = (): void => {
-    const isCapsLock = settings.get_string('super-key') === 'capslock';
+    const superKey = settings.get_string('super-key');
+    const isCapsLock = superKey === 'capslock';
     group.description = isCapsLock
       ? 'Super is Caps Lock. Hold it like a modifier; Shift+Caps Lock toggles caps lock.'
       : 'Super is the Windows key (the key with the Windows logo, Cmd on a Mac keyboard).';
     capsLockNote.visible = isCapsLock;
-    row.selected = isCapsLock ? 1 : 0;
+    row.selected = superKeyChoices.findIndex((choice) => choice.value === superKey);
     const problem = isCapsLock
       ? capsLockModeProblem({ xkbOptions: inputSources.get_strv('xkb-options'), sessionType })
       : null;
@@ -77,7 +81,7 @@ export function superKeyGroup(settings: Gio.Settings, extensionPath: string, wat
     }
   });
   row.connect('notify::selected', () => {
-    const value = superKeyChoices[row.selected];
+    const value = superKeyChoices[row.selected]?.value;
     if (value === undefined || value === settings.get_string('super-key')) {
       return;
     }
