@@ -22,7 +22,7 @@
       <summary>Maximize</summary>
     </key>
     <key name="almost-maximize" type="as">
-      <default><![CDATA[[]]]></default>
+      <default><![CDATA[['<Hyper>comma']]]></default>
       <summary>Almost maximize</summary>
     </key>
     <key name="center" type="as">
