@@ -93,10 +93,11 @@ export function hasCommandModifier(accelerator: string): boolean {
 }
 
 /**
- * The warning for a shortcut without a command modifier on a key that
- * types a character: Mutter takes the key in all windows, so the user
- * cannot type the character while the shortcut is on. `label` is the
- * display text of the accelerator. Null when there is no problem.
+ * The warning for a shortcut without a command modifier: Mutter takes the
+ * key in all windows. A key with a printable character does not type it
+ * any more, and another key, for example Left or Return, does not work in
+ * the other windows. `label` is the display text of the accelerator. Null
+ * when the shortcut has a command modifier or is empty.
  */
 export function plainKeyWarning(
   accelerator: string,
@@ -104,10 +105,17 @@ export function plainKeyWarning(
   keyToUnicode: (keyName: string) => number,
 ): string | null {
   const key = normalizeAccelerator(accelerator).replace(/<[^>]+>/g, '');
-  if (key === '' || hasCommandModifier(accelerator) || keyToUnicode(key) === 0) {
+  if (key === '' || hasCommandModifier(accelerator)) {
     return null;
   }
-  return `While this shortcut is on, the ${label} key does not type its character in any window.`;
+  return isPrintable(keyToUnicode(key))
+    ? `While this shortcut is on, the ${label} key does not type its character in any window.`
+    : `While this shortcut is on, the ${label} key does not work in other windows.`;
+}
+
+/** True for a visible character: not 0, not a space and not a control character. */
+function isPrintable(codePoint: number): boolean {
+  return codePoint > 0x20 && !(codePoint >= 0x7f && codePoint <= 0x9f);
 }
 
 /** The modifier keys that the capture dialog saw held at a key press. */

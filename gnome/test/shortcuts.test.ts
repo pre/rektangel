@@ -272,20 +272,41 @@ describe('prettyAccelLabel', () => {
 });
 
 describe('plainKeyWarning', () => {
-  const unicodeOf = (key: string): number => ({ section: 0xa7, a: 0x61, space: 0x20 })[key] ?? 0;
+  const unicodeOf = (key: string): number =>
+    ({ section: 0xa7, a: 0x61, space: 0x20, Return: 0x0d, Tab: 0x09 })[key] ?? 0;
 
-  test('warns that a key without a modifier does not type its character any more', () => {
+  test('warns that a key with a printable character does not type it any more', () => {
     assert.equal(
       plainKeyWarning('section', '§', unicodeOf),
       'While this shortcut is on, the § key does not type its character in any window.',
     );
-    assert.notEqual(plainKeyWarning('<Shift>a', 'Shift A', unicodeOf), null);
-    assert.notEqual(plainKeyWarning('space', 'Space', unicodeOf), null);
+    assert.equal(
+      plainKeyWarning('<Shift>a', 'Shift A', unicodeOf),
+      'While this shortcut is on, the Shift A key does not type its character in any window.',
+    );
   });
 
-  test('gives no warning for a key without a character or a shortcut with a command modifier', () => {
-    assert.equal(plainKeyWarning('F13', 'F13', unicodeOf), null);
+  test('warns that another key without a command modifier does not work in other windows', () => {
+    for (const [accelerator, label] of [
+      ['Left', '←'],
+      ['Page_Up', 'Page Up'],
+      ['F5', 'F5'],
+      ['Home', 'Home'],
+      ['Return', 'Return'],
+      ['Tab', 'Tab'],
+      ['space', 'Space'],
+    ]) {
+      assert.equal(
+        plainKeyWarning(accelerator!, label!, unicodeOf),
+        `While this shortcut is on, the ${label} key does not work in other windows.`,
+        accelerator,
+      );
+    }
+  });
+
+  test('gives no warning for a shortcut with a command modifier or no shortcut', () => {
     assert.equal(plainKeyWarning('<Control>section', 'Ctrl §', unicodeOf), null);
+    assert.equal(plainKeyWarning('<Hyper>Left', 'Hyper ←', unicodeOf), null);
     assert.equal(plainKeyWarning('', 'Disabled', unicodeOf), null);
   });
 });
