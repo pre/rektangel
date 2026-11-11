@@ -92,6 +92,24 @@ export function hasCommandModifier(accelerator: string): boolean {
   return /<(Control|Alt|Super|Meta|Hyper|Mod3)>/.test(normalizeAccelerator(accelerator));
 }
 
+/**
+ * The warning for a shortcut without a command modifier on a key that
+ * types a character: Mutter takes the key in all windows, so the user
+ * cannot type the character while the shortcut is on. `label` is the
+ * display text of the accelerator. Null when there is no problem.
+ */
+export function plainKeyWarning(
+  accelerator: string,
+  label: string,
+  keyToUnicode: (keyName: string) => number,
+): string | null {
+  const key = normalizeAccelerator(accelerator).replace(/<[^>]+>/g, '');
+  if (key === '' || hasCommandModifier(accelerator) || keyToUnicode(key) === 0) {
+    return null;
+  }
+  return `While this shortcut is on, the ${label} key does not type its character in any window.`;
+}
+
 /** The modifier keys that the capture dialog saw held at a key press. */
 export interface HeldModifiers {
   readonly shift: boolean;

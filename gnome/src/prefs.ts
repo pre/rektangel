@@ -7,7 +7,7 @@ import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/
 import { allActions, isAction, type Action } from '@rektangel/core';
 import { superKeySetting, type SuperKey } from './accelerator.ts';
 import { ibusSwallowsSuperKeys, parseIbusVersion } from './ibus.ts';
-import { acceleratorLabel } from './capture-dialog.ts';
+import { acceleratorLabel, keyToUnicode } from './capture-dialog.ts';
 import {
   canConflictWithGnome,
   conflictSections,
@@ -250,10 +250,6 @@ function aboveTabKeyName(display: Gdk.Display): string | null {
 }
 
 type GnomeConflict = Extract<RowConflict, { kind: 'gnome' }>;
-
-function keyToUnicode(keyName: string): number {
-  return Gdk.keyval_to_unicode(Gdk.keyval_from_name(keyName));
-}
 
 /** The standard output of a command, or null when the command fails or prints nothing. */
 function commandOutput(argv: string[]): string | null {

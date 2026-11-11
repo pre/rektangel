@@ -10,6 +10,7 @@ import {
   findConflict,
   hasCommandModifier,
   normalizeAccelerator,
+  plainKeyWarning,
   prettyAccelLabel,
   shortcutGroups,
   shortcutLayout,
@@ -267,5 +268,24 @@ describe('prettyAccelLabel', () => {
   test('keeps the other key names', () => {
     assert.equal(prettyAccelLabel(['Alt', 'Super', 'Page Up']), 'Alt Super Page Up');
     assert.equal(prettyAccelLabel(['Super', 'Return']), 'Super Return');
+  });
+});
+
+describe('plainKeyWarning', () => {
+  const unicodeOf = (key: string): number => ({ section: 0xa7, a: 0x61, space: 0x20 })[key] ?? 0;
+
+  test('warns that a key without a modifier does not type its character any more', () => {
+    assert.equal(
+      plainKeyWarning('section', '§', unicodeOf),
+      'While this shortcut is on, the § key does not type its character in any window.',
+    );
+    assert.notEqual(plainKeyWarning('<Shift>a', 'Shift A', unicodeOf), null);
+    assert.notEqual(plainKeyWarning('space', 'Space', unicodeOf), null);
+  });
+
+  test('gives no warning for a key without a character or a shortcut with a command modifier', () => {
+    assert.equal(plainKeyWarning('F13', 'F13', unicodeOf), null);
+    assert.equal(plainKeyWarning('<Control>section', 'Ctrl §', unicodeOf), null);
+    assert.equal(plainKeyWarning('', 'Disabled', unicodeOf), null);
   });
 });

@@ -9,7 +9,13 @@ import {
   type GnomeBinding,
 } from './gnome-conflicts.ts';
 import type { SuperKey } from './accelerator.ts';
-import { acceleratorLabelParts, capturedAccelerator, checkCapture, prettyAccelLabel } from './shortcuts.ts';
+import {
+  acceleratorLabelParts,
+  capturedAccelerator,
+  checkCapture,
+  plainKeyWarning,
+  prettyAccelLabel,
+} from './shortcuts.ts';
 
 export interface CaptureRequest {
   readonly actionTitle: string;
@@ -39,6 +45,11 @@ export function acceleratorLabel(accelerator: string): string {
   return prettyAccelLabel([...modifiers, keyLabel]);
 }
 
+/** The Unicode code point of a key name, or 0 for a key that gives no character. */
+export function keyToUnicode(keyName: string): number {
+  return Gdk.keyval_to_unicode(Gdk.keyval_from_name(keyName));
+}
+
 function inhibitStateText(inhibited: boolean): string {
   return inhibited
     ? 'System shortcuts are paused, press your combination.'
@@ -60,13 +71,16 @@ export function presentCaptureDialog(parent: Gtk.Widget, request: CaptureRequest
   });
   const inhibitState = new Gtk.Label({ label: inhibitStateText(false), wrap: true, css_classes: ['dim-label'] });
   const problem = new Gtk.Label({ wrap: true, css_classes: ['error'], visible: false });
+  const plainKeyNote = new Gtk.Label({ wrap: true, css_classes: ['warning'], visible: false });
   const gnomeBox = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL, spacing: 6, visible: false });
   const content = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL, spacing: 12 });
-  [shortcut, hint, inhibitState, problem, gnomeBox].forEach((widget) => content.append(widget));
+  [shortcut, hint, inhibitState, problem, plainKeyNote, gnomeBox].forEach((widget) => content.append(widget));
 
   const dialog = new Adw.AlertDialog({
     heading: `Set Shortcut for ${request.actionTitle}`,
-    body: 'Press the new key combination. Press Escape to cancel, or BackSpace to disable the action.',
+    body: request.plainKey
+      ? 'Press the new key or key combination. Press Escape to cancel, or BackSpace to turn the shortcut off.'
+      : 'Press the new key combination. Press Escape to cancel, or BackSpace to disable the action.',
     extra_child: content,
     close_response: 'cancel',
   });
@@ -133,6 +147,9 @@ export function presentCaptureDialog(parent: Gtk.Widget, request: CaptureRequest
     shortcut.label = acceleratorLabel(accelerator);
     problem.label = reason ?? '';
     problem.visible = reason !== null;
+    const warning = plainKeyWarning(accelerator, shortcut.label, keyToUnicode);
+    plainKeyNote.label = warning ?? '';
+    plainKeyNote.visible = request.plainKey && warning !== null;
     pending = reason === null ? accelerator : null;
     dialog.set_response_enabled('set', pending !== null);
     showGnomeUse(accelerator);
