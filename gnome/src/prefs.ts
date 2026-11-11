@@ -22,6 +22,7 @@ import {
   resetAllButton,
   superKeyGroup,
   versionGroup,
+  versionWarningGroup,
   type Watch,
 } from './prefs-groups.ts';
 import { findConflict, shortcutLayout, type ShortcutGroup } from './shortcuts.ts';
@@ -47,6 +48,7 @@ export default class RektangelPreferences extends ExtensionPreferences {
       icon_name: 'preferences-desktop-keyboard-shortcuts-symbolic',
     });
     window.add(page);
+    page.add(versionWarningGroup(this.dir, this.uuid));
 
     const gnomeSettings = gnomeKeybindingSettings();
     let gnomeTables = readGnomeKeybindings(gnomeSettings);

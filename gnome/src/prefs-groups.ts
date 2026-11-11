@@ -6,7 +6,7 @@ import { allActions } from '@rektangel/core';
 import { capsLockBehaviorSetting, superKeySetting, xkbOptionInstalledSetting } from './accelerator.ts';
 import { capsLockBehavior, installXkbOption, removeXkbOption } from './capslock-mode.ts';
 import { keyName } from './key-names.ts';
-import { versionLabel } from './version.ts';
+import { versionLabel, versionMismatchWarning } from './version.ts';
 import { capsLockModeProblem } from './xkb-merge.ts';
 
 const superKeyChoices = [
@@ -190,6 +190,60 @@ export function gnomeNoteGroup(): Adw.PreferencesGroup {
   return group;
 }
 
+/** The version-name of the metadata.json on disk, the code of this window. */
+export function installedVersionName(dir: Gio.File): string | undefined {
+  const [, bytes] = dir.get_child('metadata.json').load_contents(null);
+  return (JSON.parse(new TextDecoder().decode(bytes)) as { 'version-name'?: string })['version-name'];
+}
+
+/** ExtensionState.ACTIVE of GNOME Shell 46. */
+const activeState = 1;
+
+/**
+ * The version-name of the extension code that GNOME Shell runs, from the
+ * metadata that the shell read when it loaded the code. Undefined when the
+ * extension does not run or the shell does not answer.
+ */
+function runningVersionName(uuid: string): string | undefined {
+  try {
+    const reply = Gio.DBus.session.call_sync(
+      'org.gnome.Shell.Extensions',
+      '/org/gnome/Shell/Extensions',
+      'org.gnome.Shell.Extensions',
+      'GetExtensionInfo',
+      new GLib.Variant('(s)', [uuid]),
+      new GLib.VariantType('(a{sv})'),
+      Gio.DBusCallFlags.NONE,
+      1000,
+      null,
+    );
+    const [info] = reply.recursiveUnpack() as [Record<string, unknown>];
+    const versionName = info['version-name'];
+    return info.state === activeState && typeof versionName === 'string' ? versionName : undefined;
+  } catch (error) {
+    console.warn('Rektangel: cannot get the running version from GNOME Shell', error);
+    return undefined;
+  }
+}
+
+/**
+ * A warning at the top of the window when GNOME Shell runs another version
+ * of the extension than the installed one. Not visible when they are the same.
+ */
+export function versionWarningGroup(dir: Gio.File, uuid: string): Adw.PreferencesGroup {
+  const warning = versionMismatchWarning(installedVersionName(dir), runningVersionName(uuid));
+  const group = new Adw.PreferencesGroup({ visible: warning !== null });
+  const card = new Gtk.Box({ css_classes: ['card'] });
+  const content = new Gtk.Box({ spacing: 12, margin_top: 12, margin_bottom: 12, margin_start: 12, margin_end: 12 });
+  content.append(
+    new Gtk.Image({ icon_name: 'dialog-warning-symbolic', valign: Gtk.Align.START, css_classes: ['warning'] }),
+  );
+  content.append(new Gtk.Label({ label: warning ?? '', wrap: true, xalign: 0, hexpand: true, css_classes: ['warning'] }));
+  card.append(content);
+  group.add(card);
+  return group;
+}
+
 let versionCss: Gtk.CssProvider | undefined;
 
 /**
@@ -199,8 +253,6 @@ let versionCss: Gtk.CssProvider | undefined;
  * a new install would show the old version until the next login.
  */
 export function versionGroup(window: Adw.PreferencesWindow, dir: Gio.File): Adw.PreferencesGroup {
-  const [, bytes] = dir.get_child('metadata.json').load_contents(null);
-  const metadata = JSON.parse(new TextDecoder().decode(bytes)) as { 'version-name'?: string };
   if (versionCss === undefined) {
     versionCss = new Gtk.CssProvider();
     versionCss.load_from_string('.rektangel-version { font-size: 75%; }');
@@ -209,7 +261,7 @@ export function versionGroup(window: Adw.PreferencesWindow, dir: Gio.File): Adw.
   const group = new Adw.PreferencesGroup();
   group.add(
     new Gtk.Label({
-      label: versionLabel(metadata['version-name']),
+      label: versionLabel(installedVersionName(dir)),
       halign: Gtk.Align.CENTER,
       css_classes: ['dim-label', 'rektangel-version'],
     }),
