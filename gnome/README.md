@@ -24,10 +24,9 @@ The stored shortcuts use three modifier tokens. `<Hyper>` is the Rektangel modif
 
 `src/capslock-mode.ts` uses only Gio and GLib, so the preferences process can import it. The hyper scripts run it with `gjs` through `hyper/capslock-mode.js`.
 
-- `installXkbOption(extensionPath, context?)`: copies the XKB files of `extensionPath/hyper/xkb` to `$XDG_CONFIG_HOME/xkb`, or adds the Rektangel lines to the user files that are there. Then it adds `rektangel:caps_hyper` to `org.gnome.desktop.input-sources xkb-options`. It throws an `Error` with a message for the user, before it changes something, if `xkb-options` has a `caps:` option.
-- `removeXkbOption(extensionPath, context?)`: removes the option, then the Rektangel files and lines. Other options and lines stay.
-- `isXkbOptionInstalled(inputSources?)`: true when `xkb-options` has the option.
-- `ensureXkbOption(superKey, extensionPath, context?)`: calls `installXkbOption` when `superKey` is `'capslock'` and `xkb-options` does not have the option. Returns true when it installed the option. The extension calls it at enable and when `super-key` changes (ADR 0011).
+- `installXkbOption(extensionPath, behavior, context?)`: copies the XKB files of `extensionPath/hyper/xkb` to `$XDG_CONFIG_HOME/xkb`, or adds the Rektangel lines to the user files that are there, in place of the lines of an older version. Then it makes the option of `behavior` (ADR 0015) the only Rektangel option in `org.gnome.desktop.input-sources xkb-options`. It throws an `Error` with a message for the user, before it changes something, if `xkb-options` has a `caps:` option.
+- `removeXkbOption(context?)`: removes the Rektangel options, then the Rektangel files and lines. Other options and lines stay.
+- `ensureXkbOption(settings, extensionPath, context?)`: when `super-key` is `'capslock'`, calls `installXkbOption` with `caps-lock-behavior`. It does nothing when `xkb-option-installed` is true and `xkb-options` has no Rektangel option, because the user removed it. Returns true when it changed a file or the option. The extension calls it at enable and when `super-key` or `caps-lock-behavior` changes (ADR 0011, ADR 0015).
 
 Both steps do nothing a second time. In the extension and the preferences window, `extensionPath` is `this.path`. `context` is for tests and the scripts: `configDir`, `inputSources` (a `Gio.Settings`), `dryRun` and `log`.
 

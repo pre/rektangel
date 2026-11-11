@@ -1,10 +1,26 @@
 // Rektangel Caps Lock mode.
 //
 // Caps Lock held is Hyper_L on Mod3, so that <Hyper> shortcuts do not
-// collide with <Super> (Mod4). Shift+Caps Lock toggles caps lock.
+// collide with <Super> (Mod4). One variant for each Caps Lock behavior.
 
+// Shift+Caps Lock toggles caps lock. XKB selects the level when the key
+// goes down, so Caps Lock pressed after Shift gives Caps_Lock, not Hyper.
 partial modifier_keys
 xkb_symbols "caps_hyper" {
     key <CAPS> { type[Group1] = "TWO_LEVEL", [ Hyper_L, Caps_Lock ] };
     modifier_map Mod3 { <CAPS> };
+};
+
+// Caps Lock is always Hyper. No key toggles caps lock.
+partial modifier_keys
+xkb_symbols "caps_hyper_only" {
+    key <CAPS> { type[Group1] = "ONE_LEVEL", [ Hyper_L ] };
+    modifier_map Mod3 { <CAPS> };
+};
+
+// Caps Lock is always Hyper. Both Shift keys together toggle caps lock.
+partial modifier_keys
+xkb_symbols "caps_hyper_both_shifts" {
+    include "rektangel(caps_hyper_only)"
+    include "shift(both_capslock)"
 };

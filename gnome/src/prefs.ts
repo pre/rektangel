@@ -16,7 +16,14 @@ import {
 } from './gnome-conflicts.ts';
 import { gnomeKeybindingSettings, readGnomeKeybindings, removeFromGnome } from './gnome-keybindings.ts';
 import { keyName } from './key-names.ts';
-import { gnomeNoteGroup, resetAllButton, superKeyGroup, versionGroup, type Watch } from './prefs-groups.ts';
+import {
+  capsLockGroup,
+  gnomeNoteGroup,
+  resetAllButton,
+  superKeyGroup,
+  versionGroup,
+  type Watch,
+} from './prefs-groups.ts';
 import { findConflict, shortcutLayout, type ShortcutGroup } from './shortcuts.ts';
 
 /** The space that the window leaves free above and below on the monitor. */
@@ -76,7 +83,10 @@ export default class RektangelPreferences extends ExtensionPreferences {
     const superKey = superKeyGroup(settings, this.path, watch);
     superKey.valign = Gtk.Align.START;
     grid.attach(superKey, 0, 0, 1, 1);
-    grid.attach(resetAllButton(window, settings), 1, 0, 1, 1);
+    const rightTop = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL, spacing: 24, valign: Gtk.Align.START });
+    rightTop.append(resetAllButton(window, settings));
+    rightTop.append(capsLockGroup(settings, watch));
+    grid.attach(rightTop, 1, 0, 1, 1);
     shortcutLayout.forEach((cells, row) =>
       cells.forEach((groups, column) => {
         const cell = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL, spacing: 24, valign: Gtk.Align.START });

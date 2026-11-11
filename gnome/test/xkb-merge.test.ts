@@ -8,8 +8,10 @@ import {
   removeXkbLines,
   withoutXkbOption,
   withXkbOption,
-  xkbOption,
+  capsLockOptions,
 } from '../src/xkb-merge.ts';
+
+const xkbOption = capsLockOptions['both-shifts'];
 
 const shippedRules = readFileSync(new URL('../hyper/xkb/rules/evdev', import.meta.url), 'utf8');
 const shippedList = readFileSync(new URL('../hyper/xkb/rules/evdev.lst', import.meta.url), 'utf8');
@@ -23,7 +25,13 @@ describe('addXkbLines', () => {
   test('adds the option rule, but not the include, to a user rules file', () => {
     const merged = addXkbLines(userRules, shippedRules);
     assert.ok(merged.startsWith(userRules));
-    assert.equal(merged.slice(userRules.length), '\n! option = symbols\n  rektangel:caps_hyper = +rektangel(caps_hyper)\n');
+    assert.equal(
+      merged.slice(userRules.length),
+      '\n! option = symbols\n' +
+        '  rektangel:caps_hyper = +rektangel(caps_hyper)\n' +
+        '  rektangel:caps_hyper_only = +rektangel(caps_hyper_only)\n' +
+        '  rektangel:caps_hyper_both_shifts = +rektangel(caps_hyper_both_shifts)\n',
+    );
   });
 
   test('adds a newline to a user file that has no newline at the end', () => {
@@ -37,6 +45,16 @@ describe('addXkbLines', () => {
 
   test('keeps the shipped file as it is', () => {
     assert.equal(addXkbLines(shippedRules, shippedRules), shippedRules);
+  });
+
+  test('replaces the shipped file of an older version', () => {
+    const older = '// Rektangel rules\n! include %S/evdev\n\n! option = symbols\n  rektangel:caps_hyper = +rektangel(caps_hyper)\n';
+    assert.equal(addXkbLines(older, shippedRules), shippedRules);
+  });
+
+  test('replaces the lines of an older version in a user file', () => {
+    const older = `${userRules}\n! option = symbols\n  rektangel:caps_hyper = +rektangel(caps_hyper)\n`;
+    assert.equal(addXkbLines(older, shippedRules), addXkbLines(userRules, shippedRules));
   });
 });
 
@@ -78,13 +96,28 @@ describe('xkb-options', () => {
     assert.equal(conflictingCapsOption(['compose:ralt']), null);
   });
 
-  test('adds the option one time and keeps the others', () => {
-    assert.deepEqual(withXkbOption(['compose:ralt']), ['compose:ralt', xkbOption]);
-    assert.deepEqual(withXkbOption(['compose:ralt', xkbOption]), ['compose:ralt', xkbOption]);
+  test('has one option for each Caps Lock behavior', () => {
+    assert.deepEqual(capsLockOptions, {
+      'both-shifts': 'rektangel:caps_hyper_both_shifts',
+      'hyper-only': 'rektangel:caps_hyper_only',
+      'shift-caps': 'rektangel:caps_hyper',
+    });
   });
 
-  test('removes only the Rektangel option', () => {
-    assert.deepEqual(withoutXkbOption([xkbOption, 'compose:ralt']), ['compose:ralt']);
+  test('adds the option one time and keeps the others', () => {
+    assert.deepEqual(withXkbOption(['compose:ralt'], 'both-shifts'), ['compose:ralt', xkbOption]);
+    assert.deepEqual(withXkbOption(['compose:ralt', xkbOption], 'both-shifts'), ['compose:ralt', xkbOption]);
+  });
+
+  test('replaces the option of another Caps Lock behavior', () => {
+    assert.deepEqual(withXkbOption(['rektangel:caps_hyper', 'compose:ralt'], 'hyper-only'), [
+      'compose:ralt',
+      'rektangel:caps_hyper_only',
+    ]);
+  });
+
+  test('removes only the Rektangel options', () => {
+    assert.deepEqual(withoutXkbOption([xkbOption, 'compose:ralt', 'rektangel:caps_hyper']), ['compose:ralt']);
   });
 });
 
@@ -107,10 +140,16 @@ describe('capsLockModeProblem', () => {
     );
   });
 
+  test('gives null for the option of each Caps Lock behavior', () => {
+    for (const option of Object.values(capsLockOptions)) {
+      assert.equal(capsLockModeProblem({ xkbOptions: [option], sessionType: 'wayland' }), null);
+    }
+  });
+
   test('tells that the option is missing', () => {
     assert.equal(
       capsLockModeProblem({ xkbOptions: ['compose:ralt'], sessionType: 'wayland' }),
-      'xkb-options does not have rektangel:caps_hyper',
+      'xkb-options does not have a Rektangel option',
     );
   });
 });

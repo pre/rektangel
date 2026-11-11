@@ -1,4 +1,20 @@
-export const xkbOption = 'rektangel:caps_hyper';
+/** What the Caps Lock key does besides Hyper. See ADR 0015. */
+export type CapsLockBehavior = 'both-shifts' | 'hyper-only' | 'shift-caps';
+
+/** The XKB option of each Caps Lock behavior. All of them put Caps Lock on Mod3. */
+export const capsLockOptions: Readonly<Record<CapsLockBehavior, string>> = {
+  'both-shifts': 'rektangel:caps_hyper_both_shifts',
+  'hyper-only': 'rektangel:caps_hyper_only',
+  'shift-caps': 'rektangel:caps_hyper',
+};
+
+function isRektangelOption(option: string): boolean {
+  return option.startsWith('rektangel:');
+}
+
+export function hasRektangelOption(options: readonly string[]): boolean {
+  return options.some(isRektangelOption);
+}
 
 /**
  * The lines that a user file must have for the Rektangel option: the
@@ -24,7 +40,7 @@ function findBlock(lines: readonly string[], block: readonly string[]): number {
 /**
  * The new text of a user XKB file. With no user file, the shipped file.
  * Otherwise the user file with the Rektangel lines added at the end, if
- * they are not there yet.
+ * they are not there yet. The Rektangel lines of an older version go first.
  */
 export function addXkbLines(existing: string | null, shipped: string): string {
   if (existing === null) {
@@ -34,8 +50,12 @@ export function addXkbLines(existing: string | null, shipped: string): string {
   if (findBlock(existing.split('\n'), block) >= 0) {
     return existing;
   }
-  const separator = existing === '' || existing.endsWith('\n') ? '' : '\n';
-  return `${existing}${separator}\n${block.join('\n')}\n`;
+  const base = existing.split('\n').some(isRektangelLine) ? removeXkbLines(existing) : existing;
+  if (base === null) {
+    return shipped;
+  }
+  const separator = base === '' || base.endsWith('\n') ? '' : '\n';
+  return `${base}${separator}\n${block.join('\n')}\n`;
 }
 
 /** A Rektangel line has the word rektangel. The shipped comments have it too. */
@@ -103,13 +123,16 @@ export function capsLockModeProblem({ xkbOptions, sessionType }: CapsLockModeSta
   if (conflict !== null) {
     return `xkb-options has ${conflict}, which also changes Caps Lock`;
   }
-  return xkbOptions.includes(xkbOption) ? null : `xkb-options does not have ${xkbOption}`;
+  return hasRektangelOption(xkbOptions) ? null : 'xkb-options does not have a Rektangel option';
 }
 
-export function withXkbOption(options: readonly string[]): string[] {
-  return options.includes(xkbOption) ? [...options] : [...options, xkbOption];
+/** The options with the option of the behavior as the only Rektangel option. */
+export function withXkbOption(options: readonly string[], behavior: CapsLockBehavior): string[] {
+  const option = capsLockOptions[behavior];
+  const others = withoutXkbOption(options);
+  return options.includes(option) && others.length === options.length - 1 ? [...options] : [...others, option];
 }
 
 export function withoutXkbOption(options: readonly string[]): string[] {
-  return options.filter((option) => option !== xkbOption);
+  return options.filter((option) => !isRektangelOption(option));
 }

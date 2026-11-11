@@ -13,7 +13,7 @@ import {
   type Rect,
   type WindowChange,
 } from '@rektangel/core';
-import { superKeySetting, type SuperKey } from './accelerator.ts';
+import { capsLockBehaviorSetting, superKeySetting, type SuperKey } from './accelerator.ts';
 import { ensureXkbOption } from './capslock-mode.ts';
 import { loadConfig } from './config-file.ts';
 import { HistoryStore } from './history-store.ts';
@@ -29,6 +29,7 @@ export default class RektangelExtension extends Extension {
   private stored: Gio.Settings | null = null;
   private inputSources: Gio.Settings | null = null;
   private superKeyHandlerId = 0;
+  private behaviorHandlerId = 0;
   private xkbOptionsHandlerId = 0;
   private loggedProblem: string | null = null;
   private config: Readonly<CoreConfig> = defaultConfig;
@@ -49,6 +50,9 @@ export default class RektangelExtension extends Extension {
       this.ensureCapsLockKey(stored);
       updateSuperKey();
     });
+    this.behaviorHandlerId = stored.connect(`changed::${capsLockBehaviorSetting}`, () =>
+      this.ensureCapsLockKey(stored),
+    );
     this.xkbOptionsHandlerId = inputSources.connect('changed::xkb-options', updateSuperKey);
     const { settings } = this.keybindings;
     for (const action of allActions) {
@@ -66,10 +70,12 @@ export default class RektangelExtension extends Extension {
     this.keybindings?.destroy();
     this.keybindings = null;
     this.stored?.disconnect(this.superKeyHandlerId);
+    this.stored?.disconnect(this.behaviorHandlerId);
     this.inputSources?.disconnect(this.xkbOptionsHandlerId);
     this.stored = null;
     this.inputSources = null;
     this.superKeyHandlerId = 0;
+    this.behaviorHandlerId = 0;
     this.xkbOptionsHandlerId = 0;
     this.loggedProblem = null;
     this.history.disable();
@@ -77,12 +83,13 @@ export default class RektangelExtension extends Extension {
     console.log('Rektangel: disabled');
   }
 
+  // Installs the option, updates its files and follows caps-lock-behavior.
   // Never removes the option: only the Windows key choice in the
   // preferences and hyper/uninstall.sh do that.
   private ensureCapsLockKey(settings: Gio.Settings): void {
     try {
       if (ensureXkbOption(settings, this.path, { log: () => {} })) {
-        console.log('Rektangel: installed the Caps Lock XKB option');
+        console.log('Rektangel: installed or updated the Caps Lock XKB option');
       }
     } catch (error) {
       console.error('Rektangel: cannot install the Caps Lock XKB option', error);

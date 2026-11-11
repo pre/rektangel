@@ -1,3 +1,5 @@
 ! option
   rektangel            Rektangel
   rektangel:caps_hyper Caps Lock is Hyper on Mod3, Shift+Caps Lock is Caps Lock
+  rektangel:caps_hyper_only Caps Lock is always Hyper on Mod3, no Caps Lock
+  rektangel:caps_hyper_both_shifts Caps Lock is always Hyper on Mod3, both Shift keys together are Caps Lock

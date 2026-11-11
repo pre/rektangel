@@ -2,7 +2,7 @@
 # Turns on the Rektangel Caps Lock mode for the current user:
 #  1. copies the XKB option files to $XDG_CONFIG_HOME/xkb, or adds the
 #     Rektangel lines to the user XKB files that are there,
-#  2. adds the option rektangel:caps_hyper to
+#  2. adds the Rektangel option of caps-lock-behavior to
 #     org.gnome.desktop.input-sources xkb-options,
 #  3. sets the Rektangel setting super-key to capslock.
 # The shortcuts do not change: Rektangel registers each <Super> shortcut
@@ -26,5 +26,4 @@ if $dry_run; then
   echo "Dry run: nothing changed."
 else
   echo "Caps Lock mode is on. Hold Caps Lock instead of Super."
-  echo "Shift+Caps Lock toggles caps lock."
 fi

@@ -45,7 +45,7 @@ Opening the preference window via command line:
 gnome-extensions prefs rektangel@repo.pet
 ```
 
-To attach to Caps Lock, the extension writes a user XKB option to `~/.config/xkb` and adds `rektangel:caps_hyper` to `xkb-options`. The change usually has an effect at once, at the latest after you log out and in. The Windows key keeps its GNOME function. To make the Windows key the Hyper key and get a normal Caps Lock back, select Windows key in the Hyper key group of the preferences window. See Caps Lock mode below.
+To attach to Caps Lock, the extension writes a user XKB option to `~/.config/xkb` and adds a Rektangel option, such as `rektangel:caps_hyper_both_shifts`, to `xkb-options`. The change usually has an effect at once, at the latest after you log out and in. The Windows key keeps its GNOME function. To make the Windows key the Hyper key and get a normal Caps Lock back, select Windows key in the Hyper key group of the preferences window. See Caps Lock mode below.
 
 ## Default shortcuts
 
@@ -142,7 +142,15 @@ The file uses a subset of TOML: `key = value` lines, numbers, quoted strings, on
 
 ## Caps Lock mode
 
-Caps Lock mode is the default. Hyper is the name of the Rektangel modifier, and Caps Lock or the Windows key is the physical key. The setting `super-key` (`capslock`, the default, or `super`) selects the key. In Caps Lock mode, hold Caps Lock for Hyper. Shift+Caps Lock toggles caps lock. The Windows key keeps its GNOME function.
+Caps Lock mode is the default. Hyper is the name of the Rektangel modifier, and Caps Lock or the Windows key is the physical key. The setting `super-key` (`capslock`, the default, or `super`) selects the key. In Caps Lock mode, hold Caps Lock for Hyper. The Windows key keeps its GNOME function.
+
+The Caps Lock group of the preferences window sets how you toggle caps lock in Caps Lock mode. The setting is `caps-lock-behavior`:
+
+- Both Shift keys (`both-shifts`, the default): Caps Lock is always Hyper. Press both Shift keys at once to toggle caps lock.
+- Off (`hyper-only`): Caps Lock is always Hyper. Caps lock is not available.
+- Shift+Caps Lock (`shift-caps`): Shift+Caps Lock toggles caps lock. When you press Shift before Caps Lock, you get caps lock and not Hyper, and the arrow key goes to the application. This can occur when you use Hyper and Shift quickly.
+
+Each value has its own XKB option. When the value changes, the extension replaces the option, and the change has an effect at once. See ADR 0015.
 
 The default shortcuts are stored with `<Hyper>`, so one change of `super-key` switches all default shortcuts. A shortcut that you set in the preferences window stores the physical key that you pressed: `<Mod3>` for Caps Lock and `<Super>` for the Windows key. The window shows these keys as Caps Lock and Windows. A change of `super-key` does not change such a shortcut. After a change of `super-key`, a shortcut that you set can be the same key as a Hyper default, for example Caps Lock+1 and Hyper+1 in Caps Lock mode. The preferences window then shows a conflict. Rektangel registers the key for one of the two actions only, and writes the other action to the journal.
 
@@ -150,7 +158,7 @@ In v0.1.0, a stored `<Super>` was the Rektangel key. When you enable the extensi
 
 Rektangel registers the Hyper shortcuts with Caps Lock when the value is `capslock`. Caps Lock mode also needs a user XKB option. When `super-key` is `capslock`, the extension installs the option one time, when it is enabled or when the setting changes. The setting `xkb-option-installed` records the install, so the extension does not add the option again after the lock screen or after you removed it in Tweaks. The extension does not remove the option when it is disabled.
 
-To switch back to the Windows key, select Windows key in the preferences window. It removes the option and sets `super-key` to `super`. Without the preferences window, run `hyper/uninstall.sh`. Caps Lock mode cannot work when `xkb-options` has another `caps:` option, for example `caps:escape`, when `xkb-options` does not have `rektangel:caps_hyper`, or in an X11 session, because the X server does not read user XKB rules. Then the extension writes the reason to the journal one time and registers the Hyper shortcuts with the Windows key. A shortcut that you set with Caps Lock does not work then. When you select Caps Lock, the Hyper key group of the preferences window shows the reason in red and a button that installs the option again (not on X11). When the problem is gone, the Hyper shortcuts use Caps Lock again. See `gnome/hyper/README.md`, ADR 0009, ADR 0011 and ADR 0013.
+To switch back to the Windows key, select Windows key in the preferences window. It removes the option and sets `super-key` to `super`. Without the preferences window, run `hyper/uninstall.sh`. Caps Lock mode cannot work when `xkb-options` has another `caps:` option, for example `caps:escape`, when `xkb-options` does not have a Rektangel option, or in an X11 session, because the X server does not read user XKB rules. Then the extension writes the reason to the journal one time and registers the Hyper shortcuts with the Windows key. A shortcut that you set with Caps Lock does not work then. When you select Caps Lock, the Hyper key group of the preferences window shows the reason in red and a button that installs the option again (not on X11). When the problem is gone, the Hyper shortcuts use Caps Lock again. See `gnome/hyper/README.md`, ADR 0009, ADR 0011, ADR 0013 and ADR 0015.
 
 ## Build from source
 

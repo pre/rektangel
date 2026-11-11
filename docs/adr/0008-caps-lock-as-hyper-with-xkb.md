@@ -1,5 +1,7 @@
 # Caps Lock mode is a user XKB option with Hyper on Mod3
 
+Status: accepted. Superseded by ADR-0015 for the level 2 of the Caps Lock key.
+
 The Caps Lock mode is a user XKB option that makes Caps Lock `Hyper_L` on Mod3, and Shift+Caps Lock toggles caps lock (a `TWO_LEVEL` key). Mutter loads the keymap like any keyboard layout, so the mode needs no remapper, no process and no root, and Super keeps its GNOME meaning.
 
 ## Considered Options

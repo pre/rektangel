@@ -1,6 +1,8 @@
 // Rektangel: libxkbcommon reads these user rules from $XDG_CONFIG_HOME/xkb.
-// Rektangel: they include the system rules (%S) and add one option.
+// Rektangel: they include the system rules (%S) and add one option for each Caps Lock behavior.
 ! include %S/evdev
 
 ! option = symbols
   rektangel:caps_hyper = +rektangel(caps_hyper)
+  rektangel:caps_hyper_only = +rektangel(caps_hyper_only)
+  rektangel:caps_hyper_both_shifts = +rektangel(caps_hyper_both_shifts)

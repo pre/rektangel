@@ -3,8 +3,8 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk?version=4.0';
 import { allActions } from '@rektangel/core';
-import { xkbOptionInstalledSetting } from './accelerator.ts';
-import { installXkbOption, removeXkbOption } from './capslock-mode.ts';
+import { capsLockBehaviorSetting, superKeySetting, xkbOptionInstalledSetting } from './accelerator.ts';
+import { capsLockBehavior, installXkbOption, removeXkbOption } from './capslock-mode.ts';
 import { keyName } from './key-names.ts';
 import { versionLabel } from './version.ts';
 import { capsLockModeProblem } from './xkb-merge.ts';
@@ -12,6 +12,26 @@ import { capsLockModeProblem } from './xkb-merge.ts';
 const superKeyChoices = [
   { value: 'capslock', label: 'Caps Lock' },
   { value: 'super', label: 'Windows key' },
+] as const;
+
+const capsLockChoices = [
+  {
+    value: 'both-shifts',
+    label: 'Both Shift keys',
+    note: 'Caps Lock is always Hyper. To toggle caps lock, press both Shift keys at once.',
+  },
+  {
+    value: 'hyper-only',
+    label: 'Off',
+    note: 'Caps Lock is always Hyper. Caps lock is not available.',
+  },
+  {
+    value: 'shift-caps',
+    label: 'Shift+Caps Lock',
+    note:
+      'Shift+Caps Lock toggles caps lock. Disadvantage: when you press Shift before Caps Lock, ' +
+      'you get caps lock and not Hyper. This can occur when you use Hyper and Shift quickly.',
+  },
 ] as const;
 
 /** Connects a handler that the preferences window disconnects when it closes. */
@@ -32,13 +52,6 @@ export function superKeyGroup(settings: Gio.Settings, extensionPath: string, wat
     margin_top: 12,
     css_classes: ['dim-label'],
   });
-  const capsLockNote = new Gtk.Label({
-    label: 'Shift+Caps Lock still toggles the native caps lock.',
-    wrap: true,
-    xalign: 0,
-    margin_top: 6,
-    css_classes: ['dim-label'],
-  });
   const problemNote = new Gtk.Label({ wrap: true, xalign: 0, margin_top: 6, css_classes: ['error'], visible: false });
   const reinstall = new Gtk.Button({
     label: 'Install the Caps Lock option again',
@@ -47,7 +60,7 @@ export function superKeyGroup(settings: Gio.Settings, extensionPath: string, wat
     visible: false,
   });
   const changeNote = new Gtk.Label({ wrap: true, xalign: 0, margin_top: 6, visible: false });
-  [row, capsLockNote, problemNote, reinstall, storedNote, changeNote].forEach((widget) => group.add(widget));
+  [row, problemNote, reinstall, storedNote, changeNote].forEach((widget) => group.add(widget));
 
   const inputSources = new Gio.Settings({ schema_id: 'org.gnome.desktop.input-sources' });
   const sessionType = GLib.getenv('XDG_SESSION_TYPE');
@@ -55,9 +68,8 @@ export function superKeyGroup(settings: Gio.Settings, extensionPath: string, wat
     const superKey = settings.get_string('super-key');
     const isCapsLock = superKey === 'capslock';
     group.description = isCapsLock
-      ? 'Hyper is Caps Lock. Hold it like a modifier; Shift+Caps Lock toggles caps lock.'
+      ? 'Hyper is Caps Lock. Hold it like a modifier.'
       : 'Hyper is the Windows key (GNOME calls it Super; Cmd on a Mac keyboard).';
-    capsLockNote.visible = isCapsLock;
     row.selected = superKeyChoices.findIndex((choice) => choice.value === superKey);
     const problem = isCapsLock
       ? capsLockModeProblem({ xkbOptions: inputSources.get_strv('xkb-options'), sessionType })
@@ -77,7 +89,7 @@ export function superKeyGroup(settings: Gio.Settings, extensionPath: string, wat
   };
   reinstall.connect('clicked', () => {
     try {
-      installXkbOption(extensionPath);
+      installXkbOption(extensionPath, capsLockBehavior(settings));
       settings.set_boolean(xkbOptionInstalledSetting, true);
     } catch (error) {
       showNote(`Cannot install the Caps Lock option: ${error}`, true);
@@ -90,7 +102,7 @@ export function superKeyGroup(settings: Gio.Settings, extensionPath: string, wat
     }
     try {
       if (value === 'capslock') {
-        installXkbOption(extensionPath);
+        installXkbOption(extensionPath, capsLockBehavior(settings));
         settings.set_boolean(xkbOptionInstalledSetting, true);
         showNote('Caps Lock is Hyper now, usually at once, at the latest after you log out and in.', false);
       } else {
@@ -102,6 +114,41 @@ export function superKeyGroup(settings: Gio.Settings, extensionPath: string, wat
     } catch (error) {
       showNote(`Cannot change the Hyper key: ${error}`, true);
       sync();
+    }
+  });
+  return group;
+}
+
+/**
+ * The Caps Lock behavior dropdown. It is active only when Caps Lock is the
+ * Hyper key. The extension changes the XKB option when the setting changes.
+ */
+export function capsLockGroup(settings: Gio.Settings, watch: Watch): Adw.PreferencesGroup {
+  const group = new Adw.PreferencesGroup({ title: 'Caps Lock' });
+  const row = new Adw.ComboRow({
+    title: 'Toggle caps lock with',
+    model: Gtk.StringList.new(capsLockChoices.map((choice) => choice.label)),
+  });
+  const note = new Gtk.Label({ wrap: true, xalign: 0, margin_top: 12, css_classes: ['dim-label'] });
+  group.add(row);
+  group.add(note);
+
+  const sync = (): void => {
+    const index = capsLockChoices.findIndex((choice) => choice.value === settings.get_string(capsLockBehaviorSetting));
+    row.selected = index;
+    note.label = capsLockChoices[index]?.note ?? '';
+    const isCapsLock = settings.get_string(superKeySetting) === 'capslock';
+    row.sensitive = isCapsLock;
+    note.sensitive = isCapsLock;
+    group.description = isCapsLock ? '' : 'Select Caps Lock as the Hyper key to use this setting.';
+  };
+  sync();
+  watch(settings, `changed::${capsLockBehaviorSetting}`, sync);
+  watch(settings, `changed::${superKeySetting}`, sync);
+  row.connect('notify::selected', () => {
+    const value = capsLockChoices[row.selected]?.value;
+    if (value !== undefined && value !== settings.get_string(capsLockBehaviorSetting)) {
+      settings.set_string(capsLockBehaviorSetting, value);
     }
   });
   return group;

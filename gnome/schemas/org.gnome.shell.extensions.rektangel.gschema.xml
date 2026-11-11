@@ -112,7 +112,17 @@
       </choices>
       <default>'capslock'</default>
       <summary>Hyper key</summary>
-      <description>The physical key of the &lt;Hyper&gt; modifier of the shortcuts: "super" the Windows key, "capslock" (the default) Caps Lock, which needs the XKB option rektangel:caps_hyper. Rektangel then registers the &lt;Hyper&gt; shortcuts with &lt;Mod3&gt;, and the extension adds the XKB option one time when it is enabled, see xkb-option-installed.</description>
+      <description>The physical key of the &lt;Hyper&gt; modifier of the shortcuts: "super" the Windows key, "capslock" (the default) Caps Lock, which needs a Rektangel XKB option, see caps-lock-behavior. Rektangel then registers the &lt;Hyper&gt; shortcuts with &lt;Mod3&gt;, and the extension adds the XKB option one time when it is enabled, see xkb-option-installed.</description>
+    </key>
+    <key name="caps-lock-behavior" type="s">
+      <choices>
+        <choice value="both-shifts"/>
+        <choice value="hyper-only"/>
+        <choice value="shift-caps"/>
+      </choices>
+      <default>'both-shifts'</default>
+      <summary>Caps Lock behavior</summary>
+      <description>What toggles caps lock when super-key is "capslock". Caps Lock is always Hyper. "both-shifts" (the default): both Shift keys together, XKB option rektangel:caps_hyper_both_shifts. "hyper-only": nothing, XKB option rektangel:caps_hyper_only. "shift-caps": Shift+Caps Lock, XKB option rektangel:caps_hyper; Caps Lock pressed after Shift then gives caps lock, not Hyper. The extension replaces the XKB option when this changes.</description>
     </key>
     <key name="storage-version" type="i">
       <default>0</default>
@@ -122,7 +132,7 @@
     <key name="xkb-option-installed" type="b">
       <default>false</default>
       <summary>Caps Lock XKB option installed</summary>
-      <description>True after Rektangel installed the XKB option rektangel:caps_hyper. The extension installs the option at enable only while this is false, so it does not add the option again after each lock screen or after the user removed it. The Windows key choice in the preferences window and hyper/uninstall.sh set it to false.</description>
+      <description>True after Rektangel installed its XKB option. The extension installs the option at enable only while this is false, so it does not add the option again after each lock screen or after the user removed it. The Windows key choice in the preferences window and hyper/uninstall.sh set it to false.</description>
     </key>
   </schema>
 </schemalist>

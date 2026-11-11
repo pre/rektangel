@@ -1,13 +1,14 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
-import { superKeySetting, xkbOptionInstalledSetting } from './accelerator.ts';
+import { capsLockBehaviorSetting, superKeySetting, xkbOptionInstalledSetting } from './accelerator.ts';
 import {
   addXkbLines,
   conflictingCapsOption,
+  hasRektangelOption,
   removeXkbLines,
   withoutXkbOption,
   withXkbOption,
-  xkbOption,
+  type CapsLockBehavior,
 } from './xkb-merge.ts';
 
 // Uses only Gio and GLib, so that the preferences process and the hyper
@@ -28,12 +29,17 @@ export interface XkbOptionContext {
 
 /**
  * Turns on the Caps Lock key of Caps Lock mode: copies or merges the XKB
- * files of extensionPath/hyper/xkb into $XDG_CONFIG_HOME/xkb, then adds
- * rektangel:caps_hyper to xkb-options. Writes only the files that are
- * missing or different. Returns true when it changed something. Throws an
- * Error, before it changes something, if xkb-options has a caps: option.
+ * files of extensionPath/hyper/xkb into $XDG_CONFIG_HOME/xkb, then makes
+ * the option of the behavior the only Rektangel option in xkb-options.
+ * Writes only the files that are missing or different. Returns true when
+ * it changed something. Throws an Error, before it changes something, if
+ * xkb-options has a caps: option.
  */
-export function installXkbOption(extensionPath: string, context: XkbOptionContext = {}): boolean {
+export function installXkbOption(
+  extensionPath: string,
+  behavior: CapsLockBehavior,
+  context: XkbOptionContext = {},
+): boolean {
   const { inputSources, act } = resolve(context);
   const options = inputSources.get_strv('xkb-options');
   const conflict = conflictingCapsOption(options);
@@ -48,44 +54,52 @@ export function installXkbOption(extensionPath: string, context: XkbOptionContex
     act(`write ${path}`, () => writeText(path, text));
   }
 
-  const addOption = !options.includes(xkbOption);
-  if (addOption) {
-    const updated = withXkbOption(options);
+  const updated = withXkbOption(options, behavior);
+  const changeOptions = JSON.stringify(updated) !== JSON.stringify(options);
+  if (changeOptions) {
     act(`set ${inputSourcesSchema} xkb-options ${JSON.stringify(updated)}`, () =>
       inputSources.set_strv('xkb-options', updated),
     );
   }
-  return writes.length > 0 || addOption;
+  return writes.length > 0 || changeOptions;
 }
 
 /**
- * Installs the XKB option one time: when super-key of the Rektangel
- * settings is 'capslock' and xkb-option-installed is false. Writes the
- * files that are missing or different, adds the option if necessary and
- * sets xkb-option-installed. Returns true when it changed a file or the
- * option. GNOME disables and enables the extension around the lock
- * screen, and the user can remove the option in Tweaks: the flag stops a
- * second install in both cases.
+ * Makes the XKB files and option match super-key and caps-lock-behavior
+ * of the Rektangel settings. Does nothing when super-key is not
+ * 'capslock', or when xkb-option-installed is true and xkb-options has no
+ * Rektangel option: the user removed it, for example in Tweaks. So the
+ * first call installs the option, and a later call updates the files of an
+ * older version and replaces the option when the behavior changed. Sets
+ * xkb-option-installed. Returns true when it changed a file or the option.
  */
 export function ensureXkbOption(rektangel: Gio.Settings, extensionPath: string, context: XkbOptionContext = {}): boolean {
-  if (rektangel.get_string(superKeySetting) !== 'capslock' || rektangel.get_boolean(xkbOptionInstalledSetting)) {
+  if (rektangel.get_string(superKeySetting) !== 'capslock') {
     return false;
   }
-  const changed = installXkbOption(extensionPath, context);
+  const { inputSources } = resolve(context);
+  if (rektangel.get_boolean(xkbOptionInstalledSetting) && !hasRektangelOption(inputSources.get_strv('xkb-options'))) {
+    return false;
+  }
+  const changed = installXkbOption(extensionPath, capsLockBehavior(rektangel), { ...context, inputSources });
   rektangel.set_boolean(xkbOptionInstalledSetting, true);
   return changed;
 }
 
+export function capsLockBehavior(rektangel: Gio.Settings): CapsLockBehavior {
+  return rektangel.get_string(capsLockBehaviorSetting) as CapsLockBehavior;
+}
+
 /**
- * Turns off the Caps Lock key of Caps Lock mode: removes
- * rektangel:caps_hyper from xkb-options, then removes the Rektangel lines
+ * Turns off the Caps Lock key of Caps Lock mode: removes the Rektangel
+ * options from xkb-options, then removes the Rektangel lines
  * and files from $XDG_CONFIG_HOME/xkb. Other options and lines stay. The
  * directories stay, also when they are empty.
  */
 export function removeXkbOption(context: XkbOptionContext = {}): void {
   const { inputSources, act } = resolve(context);
   const options = inputSources.get_strv('xkb-options');
-  if (options.includes(xkbOption)) {
+  if (hasRektangelOption(options)) {
     const updated = withoutXkbOption(options);
     act(`set ${inputSourcesSchema} xkb-options ${JSON.stringify(updated)}`, () =>
       inputSources.set_strv('xkb-options', updated),

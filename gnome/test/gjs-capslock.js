@@ -92,12 +92,13 @@ const xkbDir = `${configDir}/xkb`;
 const context = { configDir, inputSources, log: () => {} };
 try {
   inputSources.set_strv('xkb-options', ['compose:ralt']);
-  installXkbOption(gnomeDir, context);
-  check('install: option', inputSources.get_strv('xkb-options'), ['compose:ralt', 'rektangel:caps_hyper']);
+  installXkbOption(gnomeDir, 'both-shifts', context);
+  check('install: option', inputSources.get_strv('xkb-options'), ['compose:ralt', 'rektangel:caps_hyper_both_shifts']);
   check('install: rules', readFile(`${xkbDir}/rules/evdev`), readFile(`${gnomeDir}/hyper/xkb/rules/evdev`));
-  installXkbOption(gnomeDir, context);
-  check('install two times: option', inputSources.get_strv('xkb-options'), ['compose:ralt', 'rektangel:caps_hyper']);
+  installXkbOption(gnomeDir, 'both-shifts', context);
+  check('install two times: option', inputSources.get_strv('xkb-options'), ['compose:ralt', 'rektangel:caps_hyper_both_shifts']);
 
+  check('default caps-lock-behavior', stored.get_string('caps-lock-behavior'), 'both-shifts');
   stored.set_string('super-key', 'capslock');
   check('ensure: installed already', ensureXkbOption(stored, gnomeDir, context), false);
   check('ensure: sets the flag', stored.get_boolean('xkb-option-installed'), true);
@@ -106,6 +107,21 @@ try {
   check('ensure: missing file', ensureXkbOption(stored, gnomeDir, context), true);
   check('ensure: file again', readFile(`${xkbDir}/symbols/rektangel`), readFile(`${gnomeDir}/hyper/xkb/symbols/rektangel`));
 
+  stored.set_string('caps-lock-behavior', 'shift-caps');
+  check('behavior: replaces the option', ensureXkbOption(stored, gnomeDir, context), true);
+  check('behavior: shift-caps option', inputSources.get_strv('xkb-options'), ['compose:ralt', 'rektangel:caps_hyper']);
+  stored.set_string('caps-lock-behavior', 'hyper-only');
+  ensureXkbOption(stored, gnomeDir, context);
+  check('behavior: hyper-only option', inputSources.get_strv('xkb-options'), ['compose:ralt', 'rektangel:caps_hyper_only']);
+  stored.reset('caps-lock-behavior');
+
+  writeFile(`${xkbDir}/rules/evdev`, '! include %S/evdev\n\n! option = symbols\n  rektangel:caps_hyper = +rektangel(caps_hyper)\n');
+  writeFile(`${xkbDir}/symbols/rektangel`, '// Rektangel symbols of an older version\n');
+  check('older version: ensure updates', ensureXkbOption(stored, gnomeDir, context), true);
+  check('older version: rules', readFile(`${xkbDir}/rules/evdev`), readFile(`${gnomeDir}/hyper/xkb/rules/evdev`));
+  check('older version: symbols', readFile(`${xkbDir}/symbols/rektangel`), readFile(`${gnomeDir}/hyper/xkb/symbols/rektangel`));
+  check('older version: option', inputSources.get_strv('xkb-options'), ['compose:ralt', 'rektangel:caps_hyper_both_shifts']);
+
   removeXkbOption(context);
   check('remove: option', inputSources.get_strv('xkb-options'), ['compose:ralt']);
   check('remove: symbols file', GLib.file_test(`${xkbDir}/symbols/rektangel`, GLib.FileTest.EXISTS), false);
@@ -113,7 +129,7 @@ try {
 
   const userRules = '! include %S/evdev\n\n! option = symbols\n  my:option = +my(option)\n';
   writeFile(`${xkbDir}/rules/evdev`, userRules);
-  installXkbOption(gnomeDir, context);
+  installXkbOption(gnomeDir, 'both-shifts', context);
   check('merge: user rule kept', readFile(`${xkbDir}/rules/evdev`).startsWith(userRules), true);
   removeXkbOption(context);
   check('merge: user rules file back', readFile(`${xkbDir}/rules/evdev`), userRules);
@@ -127,19 +143,23 @@ try {
 
   check('ensure: flag stops a second install', ensureXkbOption(stored, gnomeDir, context), false);
   check('ensure: flag keeps options', inputSources.get_strv('xkb-options'), ['compose:ralt']);
+  stored.set_string('caps-lock-behavior', 'hyper-only');
+  check('ensure: flag stops a behavior change', ensureXkbOption(stored, gnomeDir, context), false);
+  check('ensure: behavior change keeps options', inputSources.get_strv('xkb-options'), ['compose:ralt']);
+  stored.reset('caps-lock-behavior');
   stored.set_boolean('xkb-option-installed', false);
   stored.set_string('super-key', 'super');
   check('ensure: super does nothing', ensureXkbOption(stored, gnomeDir, context), false);
   check('ensure: super keeps options', inputSources.get_strv('xkb-options'), ['compose:ralt']);
   stored.set_string('super-key', 'capslock');
   check('ensure: capslock installs', ensureXkbOption(stored, gnomeDir, context), true);
-  check('ensure: option', inputSources.get_strv('xkb-options'), ['compose:ralt', 'rektangel:caps_hyper']);
+  check('ensure: option', inputSources.get_strv('xkb-options'), ['compose:ralt', 'rektangel:caps_hyper_both_shifts']);
   removeXkbOption(context);
 
   inputSources.set_strv('xkb-options', ['caps:escape']);
   let message = '';
   try {
-    installXkbOption(gnomeDir, context);
+    installXkbOption(gnomeDir, 'both-shifts', context);
   } catch (error) {
     message = error.message;
   }
@@ -151,7 +171,7 @@ try {
   writeFile(`${partialExtension}/hyper/xkb/rules/evdev`, readFile(`${gnomeDir}/hyper/xkb/rules/evdev`));
   message = '';
   try {
-    installXkbOption(partialExtension, context);
+    installXkbOption(partialExtension, 'both-shifts', context);
   } catch (error) {
     message = error.message;
   }
@@ -159,11 +179,11 @@ try {
   check('missing shipped file: rules file kept', readFile(`${xkbDir}/rules/evdev`), userRules);
   check('missing shipped file: options', inputSources.get_strv('xkb-options'), []);
 
-  installXkbOption(gnomeDir, { ...context, dryRun: true });
+  installXkbOption(gnomeDir, 'both-shifts', { ...context, dryRun: true });
   check('dry run: option', inputSources.get_strv('xkb-options'), []);
   check('dry run: no symbols file', GLib.file_test(`${xkbDir}/symbols/rektangel`, GLib.FileTest.EXISTS), false);
 } finally {
   GLib.spawn_command_line_sync(`rm -rf ${GLib.shell_quote(configDir)}`);
 }
 
-print('gjs capslock test passed: Hyper translation, one owner per shortcut, migration, XKB option install and remove');
+print('gjs capslock test passed: Hyper translation, one owner per shortcut, migration, XKB option install, behavior change, update and remove');

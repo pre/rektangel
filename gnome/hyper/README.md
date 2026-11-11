@@ -1,6 +1,6 @@
 # Caps Lock mode
 
-Caps Lock mode makes Caps Lock the Hyper key. Hyper is the modifier of the Rektangel default shortcuts. Hold Caps Lock for Hyper: Hyper+Left is Caps+Left. The Windows key keeps its GNOME function. See ADR 0008, ADR 0009, ADR 0011 and ADR 0013.
+Caps Lock mode makes Caps Lock the Hyper key. Hyper is the modifier of the Rektangel default shortcuts. Hold Caps Lock for Hyper: Hyper+Left is Caps+Left. The Windows key keeps its GNOME function. See ADR 0008, ADR 0009, ADR 0011, ADR 0013 and ADR 0015.
 
 The mode is the default. When `super-key` is `capslock`, the extension installs the XKB option itself one time, when it is enabled, and the preferences window installs it when you select Caps Lock. The setting `xkb-option-installed` records the install, so the extension does not add the option again after the lock screen or after you removed it in Tweaks. You do not need the scripts in this directory for the default.
 
@@ -9,9 +9,16 @@ The mode is the default. When `super-key` is `capslock`, the extension installs 
 - The default shortcuts are stored with `<Hyper>`. The setting `super-key` tells Rektangel which physical key Hyper is: `capslock` (the default) or `super` (the Windows key).
 - With `capslock`, Rektangel registers each `<Hyper>` shortcut with `<Mod3>`. With `super`, it registers them with `<Super>`. The stored values do not change. When you change `super-key`, the Hyper shortcuts move to the other key, and you do not edit a shortcut.
 - A shortcut that you set in the preferences window stores the key that you pressed: `<Mod3>` for Caps Lock and `<Super>` for the Windows key. A change of `super-key` does not move it.
-- A user XKB option, `rektangel:caps_hyper`, gives the Caps Lock key two levels: `[ Hyper_L, Caps_Lock ]` with type `TWO_LEVEL`.
-- Caps Lock alone (level 1) is `Hyper_L` on the real modifier Mod3 while you hold it.
-- Shift+Caps Lock (level 2) toggles caps lock. The Caps Lock LED shows the real caps lock state.
+- A user XKB option makes Caps Lock `Hyper_L` on the real modifier Mod3 while you hold it. The setting `caps-lock-behavior` selects the option (ADR 0015):
+
+  | `caps-lock-behavior` | XKB option | Caps lock |
+  |----------------------|------------|-----------|
+  | `both-shifts` (default) | `rektangel:caps_hyper_both_shifts` | Both Shift keys together. Caps Lock is `ONE_LEVEL` `[ Hyper_L ]`, with the stock `shift(both_capslock)`. |
+  | `hyper-only` | `rektangel:caps_hyper_only` | Not available. Caps Lock is `ONE_LEVEL` `[ Hyper_L ]`. |
+  | `shift-caps` | `rektangel:caps_hyper` | Shift+Caps Lock. Caps Lock is `TWO_LEVEL` `[ Hyper_L, Caps_Lock ]`. XKB selects the level when the key goes down, so Caps Lock pressed after Shift gives caps lock and not Hyper. |
+
+- The Caps Lock LED shows the real caps lock state.
+- When `caps-lock-behavior` changes, the extension replaces the option. Mutter then loads the keymap again, so the change has an effect at once.
 - If you press and release Caps Lock alone, it also turns caps lock off. This is the XKB `clearLocks` behavior of a modifier key.
 - GNOME (Mutter) loads the option from `org.gnome.desktop.input-sources xkb-options`. libxkbcommon reads the option files from `$XDG_CONFIG_HOME/xkb` (normally `~/.config/xkb`). There is no extra process and no root step.
 
@@ -21,14 +28,14 @@ In the stored shortcuts, Hyper is only a Rektangel name. Rektangel registers `<M
 
 | File | Installed to |
 |------|--------------|
-| `xkb/rules/evdev` | `~/.config/xkb/rules/evdev`: includes the system rules and adds the option |
-| `xkb/rules/evdev.lst` | `~/.config/xkb/rules/evdev.lst`: the option description |
-| `xkb/symbols/rektangel` | `~/.config/xkb/symbols/rektangel`: the Caps Lock key |
+| `xkb/rules/evdev` | `~/.config/xkb/rules/evdev`: includes the system rules and adds the options |
+| `xkb/rules/evdev.lst` | `~/.config/xkb/rules/evdev.lst`: the option descriptions |
+| `xkb/symbols/rektangel` | `~/.config/xkb/symbols/rektangel`: the Caps Lock key, one variant for each behavior |
 | `capslock-mode.js` | not installed: the XKB step, run with `gjs` by the scripts |
 | `install.sh` | not installed, run it from the extension directory |
 | `uninstall.sh` | not installed, run it from the extension directory |
 
-If `~/.config/xkb/rules/evdev` or `evdev.lst` exists already, the XKB step does not replace it. It adds the Rektangel lines at the end, if they are not there. The install always writes `symbols/rektangel`. The remove step removes `symbols/rektangel` and each line that has the word `rektangel`, also the lines of an older version. It removes a rules file when no other rule stays in it. The directories stay.
+If `~/.config/xkb/rules/evdev` or `evdev.lst` exists already, the XKB step does not replace it. It adds the Rektangel lines at the end, if they are not there, and removes the Rektangel lines of an older version first. The install always writes `symbols/rektangel`. The remove step removes `symbols/rektangel` and each line that has the word `rektangel`, also the lines of an older version. It removes a rules file when no other rule stays in it. The directories stay.
 
 ## Install and uninstall
 
@@ -49,10 +56,10 @@ bash "$dir/uninstall.sh"
 `install.sh` does these steps:
 
 1. It copies the three XKB files to `~/.config/xkb`, or adds the Rektangel lines to the user files that are there.
-2. It adds `rektangel:caps_hyper` to `xkb-options`. It keeps the other options. It stops before step 1 if a `caps:` option is set, because two options for one key conflict.
+2. It adds the option of `caps-lock-behavior` to `xkb-options`, in place of another Rektangel option. It keeps the other options. It stops before step 1 if a `caps:` option is set, because two options for one key conflict.
 3. It sets `xkb-option-installed` to `true` and `super-key` to `capslock`.
 
-`uninstall.sh` sets `super-key` to `super`, removes `rektangel:caps_hyper` from `xkb-options` (other options stay), removes the Rektangel XKB files and lines, and sets `xkb-option-installed` to `false`. You can run each script again: a step that is done already does nothing.
+`uninstall.sh` sets `super-key` to `super`, removes the Rektangel options from `xkb-options` (other options stay), removes the Rektangel XKB files and lines, and sets `xkb-option-installed` to `false`. You can run each script again: a step that is done already does nothing.
 
 To change only the Rektangel side, set the key yourself:
 
@@ -82,8 +89,7 @@ All defaults use Hyper, so in Caps Lock mode all defaults use Caps Lock, and the
 - While you hold Caps Lock, the Lock modifier is also active. Letters that you type with Caps Lock held come out in upper case. Rektangel shortcuts are not affected.
 - The standard `pc` symbols also put the level 5 shift on Mod3. Layouts that use level 5 (for example with the `lv5:` options) do not work well together with this mode.
 - A GNOME or libxkbcommon upgrade can change how user XKB files are read.
-- If the two-level key does not work, use the stock option `shift:both_capslock_cancel` for caps lock instead: both Shift keys together turn caps lock on, and one Shift key turns it off.
 
 ## Check the XKB files offline
 
-`npm run test:xkb --workspace gnome` compiles a keymap with `xkbcomp` and checks the Caps Lock key. It does not change the keymap of the session.
+`npm run test:xkb --workspace gnome` compiles a keymap with `xkbcomp` for each variant and checks the Caps Lock and Shift keys. It does not change the keymap of the session.

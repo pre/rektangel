@@ -2,11 +2,14 @@
  * The values of the gsettings key super-key: the physical key of the
  * <Hyper> modifier. A stored <Hyper> is the Rektangel modifier, <Super>
  * the Windows key and <Mod3> Caps Lock, the modifier of the XKB option
- * rektangel:caps_hyper. Mutter never gets <Hyper>. See ADR 0009.
+ * of ADR 0015. Mutter never gets <Hyper>. See ADR 0009.
  */
 export type SuperKey = 'super' | 'capslock';
 
 export const superKeySetting = 'super-key';
+
+/** The CapsLockBehavior of the XKB option. See ADR 0015. */
+export const capsLockBehaviorSetting = 'caps-lock-behavior';
 
 /** True after Rektangel installed the XKB option. See ADR 0011. */
 export const xkbOptionInstalledSetting = 'xkb-option-installed';

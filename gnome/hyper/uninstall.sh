@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Turns off the Rektangel Caps Lock mode for the current user:
 #  1. sets the Rektangel setting super-key to super,
-#  2. removes the option rektangel:caps_hyper from xkb-options,
+#  2. removes the Rektangel options from xkb-options,
 #  3. removes the Rektangel XKB files, or the Rektangel lines from the
 #     user XKB files.
 # Other xkb-options and other lines in the XKB files stay.
