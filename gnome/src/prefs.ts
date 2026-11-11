@@ -4,32 +4,42 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk?version=4.0';
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
-import { allActions, type Action } from '@rektangel/core';
+import { allActions, isAction, type Action } from '@rektangel/core';
 import { superKeySetting, type SuperKey } from './accelerator.ts';
 import { ibusSwallowsSuperKeys, parseIbusVersion } from './ibus.ts';
-import { acceleratorLabel, presentCaptureDialog } from './capture-dialog.ts';
+import { acceleratorLabel } from './capture-dialog.ts';
 import {
   canConflictWithGnome,
   conflictSections,
+  customShortcutTable,
   findGnomeConflicts,
   ibusExplanationMarkup,
   ibusHeading,
+  resolveAboveTab,
   rowConflicts,
-  type GnomeBinding,
+  type KeybindingTables,
   type RowConflict,
 } from './gnome-conflicts.ts';
-import { gnomeKeybindingSettings, readGnomeKeybindings, removeFromGnome } from './gnome-keybindings.ts';
+import {
+  customShortcutSettings,
+  gnomeKeybindingSettings,
+  readCustomShortcuts,
+  readGnomeKeybindings,
+  removeFromGnome,
+} from './gnome-keybindings.ts';
 import { keyName } from './key-names.ts';
 import {
   capsLockGroup,
   gnomeNoteGroup,
+  presentRowCaptureDialog,
   resetAllButton,
   superKeyGroup,
   versionGroup,
   versionWarningGroup,
+  type RowContext,
   type Watch,
 } from './prefs-groups.ts';
-import { findConflict, shortcutLayout, type ShortcutGroup } from './shortcuts.ts';
+import { shortcutLayout, type ShortcutGroup } from './shortcuts.ts';
 
 /** The space that the window leaves free above and below on the monitor. */
 const monitorMargin = 80;
@@ -62,34 +72,54 @@ export default class RektangelPreferences extends ExtensionPreferences {
     page.add(versionWarningGroup(this.dir, this.uuid));
 
     const gnomeSettings = gnomeKeybindingSettings();
-    let gnomeTables = readGnomeKeybindings(gnomeSettings);
+    let customSettings = customShortcutSettings();
+    const aboveTab = aboveTabKeyName(window.get_display());
+    const readTables = (): KeybindingTables =>
+      resolveAboveTab(
+        new Map([...readGnomeKeybindings(gnomeSettings), ...customShortcutTable(readCustomShortcuts(customSettings))]),
+        aboveTab,
+      );
+    let gnomeTables = readTables();
     // Without the IBus fault, no key gives a character, so no row gets the IBus warning.
     const ibusKeyToUnicode = ibusSwallowsSuperKeys(installedIbusVersion(), ibusPackageVersion()) ? keyToUnicode : undefined;
-    const refreshers = new Map<Action, (conflicts: readonly RowConflict[]) => void>();
+    const refreshers = new Map<string, (conflicts: readonly RowConflict[]) => void>();
     const refreshAll = (): void => {
       const bindings = currentBindings(settings);
       const superKey = settings.get_string(superKeySetting) as SuperKey;
-      refreshers.forEach((refresh, action) =>
-        refresh(rowConflicts(action, bindings, gnomeTables, superKey, ibusKeyToUnicode)),
-      );
+      refreshers.forEach((refresh, id) => refresh(rowConflicts(id, bindings, gnomeTables, superKey, ibusKeyToUnicode)));
     };
     const reloadGnome = (): void => {
-      gnomeTables = readGnomeKeybindings(gnomeSettings);
+      gnomeTables = readTables();
       refreshAll();
     };
     const removeConflict = (conflict: GnomeConflict): void => {
       try {
-        removeFromGnome(conflict, conflict.accelerator);
+        removeFromGnome(conflict, conflict.accelerator, aboveTab);
       } catch (error) {
         window.add_toast(new Adw.Toast({ title: `Cannot remove the GNOME shortcut: ${error}`, timeout: 0 }));
       }
       reloadGnome();
     };
+    const context: RowContext = {
+      window,
+      settings,
+      titleOf: (id) => rowTitle(settings, id),
+      bindings: () => currentBindings(settings),
+      gnomeConflictsOf: (accelerator) => {
+        const superKey = settings.get_string(superKeySetting) as SuperKey;
+        return canConflictWithGnome(accelerator, superKey)
+          ? findGnomeConflicts(accelerator, readTables(), superKey)
+          : [];
+      },
+      removeFromGnome: (accelerator, bindings) =>
+        bindings.forEach((binding) => removeFromGnome(binding, accelerator, aboveTab)),
+      conflictBadge: () => conflictBadge(settings, removeConflict, onClose),
+    };
 
     const groupWidget = (group: ShortcutGroup): Adw.PreferencesGroup => {
       const preferencesGroup = new Adw.PreferencesGroup({ title: group.title });
       for (const action of group.actions) {
-        const { row, refresh } = shortcutRow(window, settings, action, removeConflict, onClose);
+        const { row, refresh } = shortcutRow(context, action);
         refreshers.set(action, refresh);
         preferencesGroup.add(row);
       }
@@ -124,6 +154,17 @@ export default class RektangelPreferences extends ExtensionPreferences {
     // A change of one shortcut can add or remove a conflict on other rows.
     watch(settings, 'changed', refreshAll);
     gnomeSettings.forEach((gnome) => watch(gnome, 'changed', reloadGnome));
+    // The list of custom shortcuts is a key of media-keys, one of gnomeSettings.
+    const watchCustom = (): void => customSettings.forEach((custom) => watch(custom, 'changed', reloadGnome));
+    watchCustom();
+    const mediaKeys = gnomeSettings.find((gnome) => gnome.settings_schema.has_key('custom-keybindings'));
+    if (mediaKeys !== undefined) {
+      watch(mediaKeys, 'changed::custom-keybindings', () => {
+        customSettings = customShortcutSettings();
+        watchCustom();
+        reloadGnome();
+      });
+    }
     window.connect('close-request', () => {
       connections.forEach(({ settings: watched, id }) => watched.disconnect(id));
       cleanups.forEach((cleanup) => cleanup());
@@ -192,6 +233,22 @@ function actionTitle(settings: Gio.Settings, action: Action): string {
   return settings.settings_schema.get_key(keyName(action)).get_summary() ?? action;
 }
 
+/** The title of a row for the conflict texts. */
+function rowTitle(settings: Gio.Settings, id: string): string {
+  return isAction(id) ? actionTitle(settings, id) : id;
+}
+
+/**
+ * The key name of the key above Tab on the current layout, for example
+ * "section" on a Finnish layout. GNOME calls this key Above_Tab. Keycode 49
+ * is the XKB keycode of that key (TLDE).
+ */
+function aboveTabKeyName(display: Gdk.Display): string | null {
+  const [found, keys, keyvals] = display.map_keycode(49);
+  const index = found && keys !== null ? keys.findIndex((key) => key.group === 0 && key.level === 0) : -1;
+  return index < 0 || keyvals === null ? null : Gdk.keyval_name(keyvals[index]!);
+}
+
 type GnomeConflict = Extract<RowConflict, { kind: 'gnome' }>;
 
 function keyToUnicode(keyName: string): number {
@@ -220,14 +277,6 @@ function ibusPackageVersion(): string | null {
   return commandOutput(['dpkg-query', '--show', '--showformat=${Version}', 'libibus-1.0-5']);
 }
 
-/** The GNOME keys that can take the accelerator before Rektangel. */
-function gnomeConflictsOf(settings: Gio.Settings, accelerator: string): GnomeBinding[] {
-  const superKey = settings.get_string(superKeySetting) as SuperKey;
-  return canConflictWithGnome(accelerator, superKey)
-    ? findGnomeConflicts(accelerator, readGnomeKeybindings(), superKey)
-    : [];
-}
-
 /** One line of the badge text. A GNOME key has a button that removes the shortcut from it. */
 interface ConflictLine {
   readonly text: string;
@@ -247,7 +296,8 @@ function conflictLines(
   for (const section of conflictSections(gnomeConflicts, (conflict) => acceleratorLabel(conflict.accelerator))) {
     lines.push({ text: section.explanation, dim: true });
     for (const { binding, wording } of section.entries) {
-      const button = { label: wording.button, onClick: () => removeConflict(binding) };
+      const button =
+        wording.button === null ? undefined : { label: wording.button, onClick: () => removeConflict(binding) };
       lines.push({ text: wording.entry, dim: false, button });
     }
   }
@@ -259,7 +309,7 @@ function conflictLines(
   }
   for (const conflict of conflicts) {
     if (conflict.kind === 'rektangel') {
-      lines.push({ text: `Also used by Rektangel: ${actionTitle(settings, conflict.action)}`, dim: false });
+      lines.push({ text: `Also used by Rektangel: ${rowTitle(settings, conflict.id)}`, dim: false });
     }
   }
   return lines;
@@ -387,12 +437,10 @@ function conflictBadge(
 }
 
 function shortcutRow(
-  window: Adw.PreferencesWindow,
-  settings: Gio.Settings,
+  context: RowContext,
   action: Action,
-  removeConflict: (conflict: GnomeConflict) => void,
-  onClose: (cleanup: () => void) => void,
 ): { row: Adw.ActionRow; refresh: (conflicts: readonly RowConflict[]) => void } {
+  const { settings } = context;
   const key = keyName(action);
   const title = actionTitle(settings, action);
   const row = new Adw.ActionRow({ title, activatable: false });
@@ -404,7 +452,7 @@ function shortcutRow(
     valign: Gtk.Align.CENTER,
     css_classes: ['flat'],
   });
-  const { badge, show } = conflictBadge(settings, removeConflict, onClose);
+  const { badge, show } = context.conflictBadge();
   row.add_suffix(badge);
   row.add_suffix(shortcut);
   row.add_suffix(reset);
@@ -420,34 +468,19 @@ function shortcutRow(
   };
 
   reset.connect('clicked', () => settings.reset(key));
-  shortcut.connect('clicked', () => {
-    const superKey = settings.get_string(superKeySetting) as SuperKey;
-    presentCaptureDialog(window, {
-      actionTitle: title,
+  shortcut.connect('clicked', () =>
+    presentRowCaptureDialog(context, {
+      id: action,
+      title,
       current: settings.get_strv(key)[0] ?? '',
-      superKey,
-      conflictOf: (accelerator) => {
-        const other = findConflict(accelerator, action, currentBindings(settings), superKey);
-        return other === null ? null : actionTitle(settings, other);
-      },
-      gnomeConflictsOf: (accelerator) => gnomeConflictsOf(settings, accelerator),
-      removeFromGnome: (accelerator, bindings) => bindings.forEach((binding) => removeFromGnome(binding, accelerator)),
-      onSave: (accelerator) => {
-        settings.set_strv(key, accelerator === '' ? [] : [accelerator]);
-        if (gnomeConflictsOf(settings, accelerator).length > 0) {
-          window.add_toast(
-            new Adw.Toast({
-              title: `GNOME also uses ${acceleratorLabel(accelerator)}, so ${title} may not work.`,
-              timeout: 0,
-            }),
-          );
-        }
-      },
-    });
-  });
+      plainKey: false,
+      onSave: (accelerator) => settings.set_strv(key, accelerator === '' ? [] : [accelerator]),
+    }),
+  );
   return { row, refresh };
 }
 
-function currentBindings(settings: Gio.Settings): Map<Action, readonly string[]> {
+/** The accelerators of all rows, keyed by row id. */
+function currentBindings(settings: Gio.Settings): Map<string, readonly string[]> {
   return new Map(allActions.map((action) => [action, settings.get_strv(keyName(action))]));
 }

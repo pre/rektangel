@@ -1,4 +1,3 @@
-import type { Action } from '@rektangel/core';
 import { translateHyper, type SuperKey } from './accelerator.ts';
 import { effectiveAccelerator, normalizeAccelerator } from './shortcuts.ts';
 
@@ -36,13 +35,14 @@ export function schemaTitle(schema: string): string {
 }
 
 /**
- * A shortcut that the action shares with a GNOME key or another Rektangel
- * action, or that IBus types as text in a window with a text input.
+ * A shortcut that a row shares with a GNOME key or another Rektangel row,
+ * or that IBus types as text in a window with a text input. A row is an
+ * action or an app-toggles entry, with an id that is unique in the window.
  */
 export type RowConflict =
   | { readonly kind: 'gnome'; readonly schema: string; readonly key: string; readonly accelerator: string }
   | { readonly kind: 'ibus'; readonly accelerator: string; readonly character: string }
-  | { readonly kind: 'rektangel'; readonly action: Action; readonly accelerator: string };
+  | { readonly kind: 'rektangel'; readonly id: string; readonly accelerator: string };
 
 /** The Unicode code point of a key name, or 0 for a key that gives no character. */
 export type KeyToUnicode = (keyName: string) => number;
@@ -53,11 +53,11 @@ export type KeyToUnicode = (keyName: string) => number;
  * shortcuts. Its simple engine types a character above U+007F, starts a
  * compose sequence for a dead key, and refuses a key only with Alt or Ctrl.
  * IBus refuses neither the Windows key (Super) nor Caps Lock (Mod3), and
- * Hyper is one of them.
+ * Hyper is one of them. A key without a modifier or with Shift only, which
+ * an app-toggles entry can have, has the same problem.
  */
 export function ibusTypesKey(accelerator: string, keyToUnicode: KeyToUnicode): boolean {
-  const normalized = normalizeAccelerator(accelerator);
-  if (!/<(Super|Hyper|Mod3)>/.test(normalized) || /<(Alt|Control)>/.test(normalized)) {
+  if (accelerator === '' || /<(Alt|Control)>/.test(normalizeAccelerator(accelerator))) {
     return false;
   }
   const key = keyOf(accelerator);
@@ -85,20 +85,21 @@ export function canConflictWithGnome(accelerator: string, superKey: SuperKey): b
 }
 
 /**
- * The conflicts of each accelerator of the action: first the GNOME keys,
- * then IBus, then the other Rektangel actions that use it. A GNOME conflict
+ * The conflicts of each accelerator of the row: first the GNOME keys,
+ * then IBus, then the other Rektangel rows that use it. A GNOME conflict
  * has the accelerator in the form that GNOME uses, <Hyper> translated.
  * Without `keyToUnicode`, no key gives a character and IBus is not checked.
+ * `bindings` has the accelerators of all rows, keyed by row id.
  */
 export function rowConflicts(
-  action: Action,
-  bindings: ReadonlyMap<Action, readonly string[]>,
+  id: string,
+  bindings: ReadonlyMap<string, readonly string[]>,
   gnome: KeybindingTables,
   superKey: SuperKey,
   keyToUnicode: KeyToUnicode = () => 0,
 ): RowConflict[] {
   const conflicts: RowConflict[] = [];
-  for (const accelerator of bindings.get(action) ?? []) {
+  for (const accelerator of bindings.get(id) ?? []) {
     if (canConflictWithGnome(accelerator, superKey)) {
       for (const binding of findGnomeConflicts(accelerator, gnome, superKey)) {
         conflicts.push({ kind: 'gnome', ...binding, accelerator: translateHyper(accelerator, superKey) });
@@ -109,8 +110,8 @@ export function rowConflicts(
     }
     const wanted = effectiveAccelerator(accelerator, superKey);
     for (const [other, accelerators] of bindings) {
-      if (other !== action && accelerators.some((value) => effectiveAccelerator(value, superKey) === wanted)) {
-        conflicts.push({ kind: 'rektangel', action: other, accelerator });
+      if (other !== id && accelerators.some((value) => effectiveAccelerator(value, superKey) === wanted)) {
+        conflicts.push({ kind: 'rektangel', id: other, accelerator });
       }
     }
   }
@@ -134,9 +135,68 @@ export function findGnomeConflicts(accelerator: string, tables: KeybindingTables
   return conflicts;
 }
 
-export function withoutAccelerator(accelerators: readonly string[], accelerator: string): string[] {
+/**
+ * Removes the entries that are the accelerator. With `aboveTabKey`, an
+ * entry with Above_Tab is compared with that key name in its place.
+ */
+export function withoutAccelerator(
+  accelerators: readonly string[],
+  accelerator: string,
+  aboveTabKey: string | null = null,
+): string[] {
   const wanted = normalizeAccelerator(accelerator);
-  return accelerators.filter((value) => normalizeAccelerator(value) !== wanted);
+  return accelerators.filter((value) => normalizeAccelerator(withAboveTabKey(value, aboveTabKey)) !== wanted);
+}
+
+/**
+ * GNOME calls the key above Tab Above_Tab, for example in switch-group, and
+ * Mutter grabs the key that has that position on the current layout. That
+ * is § on a Finnish layout. The key name comes from the keymap.
+ */
+function withAboveTabKey(accelerator: string, aboveTabKey: string | null): string {
+  return aboveTabKey === null ? accelerator : accelerator.replace(/Above_Tab$/i, aboveTabKey);
+}
+
+/** The tables with Above_Tab replaced by the key name of the key above Tab, or the same tables for null. */
+export function resolveAboveTab(tables: KeybindingTables, aboveTabKey: string | null): KeybindingTables {
+  if (aboveTabKey === null) {
+    return tables;
+  }
+  return new Map(
+    [...tables].map(([schema, keys]) => [
+      schema,
+      new Map([...keys].map(([key, values]) => [key, values.map((value) => withAboveTabKey(value, aboveTabKey))])),
+    ]),
+  );
+}
+
+/**
+ * The relocatable schema of the custom shortcuts of GNOME Settings. Its
+ * table has the name of each shortcut as the key, because the user knows
+ * the shortcut by that name, and the preferences window does not change it.
+ */
+export const customShortcutSchema = 'org.gnome.settings-daemon.plugins.media-keys.custom-keybinding';
+
+/** A custom shortcut of GNOME Settings: its name and its binding of type `s`. */
+export interface CustomShortcut {
+  readonly name: string;
+  readonly binding: string;
+}
+
+/** The table of the custom shortcuts. A second shortcut with the same name gets a number. */
+export function customShortcutTable(shortcuts: readonly CustomShortcut[]): KeybindingTables {
+  const keys = new Map<string, string[]>();
+  for (const { name, binding } of shortcuts) {
+    if (binding === '') {
+      continue;
+    }
+    let key = name;
+    for (let count = 2; keys.has(key); count++) {
+      key = `${name} (${count})`;
+    }
+    keys.set(key, [binding]);
+  }
+  return new Map([[customShortcutSchema, keys]]);
 }
 
 /** Adds the old value of a key. A key that has a record keeps its first value. */
@@ -158,7 +218,8 @@ export interface ConflictWording {
   /** What happens to the shortcut. The keys with the same explanation share one section. */
   readonly explanation: string;
   readonly entry: string;
-  readonly button: string;
+  /** The label of the button that removes the shortcut from GNOME, or null when the window cannot remove it. */
+  readonly button: string | null;
 }
 
 const ibusEmojiSchema = 'org.freedesktop.ibus.panel.emoji';
@@ -183,6 +244,15 @@ export function isIbusEmojiPicker(binding: GnomeBinding): boolean {
 
 /** The texts for the key. `shortcut` is the display text of the accelerator, for example "Windows .". */
 export function conflictWording(binding: GnomeBinding, shortcut: string): ConflictWording {
+  if (binding.schema === customShortcutSchema) {
+    return {
+      explanation:
+        'A custom shortcut of GNOME Settings uses this shortcut before Rektangel. ' +
+        'Change it in Settings > Keyboard > View and Customize Shortcuts > Custom Shortcuts.',
+      entry: `Custom shortcut › ${binding.key} (${shortcut})`,
+      button: null,
+    };
+  }
   if (isIbusEmojiPicker(binding)) {
     return {
       explanation:

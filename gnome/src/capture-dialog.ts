@@ -1,7 +1,13 @@
 import Adw from 'gi://Adw';
 import Gdk from 'gi://Gdk?version=4.0';
 import Gtk from 'gi://Gtk?version=4.0';
-import { conflictWording, isIbusEmojiPicker, schemaShortName, type GnomeBinding } from './gnome-conflicts.ts';
+import {
+  conflictWording,
+  customShortcutSchema,
+  isIbusEmojiPicker,
+  schemaShortName,
+  type GnomeBinding,
+} from './gnome-conflicts.ts';
 import type { SuperKey } from './accelerator.ts';
 import { acceleratorLabelParts, capturedAccelerator, checkCapture, prettyAccelLabel } from './shortcuts.ts';
 
@@ -10,6 +16,8 @@ export interface CaptureRequest {
   readonly current: string;
   /** The super-key setting: the physical key of <Hyper>. */
   readonly superKey: SuperKey;
+  /** True when the row permits a key without a modifier, as an app-toggles entry does. */
+  readonly plainKey: boolean;
   /** The title of the other action that uses the accelerator, or null. */
   readonly conflictOf: (accelerator: string) => string | null;
   /** The GNOME keys that use the accelerator. */
@@ -69,21 +77,29 @@ export function presentCaptureDialog(parent: Gtk.Widget, request: CaptureRequest
 
   let pending: string | null = null;
   // One section for the IBus emoji picker and one for the other GNOME
-  // keys, each with a button that removes only its own keys.
+  // keys, each with a button that removes only its own keys. The custom
+  // shortcuts of GNOME Settings get a section without a button.
   const showGnomeUse = (accelerator: string): void => {
     for (let child = gnomeBox.get_first_child(); child !== null; child = gnomeBox.get_first_child()) {
       gnomeBox.remove(child);
     }
     const bindings = request.gnomeConflictsOf(accelerator);
+    const isCustom = (binding: GnomeBinding): boolean => binding.schema === customShortcutSchema;
     const [ibus] = bindings.filter(isIbusEmojiPicker);
-    const gnome = bindings.filter((binding) => !isIbusEmojiPicker(binding));
+    const custom = bindings.filter(isCustom);
+    const gnome = bindings.filter((binding) => !isIbusEmojiPicker(binding) && !isCustom(binding));
+    const label = acceleratorLabel(accelerator);
     if (ibus !== undefined) {
-      const wording = conflictWording(ibus, acceleratorLabel(accelerator));
+      const wording = conflictWording(ibus, label);
       addSection(accelerator, [ibus], [wording.explanation, wording.entry], wording.button);
     }
     if (gnome.length > 0) {
       const used = gnome.map((b) => `Used by GNOME: ${schemaShortName(b.schema)} ${b.key}`);
       addSection(accelerator, gnome, used, 'Remove from GNOME');
+    }
+    if (custom.length > 0) {
+      const wordings = custom.map((binding) => conflictWording(binding, label));
+      addSection(accelerator, [], [wordings[0]!.explanation, ...wordings.map((w) => w.entry)], null);
     }
     gnomeBox.visible = bindings.length > 0;
   };
@@ -91,9 +107,13 @@ export function presentCaptureDialog(parent: Gtk.Widget, request: CaptureRequest
     accelerator: string,
     bindings: readonly GnomeBinding[],
     lines: readonly string[],
-    buttonLabel: string,
+    buttonLabel: string | null,
   ): void => {
     const text = new Gtk.Label({ label: lines.join('\n'), wrap: true, css_classes: ['warning'] });
+    gnomeBox.append(text);
+    if (buttonLabel === null) {
+      return;
+    }
     const button = new Gtk.Button({ label: buttonLabel, halign: Gtk.Align.CENTER });
     button.connect('clicked', () => {
       try {
@@ -104,11 +124,12 @@ export function presentCaptureDialog(parent: Gtk.Widget, request: CaptureRequest
         button.visible = false;
       }
     });
-    gnomeBox.append(text);
     gnomeBox.append(button);
   };
   const offer = (captured: string): void => {
-    const { accelerator, problem: reason } = checkCapture(captured, request.superKey, request.conflictOf);
+    const { accelerator, problem: reason } = checkCapture(captured, request.superKey, request.conflictOf, {
+      plainKey: request.plainKey,
+    });
     shortcut.label = acceleratorLabel(accelerator);
     problem.label = reason ?? '';
     problem.visible = reason !== null;

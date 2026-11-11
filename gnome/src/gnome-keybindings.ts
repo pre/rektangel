@@ -2,8 +2,10 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import {
   addBackupRecord,
+  customShortcutSchema,
   gnomeKeybindingSchemas,
   withoutAccelerator,
+  type CustomShortcut,
   type GnomeBinding,
   type KeybindingTables,
   type KeysBackup,
@@ -34,6 +36,26 @@ export function readGnomeKeybindings(settingsList = gnomeKeybindingSettings()): 
   return tables;
 }
 
+const mediaKeysSchema = 'org.gnome.settings-daemon.plugins.media-keys';
+
+/** The settings of each custom shortcut of GNOME Settings, or none without gnome-settings-daemon. */
+export function customShortcutSettings(): Gio.Settings[] {
+  const source = Gio.SettingsSchemaSource.get_default();
+  const mediaKeys = source?.lookup(mediaKeysSchema, true);
+  const custom = source?.lookup(customShortcutSchema, true);
+  if (!mediaKeys || !custom || !mediaKeys.has_key('custom-keybindings')) {
+    return [];
+  }
+  return new Gio.Settings({ settings_schema: mediaKeys })
+    .get_strv('custom-keybindings')
+    .filter((path) => /^\/([A-Za-z0-9_-]+\/)+$/.test(path))
+    .map((path) => new Gio.Settings({ settings_schema: custom, path }));
+}
+
+export function readCustomShortcuts(settingsList = customShortcutSettings()): CustomShortcut[] {
+  return settingsList.map((settings) => ({ name: settings.get_string('name'), binding: settings.get_string('binding') }));
+}
+
 export function backupPath(): string {
   return GLib.build_filenamev([GLib.get_user_config_dir(), 'rektangel', 'gnome-keys-backup.json']);
 }
@@ -41,9 +63,10 @@ export function backupPath(): string {
 /**
  * Removes the accelerator from the GNOME key and keeps the other entries.
  * The old value goes to the gnome-keys.sh backup before the change, so
- * `gnome-keys.sh --undo` restores it.
+ * `gnome-keys.sh --undo` restores it. `aboveTabKey` is the key name of the
+ * key above Tab, which GNOME calls Above_Tab.
  */
-export function removeFromGnome(binding: GnomeBinding, accelerator: string): void {
+export function removeFromGnome(binding: GnomeBinding, accelerator: string, aboveTabKey: string | null = null): void {
   const settings = new Gio.Settings({ schema_id: binding.schema });
   const current = settings.get_strv(binding.key);
   const userSet = settings.get_user_value(binding.key) !== null;
@@ -64,5 +87,5 @@ export function removeFromGnome(binding: GnomeBinding, accelerator: string): voi
     null,
   );
 
-  settings.set_strv(binding.key, withoutAccelerator(current, accelerator));
+  settings.set_strv(binding.key, withoutAccelerator(current, accelerator, aboveTabKey));
 }

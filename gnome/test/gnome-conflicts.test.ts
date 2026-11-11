@@ -6,10 +6,13 @@ import {
   canConflictWithGnome,
   conflictSections,
   conflictWording,
+  customShortcutSchema,
+  customShortcutTable,
   findGnomeConflicts,
   ibusHeading,
   ibusTypesKey,
   keyCharacter,
+  resolveAboveTab,
   rowConflicts,
   schemaShortName,
   schemaTitle,
@@ -156,10 +159,10 @@ describe('rowConflicts', () => {
       [Action.MaximizeHeight, ['<Shift><Super>Up', '<super>Return']],
     ]);
     assert.deepEqual(rowConflicts(Action.Center, bindings, new Map(), 'super'), [
-      { kind: 'rektangel', action: Action.MaximizeHeight, accelerator: '<Super>Return' },
+      { kind: 'rektangel', id: Action.MaximizeHeight, accelerator: '<Super>Return' },
     ]);
     assert.deepEqual(rowConflicts(Action.MaximizeHeight, bindings, new Map(), 'super'), [
-      { kind: 'rektangel', action: Action.Center, accelerator: '<super>Return' },
+      { kind: 'rektangel', id: Action.Center, accelerator: '<super>Return' },
     ]);
   });
 
@@ -202,10 +205,10 @@ describe('rowConflicts', () => {
       [Action.CenterThird, ['<Super>1']],
     ]);
     assert.deepEqual(rowConflicts(Action.FirstThird, bindings, new Map(), 'capslock'), [
-      { kind: 'rektangel', action: Action.LastThird, accelerator: '<Hyper>1' },
+      { kind: 'rektangel', id: Action.LastThird, accelerator: '<Hyper>1' },
     ]);
     assert.deepEqual(rowConflicts(Action.FirstThird, bindings, new Map(), 'super'), [
-      { kind: 'rektangel', action: Action.CenterThird, accelerator: '<Hyper>1' },
+      { kind: 'rektangel', id: Action.CenterThird, accelerator: '<Hyper>1' },
     ]);
   });
 
@@ -254,6 +257,14 @@ describe('ibusTypesKey', () => {
     assert.equal(ibusTypesKey('', unicodeOf), false);
   });
 
+  test('is true for a key without a modifier and for Shift only, because IBus types those keys too', () => {
+    assert.equal(ibusTypesKey('section', unicodeOf), true);
+    assert.equal(ibusTypesKey('<Shift>section', unicodeOf), true);
+    assert.equal(ibusTypesKey('dead_acute', unicodeOf), true);
+    assert.equal(ibusTypesKey('a', unicodeOf), false);
+    assert.equal(ibusTypesKey('F1', unicodeOf), false);
+  });
+
   test('is false when Alt or Ctrl is in the shortcut, because IBus refuses those keys', () => {
     assert.equal(ibusTypesKey('<Super><Alt>section', unicodeOf), false);
     assert.equal(ibusTypesKey('<Control>section', unicodeOf), false);
@@ -271,7 +282,7 @@ describe('rowConflicts with IBus', () => {
     assert.deepEqual(rowConflicts(Action.Center, bindings, gnome, 'super', unicodeOf), [
       { kind: 'gnome', schema: 'org.gnome.shell.keybindings', key: 'x', accelerator: '<Super>section' },
       { kind: 'ibus', accelerator: '<Super>section', character: '§' },
-      { kind: 'rektangel', action: Action.Restore, accelerator: '<Super>section' },
+      { kind: 'rektangel', id: Action.Restore, accelerator: '<Super>section' },
     ]);
   });
 
@@ -376,5 +387,91 @@ describe('conflictSections', () => {
 
   test('returns no sections for no keys', () => {
     assert.deepEqual(conflictSections([], () => ''), []);
+  });
+});
+
+describe('resolveAboveTab', () => {
+  const switchGroup: KeybindingTables = new Map([
+    ['org.gnome.desktop.wm.keybindings', new Map([['switch-group', ['<Super>Above_Tab', '<Alt>Above_Tab']]])],
+  ]);
+
+  test('gives Above_Tab the key name of the key above Tab on the current layout', () => {
+    const resolved = resolveAboveTab(switchGroup, 'section');
+    assert.deepEqual(resolved.get('org.gnome.desktop.wm.keybindings')?.get('switch-group'), [
+      '<Super>section',
+      '<Alt>section',
+    ]);
+    assert.deepEqual(findGnomeConflicts('<Super>section', resolved, 'super'), [
+      { schema: 'org.gnome.desktop.wm.keybindings', key: 'switch-group' },
+    ]);
+  });
+
+  test('keeps the tables when the key above Tab is not known', () => {
+    assert.equal(resolveAboveTab(switchGroup, null), switchGroup);
+  });
+});
+
+describe('withoutAccelerator with Above_Tab', () => {
+  test('removes the Above_Tab entry that is the same key', () => {
+    assert.deepEqual(withoutAccelerator(['<Super>Above_Tab', '<Alt>Above_Tab'], '<Super>section', 'section'), [
+      '<Alt>Above_Tab',
+    ]);
+  });
+
+  test('keeps the Above_Tab entries without the key name', () => {
+    assert.deepEqual(withoutAccelerator(['<Super>Above_Tab'], '<Super>section'), ['<Super>Above_Tab']);
+  });
+});
+
+describe('custom shortcuts of GNOME Settings', () => {
+  test('give a table with the name of each shortcut as the key', () => {
+    const table = customShortcutTable([
+      { name: 'Show Ulauncher', binding: '<Super>space' },
+      { name: 'Terminal', binding: '' },
+    ]);
+    assert.deepEqual(table.get(customShortcutSchema), new Map([['Show Ulauncher', ['<Super>space']]]));
+    assert.deepEqual(findGnomeConflicts('<Super>space', table, 'super'), [
+      { schema: customShortcutSchema, key: 'Show Ulauncher' },
+    ]);
+  });
+
+  test('keep two shortcuts with the same name', () => {
+    const table = customShortcutTable([
+      { name: 'Run', binding: '<Super>r' },
+      { name: 'Run', binding: '<Super>t' },
+    ]);
+    assert.deepEqual([...(table.get(customShortcutSchema)?.keys() ?? [])], ['Run', 'Run (2)']);
+  });
+
+  test('tell the user to change the shortcut in Settings, without a remove button', () => {
+    assert.deepEqual(conflictWording({ schema: customShortcutSchema, key: 'Show Ulauncher' }, 'Windows Space'), {
+      explanation:
+        'A custom shortcut of GNOME Settings uses this shortcut before Rektangel. ' +
+        'Change it in Settings > Keyboard > View and Customize Shortcuts > Custom Shortcuts.',
+      entry: 'Custom shortcut › Show Ulauncher (Windows Space)',
+      button: null,
+    });
+  });
+});
+
+describe('rowConflicts with app entries', () => {
+  test('lists an action and an app entry with the same shortcut on both rows', () => {
+    const bindings = new Map<string, readonly string[]>([
+      [Action.Center, ['<Control>section']],
+      ['app:0', ['<Primary>section']],
+    ]);
+    assert.deepEqual(rowConflicts('app:0', bindings, new Map(), 'super'), [
+      { kind: 'rektangel', id: Action.Center, accelerator: '<Primary>section' },
+    ]);
+    assert.deepEqual(rowConflicts(Action.Center, bindings, new Map(), 'super'), [
+      { kind: 'rektangel', id: 'app:0', accelerator: '<Control>section' },
+    ]);
+  });
+
+  test('gives the IBus problem for a key without a modifier', () => {
+    const bindings = new Map<string, readonly string[]>([['app:0', ['section']]]);
+    assert.deepEqual(rowConflicts('app:0', bindings, new Map(), 'super', unicodeOf), [
+      { kind: 'ibus', accelerator: 'section', character: '§' },
+    ]);
   });
 });

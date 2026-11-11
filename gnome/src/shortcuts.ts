@@ -119,37 +119,43 @@ export function capturedAccelerator(held: HeldModifiers, key: string): string {
 /**
  * The accelerator to store for a key press that the capture dialog got,
  * and why it cannot be used, or null. `conflictOf` gets the stored form
- * and gives the title of the other action that uses it, or null.
+ * and gives the title of the other row that uses it, or null. With
+ * `plainKey`, a key without a modifier is permitted, as an app-toggles
+ * entry permits it.
  */
 export function checkCapture(
   accelerator: string,
   superKey: SuperKey,
   conflictOf: (accelerator: string) => string | null,
+  { plainKey = false }: { plainKey?: boolean } = {},
 ): { accelerator: string; problem: string | null } {
   const normalized = normalizeAccelerator(accelerator);
   if (normalized.includes('<Super>') && normalized.includes('<Mod3>')) {
     return { accelerator, problem: 'Use one of Caps Lock and the Windows key.' };
   }
-  if (accelerator !== '' && !hasCommandModifier(accelerator)) {
+  if (accelerator !== '' && !plainKey && !hasCommandModifier(accelerator)) {
     return { accelerator, problem: 'Use at least one of Ctrl, Alt or Hyper.' };
   }
   const conflict = conflictOf(accelerator);
   return { accelerator, problem: conflict === null ? null : `${conflict} already uses this shortcut.` };
 }
 
-/** The other action that already uses the key that Mutter grabs, or null. */
+/**
+ * The id of the other row that already uses the key that Mutter grabs, or
+ * null. `bindings` has the accelerators of all rows, keyed by row id.
+ */
 export function findConflict(
   accelerator: string,
-  action: Action,
-  bindings: ReadonlyMap<Action, readonly string[]>,
+  id: string,
+  bindings: ReadonlyMap<string, readonly string[]>,
   superKey: SuperKey,
-): Action | null {
+): string | null {
   if (accelerator === '') {
     return null;
   }
   const wanted = effectiveAccelerator(accelerator, superKey);
   for (const [other, accelerators] of bindings) {
-    if (other !== action && accelerators.some((value) => effectiveAccelerator(value, superKey) === wanted)) {
+    if (other !== id && accelerators.some((value) => effectiveAccelerator(value, superKey) === wanted)) {
       return other;
     }
   }

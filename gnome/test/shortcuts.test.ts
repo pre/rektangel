@@ -125,6 +125,15 @@ describe('checkCapture', () => {
     assert.equal(checkCapture('<Mod3>Left', 'capslock', conflictOf).problem, 'Left half already uses this shortcut.');
   });
 
+  test('accepts a key without a modifier when the row permits it', () => {
+    assert.deepEqual(checkCapture('section', 'capslock', free, { plainKey: true }), {
+      accelerator: 'section',
+      problem: null,
+    });
+    assert.equal(checkCapture('<Shift>section', 'capslock', free, { plainKey: true }).problem, null);
+    assert.equal(checkCapture('section', 'capslock', free).problem, 'Use at least one of Ctrl, Alt or Hyper.');
+  });
+
   test('accepts the empty accelerator, which disables the action', () => {
     assert.deepEqual(checkCapture('', 'capslock', free), { accelerator: '', problem: null });
   });
@@ -169,6 +178,12 @@ describe('findConflict', () => {
 
   test('never reports a conflict for an empty accelerator', () => {
     assert.equal(findConflict('', Action.LeftHalf, new Map([[Action.FirstThird, ['']]]), 'super'), null);
+  });
+
+  test('finds an app entry with the same shortcut', () => {
+    const withApp = new Map<string, readonly string[]>([...bindings, ['app:0', ['section']]]);
+    assert.equal(findConflict('section', Action.LeftHalf, withApp, 'super'), 'app:0');
+    assert.equal(findConflict('<Alt><Super>Left', 'app:0', withApp, 'super'), Action.LeftHalf);
   });
 
   test('compares the keys that Mutter grabs for Hyper', () => {

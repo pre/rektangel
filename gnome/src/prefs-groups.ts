@@ -3,9 +3,12 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk?version=4.0';
 import { allActions } from '@rektangel/core';
-import { capsLockBehaviorSetting, superKeySetting, xkbOptionInstalledSetting } from './accelerator.ts';
+import { capsLockBehaviorSetting, superKeySetting, xkbOptionInstalledSetting, type SuperKey } from './accelerator.ts';
 import { capsLockBehavior, installXkbOption, removeXkbOption } from './capslock-mode.ts';
+import { acceleratorLabel, presentCaptureDialog } from './capture-dialog.ts';
+import type { GnomeBinding, RowConflict } from './gnome-conflicts.ts';
 import { keyName } from './key-names.ts';
+import { findConflict } from './shortcuts.ts';
 import { versionLabel, versionMismatchWarning } from './version.ts';
 import { capsLockModeProblem } from './xkb-merge.ts';
 
@@ -36,6 +39,63 @@ const capsLockChoices = [
 
 /** Connects a handler that the preferences window disconnects when it closes. */
 export type Watch = (settings: Gio.Settings, signal: string, handler: () => void) => void;
+
+/** What a shortcut row of the preferences window needs from the window. */
+export interface RowContext {
+  readonly window: Adw.PreferencesWindow;
+  readonly settings: Gio.Settings;
+  /** The title of a row for the conflict texts. */
+  readonly titleOf: (id: string) => string;
+  /** The accelerators of all rows, keyed by row id. */
+  readonly bindings: () => ReadonlyMap<string, readonly string[]>;
+  /** The GNOME keys that can take the accelerator before Rektangel. */
+  readonly gnomeConflictsOf: (accelerator: string) => GnomeBinding[];
+  /** Removes the accelerator from these GNOME keys. Throws on failure. */
+  readonly removeFromGnome: (accelerator: string, bindings: readonly GnomeBinding[]) => void;
+  /** A red badge that lists the conflicts of the row. */
+  readonly conflictBadge: () => { badge: Gtk.Button; show: (conflicts: readonly RowConflict[]) => void };
+}
+
+/**
+ * Opens the capture dialog for the row and saves the new accelerator. A
+ * toast tells the user when GNOME also uses the saved shortcut.
+ */
+export function presentRowCaptureDialog(
+  context: RowContext,
+  row: {
+    readonly id: string;
+    readonly title: string;
+    readonly current: string;
+    readonly plainKey: boolean;
+    readonly onSave: (accelerator: string) => void;
+  },
+): void {
+  const { window, settings } = context;
+  const superKey = settings.get_string(superKeySetting) as SuperKey;
+  presentCaptureDialog(window, {
+    actionTitle: row.title,
+    current: row.current,
+    superKey,
+    plainKey: row.plainKey,
+    conflictOf: (accelerator) => {
+      const other = findConflict(accelerator, row.id, context.bindings(), superKey);
+      return other === null ? null : context.titleOf(other);
+    },
+    gnomeConflictsOf: context.gnomeConflictsOf,
+    removeFromGnome: context.removeFromGnome,
+    onSave: (accelerator) => {
+      row.onSave(accelerator);
+      if (context.gnomeConflictsOf(accelerator).length > 0) {
+        window.add_toast(
+          new Adw.Toast({
+            title: `GNOME also uses ${acceleratorLabel(accelerator)}, so ${row.title} may not work.`,
+            timeout: 0,
+          }),
+        );
+      }
+    },
+  });
+}
 
 export function superKeyGroup(settings: Gio.Settings, extensionPath: string, watch: Watch): Adw.PreferencesGroup {
   const group = new Adw.PreferencesGroup({ title: 'Hyper key' });
