@@ -22,6 +22,18 @@ export const gnomeKeybindingSchemas: ReadonlyMap<string, string> = new Map([
   ['org.freedesktop.ibus.panel.emoji', 'IBus emoji'],
 ]);
 
+export const mediaKeysSchema = 'org.gnome.settings-daemon.plugins.media-keys';
+
+/**
+ * For a `<name>-static` key of media-keys, the key `<name>`, else null.
+ * gsd-media-keys reads both keys for one shortcut, but it applies a change
+ * only when `<name>` changes (GNOME 46). See ADR 0018.
+ */
+export function staticSiblingKey(schema: string, key: string): string | null {
+  const match = /^(.+)-static$/.exec(key);
+  return schema === mediaKeysSchema && match !== null ? match[1]! : null;
+}
+
 export function schemaShortName(schema: string): string {
   return gnomeKeybindingSchemas.get(schema) ?? schema;
 }

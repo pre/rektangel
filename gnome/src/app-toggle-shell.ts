@@ -15,10 +15,16 @@ import {
   type AppToggle,
   type RememberedWindows,
 } from './app-toggles.ts';
-import { customShortcutSettings, gnomeKeybindingSettings } from './gnome-keybindings.ts';
+import { applyStaticMediaKey, customShortcutSettings, gnomeKeybindingSettings } from './gnome-keybindings.ts';
 
 /** Lower than META_PRIORITY_PREFS_NOTIFY, which is DEFAULT_IDLE + 10. */
 const afterMutterPrefsPriority = GLib.PRIORITY_DEFAULT_IDLE + 20;
+
+/**
+ * gsd-media-keys releases a shortcut after a GNOME change with a 50 ms
+ * timer and a D-Bus call to GNOME Shell. A grab must come after that.
+ */
+const gnomeReleaseDelayMs = 1000;
 
 /**
  * Grabs the shortcuts of the app-toggles entries and shows or hides the
@@ -35,6 +41,7 @@ export class AppToggles {
   private readonly activatedId: number;
   private readonly settingsId: number;
   private grabSourceId = 0;
+  private gnomeGrabSourceId = 0;
   /** The handlers on the GNOME keybinding settings. */
   private gnomeWatches: { settings: Gio.Settings; id: number }[] = [];
 
@@ -69,7 +76,8 @@ export class AppToggles {
   /**
    * An entry that GNOME blocks gets its shortcut when the user removes it
    * from GNOME, for example with "Remove from GNOME" or in GNOME Settings.
-   * A change of the list of custom shortcuts watches the new list.
+   * A change of the list of custom shortcuts watches the new list. A change
+   * of a `-static` media key needs help, see applyStaticMediaKey.
    */
   private watchGnome(): void {
     this.unwatchGnome();
@@ -78,7 +86,8 @@ export class AppToggles {
         if (key === 'custom-keybindings') {
           this.watchGnome();
         }
-        this.grabLater();
+        this.grabAfterGnome();
+        applyStaticMediaKey(settings, key);
       });
       this.gnomeWatches.push({ settings, id });
     }
@@ -100,6 +109,9 @@ export class AppToggles {
   destroy(): void {
     if (this.grabSourceId !== 0) {
       GLib.source_remove(this.grabSourceId);
+    }
+    if (this.gnomeGrabSourceId !== 0) {
+      GLib.source_remove(this.gnomeGrabSourceId);
     }
     global.display.disconnect(this.activatedId);
     this.stored.disconnect(this.settingsId);
@@ -123,6 +135,18 @@ export class AppToggles {
         return GLib.SOURCE_REMOVE;
       });
     }
+  }
+
+  /** Grabs again when gsd-media-keys has applied the last GNOME change. */
+  private grabAfterGnome(): void {
+    if (this.gnomeGrabSourceId !== 0) {
+      GLib.source_remove(this.gnomeGrabSourceId);
+    }
+    this.gnomeGrabSourceId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, gnomeReleaseDelayMs, () => {
+      this.gnomeGrabSourceId = 0;
+      this.grabAll();
+      return GLib.SOURCE_REMOVE;
+    });
   }
 
   private grabAll(): void {

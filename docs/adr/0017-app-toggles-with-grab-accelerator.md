@@ -1,6 +1,6 @@
 # Show or hide app windows with grab_accelerator and minimize
 
-Status: accepted. Extends ADR 0016 for keys without a modifier.
+Status: accepted. Extends ADR 0016 for keys without a modifier. ADR 0018 changes the grab after a GNOME change.
 
 A global shortcut shows or hides all windows of an app, as the system-wide hotkey of iTerm2 does on macOS. The user can add many apps, each with one shortcut. The shortcut can be one key without a modifier, for example § on a Finnish keyboard.
 

@@ -16,6 +16,7 @@ import {
   rowConflicts,
   schemaShortName,
   schemaTitle,
+  staticSiblingKey,
   withoutAccelerator,
   type KeybindingTables,
 } from '../src/gnome-conflicts.ts';
@@ -474,5 +475,25 @@ describe('rowConflicts with app entries', () => {
     assert.deepEqual(rowConflicts('app:0', bindings, new Map(), 'super', unicodeOf), [
       { kind: 'ibus', accelerator: 'section', character: '§' },
     ]);
+  });
+});
+
+describe('staticSiblingKey', () => {
+  const mediaKeys = 'org.gnome.settings-daemon.plugins.media-keys';
+
+  test('gives the key that gsd-media-keys watches for a -static media key', () => {
+    assert.equal(staticSiblingKey(mediaKeys, 'rotate-video-lock-static'), 'rotate-video-lock');
+  });
+
+  test('gives null for a media key without -static', () => {
+    assert.equal(staticSiblingKey(mediaKeys, 'rotate-video-lock'), null);
+  });
+
+  test('gives null for a -static key of another schema', () => {
+    assert.equal(staticSiblingKey('org.gnome.desktop.wm.keybindings', 'eject-static'), null);
+  });
+
+  test('gives null for the bare suffix', () => {
+    assert.equal(staticSiblingKey(mediaKeys, '-static'), null);
   });
 });

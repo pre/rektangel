@@ -4,6 +4,8 @@ import {
   addBackupRecord,
   customShortcutSchema,
   gnomeKeybindingSchemas,
+  mediaKeysSchema,
+  staticSiblingKey,
   withoutAccelerator,
   type CustomShortcut,
   type GnomeBinding,
@@ -36,7 +38,26 @@ export function readGnomeKeybindings(settingsList = gnomeKeybindingSettings()): 
   return tables;
 }
 
-const mediaKeysSchema = 'org.gnome.settings-daemon.plugins.media-keys';
+/**
+ * Makes gsd-media-keys apply a change of a `<name>-static` key. It applies
+ * only a change of `<name>`, so this writes `<name>` two times and keeps its
+ * value. Each write adds or removes the user value, so dconf reports both
+ * writes as a change, also when the value is the default. See ADR 0018.
+ */
+export function applyStaticMediaKey(settings: Gio.Settings, key: string): void {
+  const sibling = staticSiblingKey(settings.settings_schema.get_id(), key);
+  if (sibling === null || !settings.settings_schema.has_key(sibling)) {
+    return;
+  }
+  const value = settings.get_value(sibling);
+  if (settings.get_user_value(sibling) === null) {
+    settings.set_value(sibling, value);
+    settings.reset(sibling);
+  } else {
+    settings.reset(sibling);
+    settings.set_value(sibling, value);
+  }
+}
 
 /** The settings of each custom shortcut of GNOME Settings, or none without gnome-settings-daemon. */
 export function customShortcutSettings(): Gio.Settings[] {
