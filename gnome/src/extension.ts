@@ -14,6 +14,7 @@ import {
   type WindowChange,
 } from '@rektangel/core';
 import { capsLockBehaviorSetting, superKeySetting, type SuperKey } from './accelerator.ts';
+import { AppToggles } from './app-toggle-shell.ts';
 import { ensureXkbOption } from './capslock-mode.ts';
 import { loadConfig } from './config-file.ts';
 import { HistoryStore } from './history-store.ts';
@@ -26,6 +27,7 @@ const supportedWindowTypes = [Meta.WindowType.NORMAL, Meta.WindowType.DIALOG];
 
 export default class RektangelExtension extends Extension {
   private keybindings: TranslatedSettings | null = null;
+  private appToggles: AppToggles | null = null;
   private stored: Gio.Settings | null = null;
   private inputSources: Gio.Settings | null = null;
   private superKeyHandlerId = 0;
@@ -42,10 +44,15 @@ export default class RektangelExtension extends Extension {
     const inputSources = new Gio.Settings({ schema_id: 'org.gnome.desktop.input-sources' });
     this.stored = stored;
     this.inputSources = inputSources;
-    migrateStoredShortcuts(stored, allActions.map(keyName));
+    const actionKeys = allActions.map(keyName);
+    migrateStoredShortcuts(stored, actionKeys);
     this.ensureCapsLockKey(stored);
-    this.keybindings = new TranslatedSettings(stored, allActions.map(keyName), this.activeSuperKey(stored, inputSources));
-    const updateSuperKey = (): void => this.keybindings?.setSuperKey(this.activeSuperKey(stored, inputSources));
+    this.keybindings = new TranslatedSettings(stored, actionKeys, this.activeSuperKey(stored, inputSources));
+    const updateSuperKey = (): void => {
+      const superKey = this.activeSuperKey(stored, inputSources);
+      this.keybindings?.setSuperKey(superKey);
+      this.appToggles?.setSuperKey(superKey);
+    };
     this.superKeyHandlerId = stored.connect(`changed::${superKeySetting}`, () => {
       this.ensureCapsLockKey(stored);
       updateSuperKey();
@@ -60,6 +67,8 @@ export default class RektangelExtension extends Extension {
         this.onAction(action),
       );
     }
+    // After the keybindings, so that the actions have their shortcuts before the app entries.
+    this.appToggles = new AppToggles(stored, actionKeys, this.activeSuperKey(stored, inputSources));
     console.log('Rektangel: enabled');
   }
 
@@ -67,6 +76,8 @@ export default class RektangelExtension extends Extension {
     for (const action of allActions) {
       Main.wm.removeKeybinding(keyName(action));
     }
+    this.appToggles?.destroy();
+    this.appToggles = null;
     this.keybindings?.destroy();
     this.keybindings = null;
     this.stored?.disconnect(this.superKeyHandlerId);

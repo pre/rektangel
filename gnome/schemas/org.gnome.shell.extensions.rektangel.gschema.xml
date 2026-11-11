@@ -105,6 +105,11 @@
       <default><![CDATA[['<Hyper>d']]]></default>
       <summary>Move to right edge</summary>
     </key>
+    <key name="app-toggles" type="a(ss)">
+      <default>[]</default>
+      <summary>Show or hide app windows</summary>
+      <description>A list of (app identifier, shortcut). The shortcut hides all windows of the app when the app has the focus, shows them when it has no focus, and starts the app when it has no window. The identifier is the desktop file name without .desktop, for example org.gnome.TextEditor, or the window class. The shortcut has the form of the other shortcuts, and it can be one key without a modifier, for example section. An empty shortcut turns the entry off.</description>
+    </key>
     <key name="super-key" type="s">
       <choices>
         <choice value="super"/>
