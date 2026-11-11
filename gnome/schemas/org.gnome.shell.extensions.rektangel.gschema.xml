@@ -67,7 +67,7 @@
     </key>
     <key name="restore" type="as">
       <default><![CDATA[['<Hyper>BackSpace']]]></default>
-      <summary>Restore</summary>
+      <summary>Restore previous size and position</summary>
     </key>
     <key name="first-third" type="as">
       <default><![CDATA[['<Hyper>1']]]></default>

@@ -83,14 +83,17 @@ export default class RektangelPreferences extends ExtensionPreferences {
     const superKey = superKeyGroup(settings, this.path, watch);
     superKey.valign = Gtk.Align.START;
     grid.attach(superKey, 0, 0, 1, 1);
-    const rightTop = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL, spacing: 24, valign: Gtk.Align.START });
-    rightTop.append(resetAllButton(window, settings));
-    rightTop.append(capsLockGroup(settings, watch));
-    grid.attach(rightTop, 1, 0, 1, 1);
+    const capsLock = capsLockGroup(settings, watch);
+    capsLock.valign = Gtk.Align.START;
+    grid.attach(capsLock, 1, 0, 1, 1);
     shortcutLayout.forEach((cells, row) =>
       cells.forEach((groups, column) => {
         const cell = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL, spacing: 24, valign: Gtk.Align.START });
         groups.forEach((group) => cell.append(groupWidget(group)));
+        // The bottom right cell, with the Other group, also has the reset button.
+        if (row === shortcutLayout.length - 1 && column === cells.length - 1) {
+          cell.append(resetAllButton(window, settings));
+        }
         grid.attach(cell, column, row + 1, 1, 1);
       }),
     );

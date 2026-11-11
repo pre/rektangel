@@ -76,7 +76,7 @@ To attach to Caps Lock, the extension writes a user XKB option to `~/.config/xkb
 | Right edge       | Hyper+D                  |
 | Next display     | Hyper+Apostrophe         |
 | Previous display | Hyper+Shift+Apostrophe   |
-| Restore          | Hyper+Backspace          |
+| Restore previous | Hyper+Backspace          |
 
 Hyper is the Rektangel modifier. It is Caps Lock by default, so Hyper+Left is Caps Lock+Left. The setting `super-key` makes Hyper Caps Lock or the Windows key (see Caps Lock mode). The table has the order of the preferences window, which lists the halves, the corners and the edges by their arrow or WASD key: Up, Left, Down, Right. The corners go clockwise from the arrow key: Left is top left, Up is top right, Right is bottom right and Down is bottom left. The keys are for a Finnish keyboard, on which Plus and Minus have no Shift and Apostrophe is the key to the right of Ä. On a Finnish keyboard, Shift+Apostrophe is the asterisk, so the previous display shortcut shows as Hyper+*. Mutter compares the key and the modifiers, so the stored form is `<Hyper><Shift>apostrophe`, not `<Hyper>asterisk`. On other layouts, the same key names can be on other keys, or need Shift. See ADR 0010, ADR 0012 and ADR 0014.
 

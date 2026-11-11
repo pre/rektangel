@@ -21,16 +21,16 @@ const capsLockChoices = [
     note: 'Caps Lock is always Hyper. To toggle caps lock, press both Shift keys at once.',
   },
   {
-    value: 'hyper-only',
-    label: 'Off',
-    note: 'Caps Lock is always Hyper. Caps lock is not available.',
-  },
-  {
     value: 'shift-caps',
     label: 'Shift+Caps Lock',
     note:
       'Shift+Caps Lock toggles caps lock. Disadvantage: when you press Shift before Caps Lock, ' +
       'you get caps lock and not Hyper. This can occur when you use Hyper and Shift quickly.',
+  },
+  {
+    value: 'hyper-only',
+    label: 'Off',
+    note: 'Caps Lock is always Hyper. Caps lock is not available.',
   },
 ] as const;
 
@@ -140,7 +140,10 @@ export function capsLockGroup(settings: Gio.Settings, watch: Watch): Adw.Prefere
     const isCapsLock = settings.get_string(superKeySetting) === 'capslock';
     row.sensitive = isCapsLock;
     note.sensitive = isCapsLock;
-    group.description = isCapsLock ? '' : 'Select Caps Lock as the Hyper key to use this setting.';
+    // Always a description, so that the title is on one line with the Hyper key title.
+    group.description = isCapsLock
+      ? 'How to toggle caps lock in Caps Lock mode.'
+      : 'Select Caps Lock as the Hyper key to use this setting.';
   };
   sync();
   watch(settings, `changed::${capsLockBehaviorSetting}`, sync);
