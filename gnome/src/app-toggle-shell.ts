@@ -220,13 +220,18 @@ export class AppToggles {
   }
 }
 
-/** The windows of the app that the taskbar shows, on all workspaces, bottom to top. */
+/**
+ * The windows of the app that the taskbar shows, on all workspaces, bottom
+ * to top. A dialog with a parent is left out, also when the taskbar shows
+ * it: Mutter hides and shows it with its parent.
+ */
 function appWindows(app: string): Meta.Window[] {
   const tracker = Shell.WindowTracker.get_default();
   const windows = global.display.list_all_windows().filter(
     (window) =>
       !window.is_override_redirect() &&
       !window.is_skip_taskbar() &&
+      window.get_transient_for() === null &&
       windowMatchesApp(app, {
         appId: tracker.get_window_app(window)?.get_id() ?? null,
         wmClass: window.get_wm_class(),
@@ -239,8 +244,8 @@ function appWindows(app: string): Meta.Window[] {
 }
 
 /**
- * The window of the app that has the focus. A dialog is not in the taskbar,
- * so for a dialog it is the window that the dialog belongs to.
+ * The window of the app that has the focus. A dialog is not in the list of
+ * app windows, so for a dialog it is the window that the dialog belongs to.
  */
 function focusedAppWindow(windows: readonly Meta.Window[]): Meta.Window | null {
   let window: Meta.Window | null = global.display.focus_window;
