@@ -46,11 +46,18 @@ export class PickWindowService {
       invocation.return_dbus_error(`${pickWindowInterface}.Error.Busy`, 'Another pick is active');
       return;
     }
-    this.pick = new WindowPick(({ identifier, name }) => {
+    const pick = new WindowPick(({ identifier, name }) => {
       this.pick = null;
       invocation.return_value(new GLib.Variant('(ss)', [identifier, name]));
     });
-    this.pick.start();
+    this.pick = pick;
+    try {
+      pick.start();
+    } catch (error) {
+      // Removes the actor and the grab that start() made, and replies.
+      console.error('Rektangel: cannot start the window pick', error);
+      pick.cancel();
+    }
   }
 
   destroy(): void {
