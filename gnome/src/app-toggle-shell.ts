@@ -15,6 +15,7 @@ import {
   type AppToggle,
   type RememberedWindows,
 } from './app-toggles.ts';
+import { customShortcutSettings, gnomeKeybindingSettings } from './gnome-keybindings.ts';
 
 /** Lower than META_PRIORITY_PREFS_NOTIFY, which is DEFAULT_IDLE + 10. */
 const afterMutterPrefsPriority = GLib.PRIORITY_DEFAULT_IDLE + 20;
@@ -34,6 +35,8 @@ export class AppToggles {
   private readonly activatedId: number;
   private readonly settingsId: number;
   private grabSourceId = 0;
+  /** The handlers on the GNOME keybinding settings. */
+  private gnomeWatches: { settings: Gio.Settings; id: number }[] = [];
 
   /**
    * `actionKeys` are the keybinding keys of the actions. A change of one of
@@ -59,7 +62,31 @@ export class AppToggles {
         this.grabLater();
       }
     });
+    this.watchGnome();
     this.grabAll();
+  }
+
+  /**
+   * An entry that GNOME blocks gets its shortcut when the user removes it
+   * from GNOME, for example with "Remove from GNOME" or in GNOME Settings.
+   * A change of the list of custom shortcuts watches the new list.
+   */
+  private watchGnome(): void {
+    this.unwatchGnome();
+    for (const settings of [...gnomeKeybindingSettings(), ...customShortcutSettings()]) {
+      const id = settings.connect('changed', (_settings: Gio.Settings, key: string) => {
+        if (key === 'custom-keybindings') {
+          this.watchGnome();
+        }
+        this.grabLater();
+      });
+      this.gnomeWatches.push({ settings, id });
+    }
+  }
+
+  private unwatchGnome(): void {
+    this.gnomeWatches.forEach(({ settings, id }) => settings.disconnect(id));
+    this.gnomeWatches = [];
   }
 
   /** The super-key setting, or 'super' when Caps Lock mode cannot work. */
@@ -76,12 +103,14 @@ export class AppToggles {
     }
     global.display.disconnect(this.activatedId);
     this.stored.disconnect(this.settingsId);
+    this.unwatchGnome();
     this.ungrabAll();
     this.remembered.clear();
   }
 
   /**
-   * Grabs again after Mutter has updated the keybindings of the actions.
+   * Grabs again after Mutter has updated the keybindings of the actions
+   * and of GNOME.
    * Mutter applies a keybinding change in an idle callback with the
    * priority DEFAULT_IDLE + 10. Until then, an action keeps a shortcut that
    * it releases, and a grab of that shortcut fails.
