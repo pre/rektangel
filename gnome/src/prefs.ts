@@ -28,6 +28,7 @@ import {
   removeFromGnome,
 } from './gnome-keybindings.ts';
 import { keyName } from './key-names.ts';
+import { appBindings, appRowTitle, appTogglesGroup } from './prefs-app-toggles.ts';
 import {
   capsLockGroup,
   gnomeNoteGroup,
@@ -147,6 +148,7 @@ export default class RektangelPreferences extends ExtensionPreferences {
     const gridGroup = new Adw.PreferencesGroup();
     gridGroup.add(grid);
     page.add(gridGroup);
+    page.add(appTogglesGroup(context, watch, refreshers, refreshAll));
     page.add(gnomeNoteGroup());
     page.add(versionGroup(window, this.dir));
     refreshAll();
@@ -235,7 +237,7 @@ function actionTitle(settings: Gio.Settings, action: Action): string {
 
 /** The title of a row for the conflict texts. */
 function rowTitle(settings: Gio.Settings, id: string): string {
-  return isAction(id) ? actionTitle(settings, id) : id;
+  return isAction(id) ? actionTitle(settings, id) : (appRowTitle(settings, id) ?? id);
 }
 
 /**
@@ -478,5 +480,8 @@ function shortcutRow(
 
 /** The accelerators of all rows, keyed by row id. */
 function currentBindings(settings: Gio.Settings): Map<string, readonly string[]> {
-  return new Map(allActions.map((action) => [action, settings.get_strv(keyName(action))]));
+  return new Map([
+    ...allActions.map((action): [string, readonly string[]] => [action, settings.get_strv(keyName(action))]),
+    ...appBindings(settings),
+  ]);
 }
