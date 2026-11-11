@@ -12,7 +12,7 @@ import {
   canConflictWithGnome,
   conflictSections,
   findGnomeConflicts,
-  ibusExplanation,
+  ibusExplanationMarkup,
   ibusHeading,
   rowConflicts,
   type GnomeBinding,
@@ -232,6 +232,8 @@ function gnomeConflictsOf(settings: Gio.Settings, accelerator: string): GnomeBin
 interface ConflictLine {
   readonly text: string;
   readonly dim: boolean;
+  /** True when the text is Pango markup, for example with a link. */
+  readonly markup?: boolean;
   readonly button?: { readonly label: string; readonly onClick: () => void };
 }
 
@@ -252,7 +254,7 @@ function conflictLines(
   for (const conflict of conflicts) {
     if (conflict.kind === 'ibus') {
       lines.push({ text: ibusHeading(conflict.character), dim: false });
-      lines.push({ text: ibusExplanation, dim: true });
+      lines.push({ text: ibusExplanationMarkup, dim: true, markup: true });
     }
   }
   for (const conflict of conflicts) {
@@ -267,6 +269,7 @@ const popoverCss = `
 .rektangel-conflicts > contents { background-color: black; color: white; }
 .rektangel-conflicts > arrow { background-color: black; }
 .rektangel-conflicts .dim-label { color: #c8c8c8; opacity: 1; }
+.rektangel-conflicts label > link { color: #99c1f1; }
 `;
 let popoverCssAdded = false;
 
@@ -359,7 +362,13 @@ function conflictBadge(
       margin_end: 6,
     });
     for (const line of lines) {
-      const label = new Gtk.Label({ label: line.text, wrap: true, max_width_chars: 40, xalign: 0 });
+      const label = new Gtk.Label({
+        label: line.text,
+        use_markup: line.markup ?? false,
+        wrap: true,
+        max_width_chars: 40,
+        xalign: 0,
+      });
       label.css_classes = line.dim ? ['dim-label'] : ['heading'];
       box.append(label);
       if (line.button !== undefined) {

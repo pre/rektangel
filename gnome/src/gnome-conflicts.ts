@@ -168,12 +168,13 @@ export function ibusHeading(character: string): string {
   return `Character ${character} might be swallowed by text fields.`;
 }
 
-/** The explanation under the heading. */
-export const ibusExplanation =
-  'In a terminal or a text field, the IBus input method gets the key before GNOME and types the character, ' +
-  'so the shortcut works only in other windows. Your IBus has this fault: IBus 1.5.29 and 1.5.30 have it, ' +
-  'for example on Ubuntu 24.04, and IBus 1.5.31 fixes it. ' +
-  'Use a key with an ASCII character, or add Ctrl or Alt.';
+/** The README section with the IBus patch for Ubuntu 24.04. See ADR 0016. */
+export const ibusReadmeUrl = 'https://github.com/pre/rektangel#keys-with-a-non-ascii-character';
+
+/** The explanation under the heading, in Pango markup with a link to the README. */
+export const ibusExplanationMarkup =
+  'If you encounter problems, use a key with an ASCII character, or add Ctrl or Alt. ' +
+  `Alternatively see <a href="${ibusReadmeUrl}">README.md</a> for instructions how to make it work.`;
 
 /** The IBus hotkey that opens the emoji picker. */
 export function isIbusEmojiPicker(binding: GnomeBinding): boolean {
