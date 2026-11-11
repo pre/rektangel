@@ -247,7 +247,8 @@ export function conflictWording(binding: GnomeBinding, shortcut: string): Confli
   if (binding.schema === customShortcutSchema) {
     return {
       explanation:
-        'A custom shortcut of GNOME Settings uses this shortcut before Rektangel. ' +
+        'A custom shortcut of GNOME Settings has this key. Only one of GNOME Settings and Rektangel can get it: ' +
+        'the one that takes the key first, usually at login. ' +
         'Change it in Settings > Keyboard > View and Customize Shortcuts > Custom Shortcuts.',
       entry: `Custom shortcut › ${binding.key} (${shortcut})`,
       button: null,

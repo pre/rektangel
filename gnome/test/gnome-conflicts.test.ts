@@ -446,7 +446,8 @@ describe('custom shortcuts of GNOME Settings', () => {
   test('tell the user to change the shortcut in Settings, without a remove button', () => {
     assert.deepEqual(conflictWording({ schema: customShortcutSchema, key: 'Show Ulauncher' }, 'Windows Space'), {
       explanation:
-        'A custom shortcut of GNOME Settings uses this shortcut before Rektangel. ' +
+        'A custom shortcut of GNOME Settings has this key. Only one of GNOME Settings and Rektangel can get it: ' +
+        'the one that takes the key first, usually at login. ' +
         'Change it in Settings > Keyboard > View and Customize Shortcuts > Custom Shortcuts.',
       entry: 'Custom shortcut › Show Ulauncher (Windows Space)',
       button: null,
