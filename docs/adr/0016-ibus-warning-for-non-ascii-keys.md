@@ -1,6 +1,6 @@
 # The preferences window warns when IBus can take a shortcut with a non-ASCII key
 
-Status: accepted.
+Status: accepted. ADR 0017 extends the first condition to keys without a modifier and to keys with Shift only.
 
 A shortcut can use a key that gives a character outside ASCII, for example §, ä, ö, å or ½, or a dead key. Some IBus versions take such a shortcut in a window with a text input. The preferences window shows a warning on the shortcut only when the installed IBus has this fault.
 

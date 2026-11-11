@@ -121,7 +121,40 @@ The scripts use `/usr/bin/gsettings` and `/usr/bin/dconf` when they exist. A `gs
 
 ### Keys with a non-ASCII character
 
-A shortcut with Hyper, Caps Lock or the Windows key and a key that gives a non-ASCII character, for example § or å, does not work in terminals and text fields when IBus is older than 1.5.31, because IBus types the character. Ubuntu 24.04 LTS needs the IBus patch from [ibus-super-fix](https://github.com/pre/linux-tilkku/tree/main/ibus-super-fix), and Ubuntu 26.04 LTS has the fix. The preferences window shows a warning on such a shortcut when IBus has the fault (ADR 0016).
+A shortcut with Hyper, Caps Lock or the Windows key and a key that gives a non-ASCII character, for example § or å, does not work in terminals and text fields when IBus is older than 1.5.31, because IBus types the character. The same is true for an app shortcut without a modifier or with Shift only (ADR 0017). Ubuntu 24.04 LTS needs the IBus patch from [ibus-super-fix](https://github.com/pre/linux-tilkku/tree/main/ibus-super-fix), and Ubuntu 26.04 LTS has the fix. The preferences window shows a warning on such a shortcut when IBus has the fault (ADR 0016).
+
+## Show or hide app windows
+
+One global shortcut can show and hide all windows of an app, as the system-wide hotkey of iTerm2 does on macOS. You can add many apps, each with its own shortcut. The shortcut can be one key without a modifier, for example § on a Finnish keyboard, or a combination, for example Ctrl+§ or Ctrl+Shift+K.
+
+When you press the shortcut:
+
+- The app has the focus: all windows of the app are minimized. The focus goes to the next window.
+- The app has windows but no focus: the windows come to the front, and the window that had the focus at the last hide gets the focus again. A window that you minimized yourself stays minimized.
+- The app has no window: Rektangel starts the app.
+
+The windows stay on their workspaces and keep their size and position. When the app has a window on the current workspace, the workspace does not change.
+
+To add an app, open the preferences window and go to Show or Hide App Windows at the bottom. Click Add App, then click Pick a Window and click a window of the app, or type the identifier of the app. Then click the shortcut button of the new row and press the key.
+
+The identifier is the name of the `.desktop` file of the app without `.desktop`, for example `dev.kukka.Kukka`, `org.gnome.Nautilus` or `firefox_firefox` (a snap). To find it:
+
+- Click Pick a Window in the add dialog.
+- Look at the file names in `/usr/share/applications`, `~/.local/share/applications`, `/var/lib/flatpak/exports/share/applications`, `~/.local/share/flatpak/exports/share/applications` and `/var/lib/snapd/desktop/applications`. For Flatpak apps, `flatpak list --app --columns=application` also gives the identifiers.
+- Open Looking Glass (Alt+F2, type `lg`, then the Windows tab). It shows `wmclass` and `app` of each open window. The window class also works as the identifier.
+
+The identifier matches a window when it is equal to the app id, the window class, the window instance, the GTK application id or the sandbox app id of the window. Upper and lower case and a `.desktop` suffix do not matter. Only windows that the taskbar shows count, on all workspaces. A dialog follows its window.
+
+A key without a modifier, or with Shift only, does not type its character any more in any window while the shortcut is on. The capture dialog shows this as a warning. The shortcut works only in the normal desktop, not in the overview and not on the lock screen.
+
+The preferences window shows a conflict badge on a row when the shortcut is also a GNOME shortcut, a custom shortcut of GNOME Settings or another Rektangel shortcut. GNOME calls the key above Tab `Above_Tab`, which is § on a Finnish keyboard, so Windows+§ and Alt+§ are GNOME shortcuts ("Switch windows of an application"). "Remove from GNOME" removes such a GNOME shortcut. For a custom shortcut, change it in Settings > Keyboard > View and Customize Shortcuts > Custom Shortcuts. `gnome-keys.sh` does not read the app entries. When a Rektangel action and an app entry have the same shortcut, the action gets it. When GNOME already has the shortcut, the entry does not get it. In both cases the extension writes one line to the journal.
+
+The entries are in the gsettings key `app-toggles`, type `a(ss)`: a list of (identifier, shortcut). An empty shortcut turns an entry off.
+
+```sh
+schemas=~/.local/share/gnome-shell/extensions/rektangel@repo.pet/schemas
+/usr/bin/gsettings --schemadir "$schemas" set org.gnome.shell.extensions.rektangel app-toggles "[('dev.kukka.Kukka', 'section')]"
+```
 
 ## Settings file
 

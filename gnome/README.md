@@ -34,6 +34,29 @@ To turn on Caps Lock mode, call `installXkbOption` first and then set `super-key
 
 `src/translated-settings.ts` is for the extension process: it keeps the copy of the shortcuts that Mutter reads, with `<Hyper>` translated. When two keys have the same effective accelerator, only the key that is first in `allActions` order gets it, and the extension writes one journal line.
 
+## Show or hide app windows
+
+The gsettings key `app-toggles` (`a(ss)`) has the entries: an app identifier and an accelerator in the stored form. An accelerator can be a key without a modifier. See ADR 0017.
+
+`src/app-toggles.ts` has no GNOME imports:
+
+- `parseAppToggles`, `serializeAppToggles`: the entries and the unpacked `a(ss)` value.
+- `isValidAppId`, `isValidAccelerator`: the checks before a value from gsettings is used. The identifier is never part of a command line.
+- `windowMatchesApp(app, window)`: true when the identifier is equal to one of the identifiers of the window, without case and without a `.desktop` suffix.
+- `planGrabs(entries, actions, superKey)`: the accelerators to grab, with `<Hyper>` translated, and one journal line for each entry that does not get its shortcut. The actions own their shortcuts first, then the entries in list order.
+- `toggleDecision(input)`: start, hide or show, and which windows to minimize, unminimize, raise and focus.
+- `pickedIdentifier`, `topWindowAt`: the identifier of a clicked window and the window at a point.
+
+`src/app-toggle-shell.ts` (extension process): grabs the shortcuts with `global.display.grab_accelerator`, handles `accelerator-activated`, and applies the decision. It grabs again after a change of `app-toggles`, of an action shortcut or of the Hyper key, in an idle callback with a lower priority than the keybinding update of Mutter.
+
+`src/pick-window.ts` (extension process): exports the D-Bus object `/pet/repo/Rektangel` with the interface `pet.repo.Rektangel` on the bus connection of GNOME Shell, bus name `org.gnome.Shell`. The method `PickWindow() -> (identifier, name)` returns the app of the next window that the user clicks, or two empty strings when the user cancels or after 30 seconds. A second call while a pick is active gets the error `pet.repo.Rektangel.Error.Busy`. The object exists only while the extension is enabled.
+
+```sh
+gdbus call --session --dest org.gnome.Shell --object-path /pet/repo/Rektangel --method pet.repo.Rektangel.PickWindow
+```
+
+`src/prefs-app-toggles.ts` (preferences process): the group of the entries and the add dialog.
+
 ## Tests
 
 `npm test --workspace gnome` runs the unit tests with Node.js, `test/gnome-keys-normalize.sh` (the jq normalizer of `gnome-keys.sh` with the pairs of `test/fixtures/accelerators.json`, the same pairs as the TypeScript test), then two GJS tests: `test/gjs-smoke.js` (core and config.toml) and `test/gjs-capslock.js` (the Hyper translation, one owner for each shortcut, the migration and the XKB steps, with memory settings backends and a temporary directory).
