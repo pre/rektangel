@@ -20,6 +20,7 @@ import { loadConfig } from './config-file.ts';
 import { HistoryStore } from './history-store.ts';
 import { keyName } from './key-names.ts';
 import { migrateStoredShortcuts } from './migrate.ts';
+import { PickWindowService } from './pick-window.ts';
 import { TranslatedSettings } from './translated-settings.ts';
 import { capsLockModeProblem } from './xkb-merge.ts';
 
@@ -28,6 +29,7 @@ const supportedWindowTypes = [Meta.WindowType.NORMAL, Meta.WindowType.DIALOG];
 export default class RektangelExtension extends Extension {
   private keybindings: TranslatedSettings | null = null;
   private appToggles: AppToggles | null = null;
+  private pickWindow: PickWindowService | null = null;
   private stored: Gio.Settings | null = null;
   private inputSources: Gio.Settings | null = null;
   private superKeyHandlerId = 0;
@@ -69,6 +71,7 @@ export default class RektangelExtension extends Extension {
     }
     // After the keybindings, so that the actions have their shortcuts before the app entries.
     this.appToggles = new AppToggles(stored, actionKeys, this.activeSuperKey(stored, inputSources));
+    this.pickWindow = new PickWindowService();
     console.log('Rektangel: enabled');
   }
 
@@ -76,6 +79,8 @@ export default class RektangelExtension extends Extension {
     for (const action of allActions) {
       Main.wm.removeKeybinding(keyName(action));
     }
+    this.pickWindow?.destroy();
+    this.pickWindow = null;
     this.appToggles?.destroy();
     this.appToggles = null;
     this.keybindings?.destroy();

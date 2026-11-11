@@ -6,6 +6,13 @@ import { effectiveAccelerator } from './shortcuts.ts';
 export const appTogglesSetting = 'app-toggles';
 
 /**
+ * The D-Bus object of the extension on the bus name org.gnome.Shell. Its
+ * method PickWindow() -> (identifier, name) lets the user click a window.
+ */
+export const pickWindowPath = '/pet/repo/Rektangel';
+export const pickWindowInterface = 'pet.repo.Rektangel';
+
+/**
  * One entry of app-toggles: the shortcut shows or hides the windows of
  * the app. The accelerator has the stored form of ADR 0013, and it can be
  * a key without a modifier. An empty accelerator turns the entry off.

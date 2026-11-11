@@ -7,6 +7,8 @@ import {
   desktopIdCandidates,
   isValidAppId,
   parseAppToggles,
+  pickWindowInterface,
+  pickWindowPath,
   serializeAppToggles,
   type AppToggle,
 } from './app-toggles.ts';
@@ -188,19 +190,53 @@ function appRow(
   return { row, refresh: show };
 }
 
+/** Asks GNOME Shell for the app of the window that the user clicks next. */
+function pickWindow(onResult: (result: { identifier: string; name: string } | { error: string }) => void): void {
+  // Longer than the pick timeout of the extension, so that its reply comes first.
+  const timeoutMs = 35000;
+  Gio.DBus.session.call(
+    'org.gnome.Shell',
+    pickWindowPath,
+    pickWindowInterface,
+    'PickWindow',
+    null,
+    new GLib.VariantType('(ss)'),
+    Gio.DBusCallFlags.NONE,
+    timeoutMs,
+    null,
+    (connection, asyncResult) => {
+      try {
+        const [identifier, name] = connection!.call_finish(asyncResult).deepUnpack() as [string, string];
+        onResult({ identifier, name });
+      } catch (error) {
+        onResult({ error: error instanceof GLib.Error ? error.message : String(error) });
+      }
+    },
+  );
+}
+
 /**
  * Asks for the identifier of the app. `onAdd` gets a valid identifier.
  */
 function presentAddDialog(parent: Gtk.Widget, onAdd: (app: string) => void): void {
-  const entry = new Gtk.Entry({ placeholder_text: 'For example org.gnome.TextEditor', activates_default: true });
+  const entry = new Gtk.Entry({
+    placeholder_text: 'For example org.gnome.TextEditor',
+    activates_default: true,
+    hexpand: true,
+  });
+  const pick = new Gtk.Button({ label: 'Pick a Window', tooltip_text: 'Click a window to select its app' });
+  const entryBox = new Gtk.Box({ spacing: 6 });
+  entryBox.append(entry);
+  entryBox.append(pick);
+  const pickState = new Gtk.Label({ wrap: true, xalign: 0, visible: false });
   const problem = new Gtk.Label({ wrap: true, xalign: 0, css_classes: ['error'], visible: false });
   const hint = new Gtk.Label({ label: identifierHint, wrap: true, xalign: 0, css_classes: ['dim-label'] });
   const content = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL, spacing: 12 });
-  [entry, problem, hint].forEach((widget) => content.append(widget));
+  [entryBox, pickState, problem, hint].forEach((widget) => content.append(widget));
 
   const dialog = new Adw.AlertDialog({
     heading: 'Add App',
-    body: 'Type the identifier of the app.',
+    body: 'Type the identifier of the app, or click Pick a Window and then click a window of the app.',
     extra_child: content,
     close_response: 'cancel',
     default_response: 'add',
@@ -218,6 +254,30 @@ function presentAddDialog(parent: Gtk.Widget, onAdd: (app: string) => void): voi
     dialog.set_response_enabled('add', isValid);
   };
   entry.connect('changed', check);
+  const showPickState = (text: string, isError: boolean): void => {
+    pickState.label = text;
+    pickState.css_classes = isError ? ['error'] : ['dim-label'];
+    pickState.visible = true;
+  };
+  pick.connect('clicked', () => {
+    pick.sensitive = false;
+    showPickState('Click a window of the app. Press Escape to cancel.', false);
+    pickWindow((result) => {
+      pick.sensitive = true;
+      if ('error' in result) {
+        showPickState(
+          'Cannot pick a window. The extension is not enabled, or GNOME Shell runs an older version of Rektangel: ' +
+            `log out and in after an update. Type the identifier instead. (${result.error})`,
+          true,
+        );
+      } else if (result.identifier === '') {
+        showPickState('No window was selected.', false);
+      } else {
+        entry.text = result.identifier;
+        showPickState(`Selected: ${result.name}`, false);
+      }
+    });
+  });
   dialog.connect('response', (_dialog, response) => {
     const app = entry.text.trim();
     if (response === 'add' && isValidAppId(app)) {
