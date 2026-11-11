@@ -52,11 +52,12 @@ export type KeyToUnicode = (keyName: string) => number;
  * a window with a text input, IBus gets each key before GNOME checks the
  * shortcuts. Its simple engine types a character above U+007F, starts a
  * compose sequence for a dead key, and refuses a key only with Alt or Ctrl.
- * Super is the Windows key or Caps Lock, and IBus refuses neither.
+ * IBus refuses neither the Windows key (Super) nor Caps Lock (Mod3), and
+ * Hyper is one of them.
  */
 export function ibusTypesKey(accelerator: string, keyToUnicode: KeyToUnicode): boolean {
   const normalized = normalizeAccelerator(accelerator);
-  if (!normalized.includes('<Super>') || /<(Alt|Control)>/.test(normalized)) {
+  if (!/<(Super|Hyper|Mod3)>/.test(normalized) || /<(Alt|Control)>/.test(normalized)) {
     return false;
   }
   const key = keyOf(accelerator);
@@ -170,7 +171,8 @@ export function ibusHeading(character: string): string {
 /** The explanation under the heading. */
 export const ibusExplanation =
   'In a terminal or a text field, the IBus input method gets the key before GNOME and types the character, ' +
-  'so the shortcut works only in other windows. IBus 1.5.29 and 1.5.30 have this fault, for example on Ubuntu 24.04. ' +
+  'so the shortcut works only in other windows. Your IBus has this fault: IBus 1.5.29 and 1.5.30 have it, ' +
+  'for example on Ubuntu 24.04, and IBus 1.5.31 fixes it. ' +
   'Use a key with an ASCII character, or add Ctrl or Alt.';
 
 /** The IBus hotkey that opens the emoji picker. */

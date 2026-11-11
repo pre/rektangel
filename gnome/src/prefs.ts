@@ -1,11 +1,12 @@
 import Adw from 'gi://Adw';
 import Gdk from 'gi://Gdk?version=4.0';
-import type Gio from 'gi://Gio';
+import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk?version=4.0';
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 import { allActions, type Action } from '@rektangel/core';
 import { superKeySetting, type SuperKey } from './accelerator.ts';
+import { ibusSwallowsSuperKeys, parseIbusVersion } from './ibus.ts';
 import { acceleratorLabel, presentCaptureDialog } from './capture-dialog.ts';
 import {
   canConflictWithGnome,
@@ -62,12 +63,14 @@ export default class RektangelPreferences extends ExtensionPreferences {
 
     const gnomeSettings = gnomeKeybindingSettings();
     let gnomeTables = readGnomeKeybindings(gnomeSettings);
+    // Without the IBus fault, no key gives a character, so no row gets the IBus warning.
+    const ibusKeyToUnicode = ibusSwallowsSuperKeys(installedIbusVersion(), ibusPackageVersion()) ? keyToUnicode : undefined;
     const refreshers = new Map<Action, (conflicts: readonly RowConflict[]) => void>();
     const refreshAll = (): void => {
       const bindings = currentBindings(settings);
       const superKey = settings.get_string(superKeySetting) as SuperKey;
       refreshers.forEach((refresh, action) =>
-        refresh(rowConflicts(action, bindings, gnomeTables, superKey, keyToUnicode)),
+        refresh(rowConflicts(action, bindings, gnomeTables, superKey, ibusKeyToUnicode)),
       );
     };
     const reloadGnome = (): void => {
@@ -193,6 +196,28 @@ type GnomeConflict = Extract<RowConflict, { kind: 'gnome' }>;
 
 function keyToUnicode(keyName: string): number {
   return Gdk.keyval_to_unicode(Gdk.keyval_from_name(keyName));
+}
+
+/** The standard output of a command, or null when the command fails or prints nothing. */
+function commandOutput(argv: string[]): string | null {
+  try {
+    const process = Gio.Subprocess.new(argv, Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_SILENCE);
+    const [, stdout] = process.communicate_utf8(null, null);
+    const output = (stdout ?? '').trim();
+    return output === '' ? null : output;
+  } catch {
+    return null;
+  }
+}
+
+function installedIbusVersion() {
+  const output = commandOutput(['ibus', 'version']);
+  return output === null ? null : parseIbusVersion(output);
+}
+
+/** The Debian version of the IBus library, or null without dpkg or the package. */
+function ibusPackageVersion(): string | null {
+  return commandOutput(['dpkg-query', '--show', '--showformat=${Version}', 'libibus-1.0-5']);
 }
 
 /** The GNOME keys that can take the accelerator before Rektangel. */

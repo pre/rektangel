@@ -237,6 +237,11 @@ describe('ibusTypesKey', () => {
     assert.equal(ibusTypesKey('<Super>onehalf', unicodeOf), true);
   });
 
+  test('is true for Hyper and Caps Lock, because IBus does not refuse them either', () => {
+    assert.equal(ibusTypesKey('<Hyper>section', unicodeOf), true);
+    assert.equal(ibusTypesKey('<Mod3>adiaeresis', unicodeOf), true);
+  });
+
   test('is true for Super with a dead key', () => {
     assert.equal(ibusTypesKey('<Super>dead_acute', unicodeOf), true);
   });
