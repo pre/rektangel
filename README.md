@@ -239,6 +239,7 @@ The script makes a draft GitHub release at HEAD, with notes from the conventiona
 - `core/`: the window calculations, shared by all platforms. See `core/README.md`.
 - `gnome/`: the GNOME Shell extension. See `gnome/README.md`.
 - `docs/adr/`: the architecture decisions. Read them before you change the architecture.
+- `docs/limitations.md`: the known limitations, with their causes.
 
 ## License
 
