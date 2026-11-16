@@ -97,8 +97,8 @@ export function appTogglesGroup(
     css_classes: ['flat'],
   });
   group.header_suffix = add;
-  // The list index of the entry that was added last in this window. Its row
-  // keeps the highlight after it gets a shortcut, so that the user can find it.
+  // The list index of the entry that the user added last in this window. Its
+  // row stays first and highlighted until the next add or until the window closes.
   let newIndex: number | null = null;
   add.connect('clicked', () =>
     presentAddDialog(context.window, (app) => {
@@ -130,7 +130,7 @@ export function appTogglesGroup(
       refreshers.delete(id);
     }
     const entries = readAppToggles(settings);
-    rows = appRowOrder(entries, appName).map((index) => {
+    rows = appRowOrder(entries, appName, newIndex).map((index) => {
       const { row, refresh } = appRow(context, entries, index, index === newIndex, () => remove(entries, index));
       refreshers.set(appRowId(index), refresh);
       group.add(row);
@@ -153,15 +153,29 @@ export function appTogglesGroup(
 }
 
 const highlightClass = 'rektangel-highlight';
+const newTagClass = 'rektangel-new-tag';
+// A bar in the accent color on the left edge, and a tinted background. The
+// bar is easy to see also in a dark theme, where a light tint is not.
+const highlightCss = `
+row.${highlightClass} { background-color: alpha(@accent_bg_color, 0.2); box-shadow: inset 5px 0 @accent_bg_color; }
+label.${newTagClass} {
+  background-color: @accent_bg_color;
+  color: @accent_fg_color;
+  border-radius: 9999px;
+  padding: 2px 8px;
+  font-size: smaller;
+  font-weight: bold;
+}
+`;
 let highlightCssAdded = false;
 
-/** Adds the yellow background of a highlighted row to the display one time. */
+/** Adds the style of a highlighted row and of the New tag to the display one time. */
 function addHighlightCss(display: Gdk.Display): void {
   if (highlightCssAdded) {
     return;
   }
   const provider = new Gtk.CssProvider();
-  provider.load_from_string(`row.${highlightClass} { background-color: alpha(@warning_bg_color, 0.15); }`);
+  provider.load_from_string(highlightCss);
   Gtk.StyleContext.add_provider_for_display(display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
   highlightCssAdded = true;
 }
@@ -210,7 +224,15 @@ function appRow(
     tooltip_text: 'The shortcut is not set, so this item does nothing now.',
     visible: isEmpty,
   });
+  const newTag = new Gtk.Label({
+    label: 'New',
+    valign: Gtk.Align.CENTER,
+    css_classes: [newTagClass],
+    tooltip_text: 'You added this app now. It moves to its place in name order when you add another app.',
+    visible: isNew,
+  });
   const { badge, show } = context.conflictBadge();
+  row.add_suffix(newTag);
   row.add_suffix(unsetWarning);
   row.add_suffix(badge);
   row.add_suffix(shortcut);

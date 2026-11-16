@@ -128,17 +128,26 @@ export function topWindowAt<T>(windows: readonly { id: T; frame: Rect }[], x: nu
 
 /**
  * The list indexes of the entries in the order of the rows in the
- * preferences window. The entries without a shortcut come first, in list
- * order, so that the user sees a new entry. The other entries follow in
- * the order of the app names. The list itself keeps its order, because
- * the list order sets the owner of a shortcut that two entries have.
+ * preferences window, so that the user sees a new entry. First comes
+ * `newIndex`, the entry that the user added last, also after it gets a
+ * shortcut. Then the entries without a shortcut, in list order. Then the
+ * other entries, in the order of the app names. The list itself keeps its
+ * order, because the list order sets the owner of a shortcut that two
+ * entries have.
  */
-export function appRowOrder(entries: readonly AppToggle[], nameOf: (app: string) => string): number[] {
-  const unset = entries.flatMap((entry, index) => (entry.accelerator === '' ? [index] : []));
-  const set = entries
-    .flatMap((entry, index) => (entry.accelerator === '' ? [] : [{ index, name: nameOf(entry.app) }]))
+export function appRowOrder(
+  entries: readonly AppToggle[],
+  nameOf: (app: string) => string,
+  newIndex: number | null,
+): number[] {
+  const others = entries.flatMap((entry, index) => (index === newIndex ? [] : [{ index, entry }]));
+  const unset = others.filter(({ entry }) => entry.accelerator === '');
+  const set = others
+    .filter(({ entry }) => entry.accelerator !== '')
+    .map(({ index, entry }) => ({ index, name: nameOf(entry.app) }))
     .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
-  return [...unset, ...set.map(({ index }) => index)];
+  const first = newIndex !== null && newIndex < entries.length ? [newIndex] : [];
+  return [...first, ...unset.map(({ index }) => index), ...set.map(({ index }) => index)];
 }
 
 /** The accelerators to give Mutter, and one journal line for each entry that does not get its shortcut. */
