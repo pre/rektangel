@@ -6,11 +6,11 @@ In ADR 0008, Caps Lock is a `TWO_LEVEL` key: `[ Hyper_L, Caps_Lock ]`. XKB selec
 
 The setting `caps-lock-behavior` selects one of three XKB options. Each option puts Caps Lock on Mod3, so the shortcuts do not change:
 
-| Value | XKB option | Caps lock |
-|-------|------------|-----------|
+| Value                   | XKB option                         | Caps lock                                                                                                               |
+| ----------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | `both-shifts` (default) | `rektangel:caps_hyper_both_shifts` | Both Shift keys together. Caps Lock is `ONE_LEVEL` `Hyper_L`, and the symbols include the stock `shift(both_capslock)`. |
-| `hyper-only` | `rektangel:caps_hyper_only` | Not available. Caps Lock is `ONE_LEVEL` `Hyper_L`. |
-| `shift-caps` | `rektangel:caps_hyper` | Shift+Caps Lock, as in ADR 0008. |
+| `hyper-only`            | `rektangel:caps_hyper_only`        | Not available. Caps Lock is `ONE_LEVEL` `Hyper_L`.                                                                      |
+| `shift-caps`            | `rektangel:caps_hyper`             | Shift+Caps Lock, as in ADR 0008.                                                                                        |
 
 The preferences window shows the setting in the Caps Lock group, at the top right. The dropdown is active only when `super-key` is `capslock`.
 

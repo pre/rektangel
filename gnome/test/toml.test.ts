@@ -64,7 +64,10 @@ describe('parseToml', () => {
   ];
   for (const [name, text, message] of errors) {
     test(`throws a TomlError for ${name}`, () => {
-      assert.throws(() => parseToml(text), (error: unknown) => error instanceof TomlError && message.test(error.message));
+      assert.throws(
+        () => parseToml(text),
+        (error: unknown) => error instanceof TomlError && message.test(error.message),
+      );
     });
   }
 });

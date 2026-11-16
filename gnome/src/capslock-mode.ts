@@ -73,7 +73,11 @@ export function installXkbOption(
  * older version and replaces the option when the behavior changed. Sets
  * xkb-option-installed. Returns true when it changed a file or the option.
  */
-export function ensureXkbOption(rektangel: Gio.Settings, extensionPath: string, context: XkbOptionContext = {}): boolean {
+export function ensureXkbOption(
+  rektangel: Gio.Settings,
+  extensionPath: string,
+  context: XkbOptionContext = {},
+): boolean {
   if (rektangel.get_string(superKeySetting) !== 'capslock') {
     return false;
   }
@@ -177,4 +181,3 @@ function writeText(path: string, text: string): void {
     null,
   );
 }
-

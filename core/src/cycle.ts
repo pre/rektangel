@@ -24,7 +24,11 @@ export function sortedCycleSizes(sizes: readonly number[]): number[] {
  * first press gives one half. Each repeat of the same action on an
  * unchanged window gives the next cycle size.
  */
-export function cycleFraction(action: Action, lastAction: LastAction | undefined, cycleSizes: readonly number[]): number {
+export function cycleFraction(
+  action: Action,
+  lastAction: LastAction | undefined,
+  cycleSizes: readonly number[],
+): number {
   const sizes = sortedCycleSizes(cycleSizes);
   if (lastAction === undefined || lastAction.action !== action || sizes.length === 0) {
     return firstCycleSize;

@@ -11,11 +11,11 @@ The mode is the default. When `super-key` is `capslock`, the extension installs 
 - A shortcut that you set in the preferences window stores the key that you pressed: `<Mod3>` for Caps Lock and `<Super>` for the Windows key. A change of `super-key` does not move it.
 - A user XKB option makes Caps Lock `Hyper_L` on the real modifier Mod3 while you hold it. The setting `caps-lock-behavior` selects the option (ADR 0015):
 
-  | `caps-lock-behavior` | XKB option | Caps lock |
-  |----------------------|------------|-----------|
-  | `both-shifts` (default) | `rektangel:caps_hyper_both_shifts` | Both Shift keys together. Caps Lock is `ONE_LEVEL` `[ Hyper_L ]`, with the stock `shift(both_capslock)`. |
-  | `hyper-only` | `rektangel:caps_hyper_only` | Not available. Caps Lock is `ONE_LEVEL` `[ Hyper_L ]`. |
-  | `shift-caps` | `rektangel:caps_hyper` | Shift+Caps Lock. Caps Lock is `TWO_LEVEL` `[ Hyper_L, Caps_Lock ]`. XKB selects the level when the key goes down, so Caps Lock pressed after Shift gives caps lock and not Hyper. |
+  | `caps-lock-behavior`    | XKB option                         | Caps lock                                                                                                                                                                         |
+  | ----------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `both-shifts` (default) | `rektangel:caps_hyper_both_shifts` | Both Shift keys together. Caps Lock is `ONE_LEVEL` `[ Hyper_L ]`, with the stock `shift(both_capslock)`.                                                                          |
+  | `hyper-only`            | `rektangel:caps_hyper_only`        | Not available. Caps Lock is `ONE_LEVEL` `[ Hyper_L ]`.                                                                                                                            |
+  | `shift-caps`            | `rektangel:caps_hyper`             | Shift+Caps Lock. Caps Lock is `TWO_LEVEL` `[ Hyper_L, Caps_Lock ]`. XKB selects the level when the key goes down, so Caps Lock pressed after Shift gives caps lock and not Hyper. |
 
 - The Caps Lock LED shows the real caps lock state.
 - When `caps-lock-behavior` changes, the extension replaces the option. Mutter then loads the keymap again, so the change has an effect at once.
@@ -26,14 +26,14 @@ In the stored shortcuts, Hyper is only a Rektangel name. Rektangel registers `<M
 
 ## Files
 
-| File | Installed to |
-|------|--------------|
-| `xkb/rules/evdev` | `~/.config/xkb/rules/evdev`: includes the system rules and adds the options |
-| `xkb/rules/evdev.lst` | `~/.config/xkb/rules/evdev.lst`: the option descriptions |
+| File                    | Installed to                                                                        |
+| ----------------------- | ----------------------------------------------------------------------------------- |
+| `xkb/rules/evdev`       | `~/.config/xkb/rules/evdev`: includes the system rules and adds the options         |
+| `xkb/rules/evdev.lst`   | `~/.config/xkb/rules/evdev.lst`: the option descriptions                            |
 | `xkb/symbols/rektangel` | `~/.config/xkb/symbols/rektangel`: the Caps Lock key, one variant for each behavior |
-| `capslock-mode.js` | not installed: the XKB step, run with `gjs` by the scripts |
-| `install.sh` | not installed, run it from the extension directory |
-| `uninstall.sh` | not installed, run it from the extension directory |
+| `capslock-mode.js`      | not installed: the XKB step, run with `gjs` by the scripts                          |
+| `install.sh`            | not installed, run it from the extension directory                                  |
+| `uninstall.sh`          | not installed, run it from the extension directory                                  |
 
 If `~/.config/xkb/rules/evdev` or `evdev.lst` exists already, the XKB step does not replace it. It adds the Rektangel lines at the end, if they are not there, and removes the Rektangel lines of an older version first. The install always writes `symbols/rektangel`. The remove step removes `symbols/rektangel` and each line that has the word `rektangel`, also the lines of an older version. It removes a rules file when no other rule stays in it. The directories stay.
 
@@ -74,12 +74,12 @@ When `super-key` changes to `capslock`, the extension installs the XKB option on
 
 Each Hyper shortcut uses Caps Lock. A shortcut with the Windows key or without Hyper does not change. With the defaults:
 
-| Action           | Default                  | Caps Lock mode           |
-|------------------|--------------------------|--------------------------|
-| Left half        | Hyper+Left               | Caps+Left                |
-| Top left         | Hyper+Shift+Left         | Caps+Shift+Left          |
-| Maximize         | Hyper+Space              | Caps+Space               |
-| Restore          | Hyper+BackSpace          | Caps+BackSpace           |
+| Action    | Default          | Caps Lock mode  |
+| --------- | ---------------- | --------------- |
+| Left half | Hyper+Left       | Caps+Left       |
+| Top left  | Hyper+Shift+Left | Caps+Shift+Left |
+| Maximize  | Hyper+Space      | Caps+Space      |
+| Restore   | Hyper+BackSpace  | Caps+BackSpace  |
 
 All defaults use Hyper, so in Caps Lock mode all defaults use Caps Lock, and the Windows key is free for GNOME. In Caps Lock mode you need `gnome-keys.sh` only for the shortcuts that you set with the Windows key. The script compares each Hyper shortcut as the key that `super-key` gives it, and it does not compare the shortcuts with Caps Lock. When you set `super-key` to `super`, run `gnome-keys.sh` again. To get the GNOME shortcuts back, run `gnome-keys.sh --undo`.
 

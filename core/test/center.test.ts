@@ -5,9 +5,21 @@ import { input, rect, singleMonitor } from './fixtures.js';
 
 describe('center', () => {
   const cases = [
-    { name: 'keeps the size and centers the window', frame: rect(100, 200, 800, 600), expected: rect(1104, 560, 800, 600) },
-    { name: 'a window taller than the work area gets its height', frame: rect(100, 0, 800, 2000), expected: rect(1104, 27, 800, 1665) },
-    { name: 'a window wider than the work area gets its width', frame: rect(-100, 200, 4000, 600), expected: rect(0, 560, 3008, 600) },
+    {
+      name: 'keeps the size and centers the window',
+      frame: rect(100, 200, 800, 600),
+      expected: rect(1104, 560, 800, 600),
+    },
+    {
+      name: 'a window taller than the work area gets its height',
+      frame: rect(100, 0, 800, 2000),
+      expected: rect(1104, 27, 800, 1665),
+    },
+    {
+      name: 'a window wider than the work area gets its width',
+      frame: rect(-100, 200, 4000, 600),
+      expected: rect(0, 560, 3008, 600),
+    },
   ];
   for (const { name, frame, expected } of cases) {
     test(name, () => {

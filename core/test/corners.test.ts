@@ -7,9 +7,19 @@ import { press } from './run.js';
 // Work area 0,27 3008x1665. The axis is horizontal by default.
 const horizontalCycles: Record<string, ReturnType<typeof rect>[]> = {
   'top-left': [rect(0, 27, 1504, 832), rect(0, 27, 2005, 832), rect(0, 27, 1002, 832), rect(0, 27, 1504, 832)],
-  'top-right': [rect(1504, 27, 1504, 832), rect(1003, 27, 2005, 832), rect(2006, 27, 1002, 832), rect(1504, 27, 1504, 832)],
+  'top-right': [
+    rect(1504, 27, 1504, 832),
+    rect(1003, 27, 2005, 832),
+    rect(2006, 27, 1002, 832),
+    rect(1504, 27, 1504, 832),
+  ],
   'bottom-left': [rect(0, 860, 1504, 832), rect(0, 860, 2005, 832), rect(0, 860, 1002, 832), rect(0, 860, 1504, 832)],
-  'bottom-right': [rect(1504, 860, 1504, 832), rect(1003, 860, 2005, 832), rect(2006, 860, 1002, 832), rect(1504, 860, 1504, 832)],
+  'bottom-right': [
+    rect(1504, 860, 1504, 832),
+    rect(1003, 860, 2005, 832),
+    rect(2006, 860, 1002, 832),
+    rect(1504, 860, 1504, 832),
+  ],
 };
 
 describe('corners', () => {

@@ -10,10 +10,10 @@ In a window with a text input, for example a terminal or a text field, GNOME giv
 
 Two upstream commits fix the fault:
 
-| Commit | IBus release | Change |
-|--------|--------------|--------|
-| `4872c1fcd` | 1.5.30 | The simple engine does not type the character. |
-| `48c4a9c90` | 1.5.31 | The simple engine ignores Super for compose keys, as it ignores Alt and Ctrl. |
+| Commit      | IBus release | Change                                                                        |
+| ----------- | ------------ | ----------------------------------------------------------------------------- |
+| `4872c1fcd` | 1.5.30       | The simple engine does not type the character.                                |
+| `48c4a9c90` | 1.5.31       | The simple engine ignores Super for compose keys, as it ignores Alt and Ctrl. |
 
 Ubuntu 24.04 LTS has IBus 1.5.29-2, with the fault. Ubuntu 26.04 LTS has IBus 1.5.34, with the fix. [ibus-super-fix](https://github.com/pre/linux-tilkku/tree/main/ibus-super-fix) builds the Ubuntu 24.04 package again with the two commits. Its version is `1.5.29-2ubuntu0~local1`.
 

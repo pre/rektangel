@@ -13,7 +13,12 @@ type Contact = 'neither' | 'start' | 'end' | 'both';
 
 const clamp = (value: number, lower: number, upper: number): number => Math.min(Math.max(value, lower), upper);
 
-function transfer(window: Span, source: Span, destination: Span, edgeTolerance: number): { span: Span; contact: Contact } {
+function transfer(
+  window: Span,
+  source: Span,
+  destination: Span,
+  edgeTolerance: number,
+): { span: Span; contact: Contact } {
   const startInset = window.origin - source.origin;
   const endInset = source.origin + source.length - (window.origin + window.length);
   const againstStart = startInset <= edgeTolerance;
@@ -37,7 +42,10 @@ function transfer(window: Span, source: Span, destination: Span, edgeTolerance: 
   }
   const centerFraction = (window.origin + window.length / 2 - source.origin) / source.length;
   const origin = destination.origin + centerFraction * destination.length - length / 2;
-  return { span: { origin: clamp(origin, destination.origin, destination.origin + slack), length }, contact: 'neither' };
+  return {
+    span: { origin: clamp(origin, destination.origin, destination.origin + slack), length },
+    contact: 'neither',
+  };
 }
 
 function changesOrientation(source: Rect, destination: Rect): boolean {
@@ -91,7 +99,12 @@ export function transferredRect(
   }
 
   return {
-    rect: { x: horizontal.span.origin, y: vertical.span.origin, width: horizontal.span.length, height: vertical.span.length },
+    rect: {
+      x: horizontal.span.origin,
+      y: vertical.span.origin,
+      width: horizontal.span.length,
+      height: vertical.span.length,
+    },
     touchesAllEdges: horizontal.contact === 'both' && vertical.contact === 'both',
   };
 }

@@ -26,7 +26,10 @@ describe('versionMismatchWarning', () => {
   });
 
   test('gives release versions with a v', () => {
-    assert.match(versionMismatchWarning('0.3.0', '0.2.0') ?? '', /^Rektangel was updated to v0\.3\.0, but GNOME Shell still runs v0\.2\.0\./);
+    assert.match(
+      versionMismatchWarning('0.3.0', '0.2.0') ?? '',
+      /^Rektangel was updated to v0\.3\.0, but GNOME Shell still runs v0\.2\.0\./,
+    );
   });
 
   test('gives null for the same version', () => {

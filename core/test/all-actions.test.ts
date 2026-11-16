@@ -71,10 +71,17 @@ describe('every result lies inside the work area of its monitor', () => {
           const { workArea } = twoMonitors[result.change.monitorIndex]!;
           const fits = frame.width <= workArea.width && frame.height <= workArea.height;
           if (canResize || fits) {
-            assert.ok(isInside(result.change.frame, workArea), `${action} ${JSON.stringify(frame)} gave ${JSON.stringify(result.change.frame)}`);
+            assert.ok(
+              isInside(result.change.frame, workArea),
+              `${action} ${JSON.stringify(frame)} gave ${JSON.stringify(result.change.frame)}`,
+            );
           }
           if (!canResize) {
-            assert.deepEqual([result.change.frame.width, result.change.frame.height], [frame.width, frame.height], action);
+            assert.deepEqual(
+              [result.change.frame.width, result.change.frame.height],
+              [frame.width, frame.height],
+              action,
+            );
           }
         }
       }

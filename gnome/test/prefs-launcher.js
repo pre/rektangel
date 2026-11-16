@@ -26,7 +26,12 @@ GLib.set_prgname('Rektangel');
 GLib.set_application_name('Rektangel');
 const app = new Adw.Application({ flags: Gio.ApplicationFlags.NON_UNIQUE });
 app.connect('activate', () => {
-  const win = new Adw.PreferencesWindow({ application: app, default_width: 640, default_height: 900, title: 'Rektangel' });
+  const win = new Adw.PreferencesWindow({
+    application: app,
+    default_width: 640,
+    default_height: 900,
+    title: 'Rektangel',
+  });
   new Prefs(metadata).fillPreferencesWindow(win);
   win.present();
 });

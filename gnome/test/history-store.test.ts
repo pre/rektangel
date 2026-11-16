@@ -182,11 +182,13 @@ describe('HistoryStore', () => {
     store.set(window, history());
     store.recordFrameAfterChange(window, requested);
 
-    display.beginGrab(new (class extends FakeWindow {
-      override get_id(): number {
-        return 8;
-      }
-    })());
+    display.beginGrab(
+      new (class extends FakeWindow {
+        override get_id(): number {
+          return 8;
+        }
+      })(),
+    );
 
     assert.deepEqual(window.connectedSignals(), ['position-changed', 'size-changed', 'unmanaged']);
   });

@@ -41,12 +41,42 @@ describe('changeSize (Rectangle ChangeSizeCalculationTests)', () => {
 
 describe('larger and smaller', () => {
   const cases = [
-    { name: 'larger grows 30 px around the center', action: 'larger', frame: rect(100, 200, 800, 600), expected: rect(85, 185, 830, 630) },
-    { name: 'smaller shrinks 30 px around the center', action: 'smaller', frame: rect(100, 200, 800, 600), expected: rect(115, 215, 770, 570) },
-    { name: 'larger keeps the edges that touch the work area', action: 'larger', frame: rect(0, 27, 1504, 1665), expected: rect(0, 27, 1534, 1665) },
-    { name: 'larger keeps the bottom edge of a bottom-right corner', action: 'larger', frame: rect(1504, 860, 1504, 832), expected: rect(1474, 830, 1534, 862) },
-    { name: 'smaller on a maximized window shrinks both axes', action: 'smaller', frame: rect(0, 27, 3008, 1665), expected: rect(15, 42, 2978, 1635) },
-    { name: 'larger never grows past the work area', action: 'larger', frame: rect(10, 40, 2990, 1640), expected: rect(0, 27, 3008, 1665) },
+    {
+      name: 'larger grows 30 px around the center',
+      action: 'larger',
+      frame: rect(100, 200, 800, 600),
+      expected: rect(85, 185, 830, 630),
+    },
+    {
+      name: 'smaller shrinks 30 px around the center',
+      action: 'smaller',
+      frame: rect(100, 200, 800, 600),
+      expected: rect(115, 215, 770, 570),
+    },
+    {
+      name: 'larger keeps the edges that touch the work area',
+      action: 'larger',
+      frame: rect(0, 27, 1504, 1665),
+      expected: rect(0, 27, 1534, 1665),
+    },
+    {
+      name: 'larger keeps the bottom edge of a bottom-right corner',
+      action: 'larger',
+      frame: rect(1504, 860, 1504, 832),
+      expected: rect(1474, 830, 1534, 862),
+    },
+    {
+      name: 'smaller on a maximized window shrinks both axes',
+      action: 'smaller',
+      frame: rect(0, 27, 3008, 1665),
+      expected: rect(15, 42, 2978, 1635),
+    },
+    {
+      name: 'larger never grows past the work area',
+      action: 'larger',
+      frame: rect(10, 40, 2990, 1640),
+      expected: rect(0, 27, 3008, 1665),
+    },
   ] as const;
   for (const { name, action, frame, expected } of cases) {
     test(name, () => {

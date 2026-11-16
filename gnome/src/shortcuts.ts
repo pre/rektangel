@@ -73,7 +73,10 @@ export function normalizeAccelerator(accelerator: string): string {
     return '';
   });
   const name = key.trim();
-  return [...[...modifiers].sort().map((modifier) => `<${modifier}>`), name.length === 1 ? name.toLowerCase() : name].join('');
+  return [
+    ...[...modifiers].sort().map((modifier) => `<${modifier}>`),
+    name.length === 1 ? name.toLowerCase() : name,
+  ].join('');
 }
 
 /**

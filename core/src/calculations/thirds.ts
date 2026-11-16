@@ -87,11 +87,13 @@ function lastThirdPlacement(area: Rect, lastAction: LastAction | undefined): Pla
   return lastThirdRect(area);
 }
 
-export const firstThird: Calculation = (input) => result(input, firstThirdPlacement(input.monitor.workArea, input.lastAction));
+export const firstThird: Calculation = (input) =>
+  result(input, firstThirdPlacement(input.monitor.workArea, input.lastAction));
 
 export const centerThird: Calculation = (input) => result(input, centerThirdRect(input.monitor.workArea));
 
-export const lastThird: Calculation = (input) => result(input, lastThirdPlacement(input.monitor.workArea, input.lastAction));
+export const lastThird: Calculation = (input) =>
+  result(input, lastThirdPlacement(input.monitor.workArea, input.lastAction));
 
 export const firstTwoThirds: Calculation = (input) => {
   const sub = input.lastAction?.subAction;

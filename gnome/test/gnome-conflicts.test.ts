@@ -168,7 +168,9 @@ describe('rowConflicts', () => {
   });
 
   test('in Caps Lock mode, lists the GNOME keys only for shortcuts without Hyper and Caps Lock', () => {
-    const withAlt: KeybindingTables = new Map([['org.gnome.desktop.wm.keybindings', new Map([['close', ['<Alt>F4']]])]]);
+    const withAlt: KeybindingTables = new Map([
+      ['org.gnome.desktop.wm.keybindings', new Map([['close', ['<Alt>F4']]])],
+    ]);
     const bindings = new Map([
       [Action.LeftHalf, ['<Hyper>Left']],
       [Action.RightHalf, ['<Mod3>Left']],
@@ -365,7 +367,10 @@ describe('conflictWording', () => {
   });
 
   test('uses the GNOME texts for the IBus unicode hotkey, which is not the emoji picker', () => {
-    const wording = conflictWording({ schema: 'org.freedesktop.ibus.panel.emoji', key: 'unicode-hotkey' }, 'Ctrl+Shift+U');
+    const wording = conflictWording(
+      { schema: 'org.freedesktop.ibus.panel.emoji', key: 'unicode-hotkey' },
+      'Ctrl+Shift+U',
+    );
     assert.equal(wording.entry, 'IBus emoji › unicode-hotkey (Ctrl+Shift+U)');
     assert.equal(wording.button, 'Remove from GNOME');
   });
@@ -387,7 +392,10 @@ describe('conflictSections', () => {
   });
 
   test('returns no sections for no keys', () => {
-    assert.deepEqual(conflictSections([], () => ''), []);
+    assert.deepEqual(
+      conflictSections([], () => ''),
+      [],
+    );
   });
 });
 

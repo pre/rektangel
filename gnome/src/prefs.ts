@@ -82,7 +82,9 @@ export default class RektangelPreferences extends ExtensionPreferences {
       );
     let gnomeTables = readTables();
     // Without the IBus fault, no key gives a character, so no row gets the IBus warning.
-    const ibusKeyToUnicode = ibusSwallowsSuperKeys(installedIbusVersion(), ibusPackageVersion()) ? keyToUnicode : undefined;
+    const ibusKeyToUnicode = ibusSwallowsSuperKeys(installedIbusVersion(), ibusPackageVersion())
+      ? keyToUnicode
+      : undefined;
     const refreshers = new Map<string, (conflicts: readonly RowConflict[]) => void>();
     const refreshAll = (): void => {
       const bindings = currentBindings(settings);

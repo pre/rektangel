@@ -66,17 +66,17 @@ Rounding:
 
 ## Calculations
 
-| Action | Rectangle source | File |
-|--------|------------------|------|
-| left-half, right-half, top-half, bottom-half | `LeftRightHalfCalculation`, `TopHalfCalculation`, `BottomHalfCalculation`, `RepeatedExecutionsCalculation` | `halves.ts`, `../cycle.ts` |
-| top-left, top-right, bottom-left, bottom-right | `UpperLeftCalculation` and siblings, `CornerCycleExpansionCalculation` | `corners.ts` |
-| first-third, center-third, last-third, first-two-thirds, last-two-thirds | `FirstThirdCalculation` and siblings, `OrientationAware` | `thirds.ts` |
-| maximize, almost-maximize, maximize-height | `MaximizeCalculation`, `AlmostMaximizeCalculation`, `MaximizeHeightCalculation` | `maximize.ts` |
-| center | `CenterCalculation` | `center.ts` |
-| larger, smaller | `ChangeSizeCalculation`, `ChangeWindowDimensionCalculation` | `change-size.ts` |
-| move-left, move-right, move-up, move-down | `MoveLeftRightCalculation`, `MoveUpDownCalculation` | `move.ts` |
-| previous-display, next-display | `NextPrevDisplayCalculation`, `DisplayTransfer`, `ScreenDetection.order` | `display.ts`, `display-transfer.ts` |
-| restore | `WindowManager.execute` | `../execute.ts` |
+| Action                                                                   | Rectangle source                                                                                           | File                                |
+| ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| left-half, right-half, top-half, bottom-half                             | `LeftRightHalfCalculation`, `TopHalfCalculation`, `BottomHalfCalculation`, `RepeatedExecutionsCalculation` | `halves.ts`, `../cycle.ts`          |
+| top-left, top-right, bottom-left, bottom-right                           | `UpperLeftCalculation` and siblings, `CornerCycleExpansionCalculation`                                     | `corners.ts`                        |
+| first-third, center-third, last-third, first-two-thirds, last-two-thirds | `FirstThirdCalculation` and siblings, `OrientationAware`                                                   | `thirds.ts`                         |
+| maximize, almost-maximize, maximize-height                               | `MaximizeCalculation`, `AlmostMaximizeCalculation`, `MaximizeHeightCalculation`                            | `maximize.ts`                       |
+| center                                                                   | `CenterCalculation`                                                                                        | `center.ts`                         |
+| larger, smaller                                                          | `ChangeSizeCalculation`, `ChangeWindowDimensionCalculation`                                                | `change-size.ts`                    |
+| move-left, move-right, move-up, move-down                                | `MoveLeftRightCalculation`, `MoveUpDownCalculation`                                                        | `move.ts`                           |
+| previous-display, next-display                                           | `NextPrevDisplayCalculation`, `DisplayTransfer`, `ScreenDetection.order`                                   | `display.ts`, `display-transfer.ts` |
+| restore                                                                  | `WindowManager.execute`                                                                                    | `../execute.ts`                     |
 
 The port uses the Rectangle defaults: `subsequentExecutionMode = resize`, `cooperativeCornerResize` off, `centeredDirectionalMove` on, `resizeOnDirectionalMove` off, `curtainChangeSize` on, `smallerShrinksMaximizedHeight` off, `attemptMatchOnNextPrevDisplay` off, `screensOrderedByX = yThenMinX`, no gaps, no split ratios. Repeated cycles:
 

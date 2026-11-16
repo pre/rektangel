@@ -74,7 +74,10 @@ export function customShortcutSettings(): Gio.Settings[] {
 }
 
 export function readCustomShortcuts(settingsList = customShortcutSettings()): CustomShortcut[] {
-  return settingsList.map((settings) => ({ name: settings.get_string('name'), binding: settings.get_string('binding') }));
+  return settingsList.map((settings) => ({
+    name: settings.get_string('name'),
+    binding: settings.get_string('binding'),
+  }));
 }
 
 export function backupPath(): string {

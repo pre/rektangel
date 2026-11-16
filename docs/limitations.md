@@ -21,10 +21,10 @@ Other GTK 3 applications that set a size increment can show the same strips.
 Measured on 2026-11-13 with GNOME Shell 46 on Wayland, GNOME Terminal 3.52, GTK 3.24.41 and a cell of 9 x 20 pixels. All sizes are logical pixels. The columns and rows are measured. The strips are calculated from them.
 
 | Monitor scale | Half of the work area | Columns x rows | Strip on the right side | Strip below |
-|---|---|---|---|---|
-| 1.75 | 824 x 1030 | 90 x 49 | 0 | 1 |
-| 1.5 | 1280 x 1408 | 140 x 67 | 6 | 19 |
-| 1.25 | 1536 x 1728 | 169 x 83 | 1 | 19 |
+| ------------- | --------------------- | -------------- | ----------------------- | ----------- |
+| 1.75          | 824 x 1030            | 90 x 49        | 0                       | 1           |
+| 1.5           | 1280 x 1408           | 140 x 67       | 6                       | 19          |
+| 1.25          | 1536 x 1728           | 169 x 83       | 1                       | 19          |
 
 The monitor scale has no direct effect. It changes the size of the work area in logical pixels, and the work area sets how many pixels stay after the last full column and row.
 

@@ -43,7 +43,8 @@ await build({
 // The release workflow sets version-name before the build. A local build gets
 // the commit, so the preferences window and the Extensions app show it.
 const metadata = JSON.parse(readFileSync('metadata.json', 'utf8'));
-metadata['version-name'] ??= `git-${execFileSync('git', ['rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).trim()}`;
+metadata['version-name'] ??=
+  `git-${execFileSync('git', ['rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).trim()}`;
 writeFileSync('dist/metadata.json', `${JSON.stringify(metadata, null, 2)}\n`);
 cpSync('schemas', 'dist/schemas', { recursive: true });
 execFileSync('glib-compile-schemas', ['--strict', 'dist/schemas'], { stdio: 'inherit' });

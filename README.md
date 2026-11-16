@@ -49,34 +49,34 @@ To attach to Caps Lock, the extension writes a user XKB option to `~/.config/xkb
 
 ## Default shortcuts
 
-| Action           | Shortcut                 |
-|------------------|--------------------------|
-| Top half         | Hyper+Up                 |
-| Left half        | Hyper+Left               |
-| Bottom half      | Hyper+Down               |
-| Right half       | Hyper+Right              |
-| Top right        | Hyper+Shift+Up           |
-| Top left         | Hyper+Shift+Left         |
-| Bottom left      | Hyper+Shift+Down         |
-| Bottom right     | Hyper+Shift+Right        |
-| First third      | Hyper+1                  |
-| Last third       | Hyper+2                  |
-| First two thirds | Hyper+3                  |
-| Last two thirds  | Hyper+4                  |
-| Center third     | Hyper+5                  |
-| Maximize         | Hyper+Space              |
-| Almost maximize  | Hyper+Comma              |
-| Maximize height  | Hyper+Return             |
-| Larger           | Hyper+Plus               |
-| Smaller          | Hyper+Minus              |
-| Center           | Hyper+Period             |
-| Top edge         | Hyper+W                  |
-| Left edge        | Hyper+A                  |
-| Bottom edge      | Hyper+S                  |
-| Right edge       | Hyper+D                  |
-| Next display     | Hyper+Apostrophe         |
-| Previous display | Hyper+Shift+Apostrophe   |
-| Restore previous | Hyper+Backspace          |
+| Action           | Shortcut               |
+| ---------------- | ---------------------- |
+| Top half         | Hyper+Up               |
+| Left half        | Hyper+Left             |
+| Bottom half      | Hyper+Down             |
+| Right half       | Hyper+Right            |
+| Top right        | Hyper+Shift+Up         |
+| Top left         | Hyper+Shift+Left       |
+| Bottom left      | Hyper+Shift+Down       |
+| Bottom right     | Hyper+Shift+Right      |
+| First third      | Hyper+1                |
+| Last third       | Hyper+2                |
+| First two thirds | Hyper+3                |
+| Last two thirds  | Hyper+4                |
+| Center third     | Hyper+5                |
+| Maximize         | Hyper+Space            |
+| Almost maximize  | Hyper+Comma            |
+| Maximize height  | Hyper+Return           |
+| Larger           | Hyper+Plus             |
+| Smaller          | Hyper+Minus            |
+| Center           | Hyper+Period           |
+| Top edge         | Hyper+W                |
+| Left edge        | Hyper+A                |
+| Bottom edge      | Hyper+S                |
+| Right edge       | Hyper+D                |
+| Next display     | Hyper+Apostrophe       |
+| Previous display | Hyper+Shift+Apostrophe |
+| Restore previous | Hyper+Backspace        |
 
 Hyper is the Rektangel modifier. It is Caps Lock by default, so Hyper+Left is Caps Lock+Left. The setting `super-key` makes Hyper Caps Lock or the Windows key (see Caps Lock mode). The table has the order of the preferences window, which lists the halves, the corners and the edges by their arrow or WASD key: Up, Left, Down, Right. The corners go clockwise from the arrow key: Left is top left, Up is top right, Right is bottom right and Down is bottom left. The keys are for a Finnish keyboard, on which Plus and Minus have no Shift and Apostrophe is the key to the right of Ä. On a Finnish keyboard, Shift+Apostrophe is the asterisk, so the previous display shortcut shows as Hyper+*. Mutter compares the key and the modifiers, so the stored form is `<Hyper><Shift>apostrophe`, not `<Hyper>asterisk`. On other layouts, the same key names can be on other keys, or need Shift. See ADR 0010, ADR 0012 and ADR 0014.
 
@@ -91,18 +91,18 @@ gsettings --schemadir "$schemas" set org.gnome.shell.extensions.rektangel first-
 
 GNOME shortcuts use the Windows key, which GNOME calls Super. A Hyper default conflicts with GNOME only when Hyper is the Windows key. With Caps Lock as the Hyper key, the default shortcuts do not conflict with GNOME. A shortcut that you set with the Windows key can conflict with GNOME in each mode. When Hyper is the Windows key, on GNOME 46 these GNOME defaults conflict:
 
-| Rektangel default        | GNOME key                                                        |
-|--------------------------|------------------------------------------------------------------|
-| Hyper+Left, Hyper+Right  | `org.gnome.mutter.keybindings` `toggle-tiled-left`, `toggle-tiled-right` |
-| Hyper+Up                 | `org.gnome.desktop.wm.keybindings` `maximize`                    |
-| Hyper+Down               | `org.gnome.desktop.wm.keybindings` `unmaximize`                  |
-| Hyper+Shift+arrow keys   | `org.gnome.desktop.wm.keybindings` `move-to-monitor-left`, `-right`, `-up`, `-down` |
-| Hyper+Space              | `org.gnome.desktop.wm.keybindings` `switch-input-source`         |
-| Hyper+Period             | `org.freedesktop.ibus.panel.emoji` `hotkey` (IBus emoji)         |
-| Hyper+1 to Hyper+5       | `org.gnome.shell.keybindings` `switch-to-application-1` to `-5` (dash favorites) |
-| Hyper+A                  | `org.gnome.shell.keybindings` `toggle-application-view` (show applications) |
-| Hyper+S                  | `org.gnome.shell.keybindings` `toggle-quick-settings`            |
-| Hyper+D                  | `org.gnome.desktop.wm.keybindings` `show-desktop` (Ubuntu only)  |
+| Rektangel default       | GNOME key                                                                           |
+| ----------------------- | ----------------------------------------------------------------------------------- |
+| Hyper+Left, Hyper+Right | `org.gnome.mutter.keybindings` `toggle-tiled-left`, `toggle-tiled-right`            |
+| Hyper+Up                | `org.gnome.desktop.wm.keybindings` `maximize`                                       |
+| Hyper+Down              | `org.gnome.desktop.wm.keybindings` `unmaximize`                                     |
+| Hyper+Shift+arrow keys  | `org.gnome.desktop.wm.keybindings` `move-to-monitor-left`, `-right`, `-up`, `-down` |
+| Hyper+Space             | `org.gnome.desktop.wm.keybindings` `switch-input-source`                            |
+| Hyper+Period            | `org.freedesktop.ibus.panel.emoji` `hotkey` (IBus emoji)                            |
+| Hyper+1 to Hyper+5      | `org.gnome.shell.keybindings` `switch-to-application-1` to `-5` (dash favorites)    |
+| Hyper+A                 | `org.gnome.shell.keybindings` `toggle-application-view` (show applications)         |
+| Hyper+S                 | `org.gnome.shell.keybindings` `toggle-quick-settings`                               |
+| Hyper+D                 | `org.gnome.desktop.wm.keybindings` `show-desktop` (Ubuntu only)                     |
 
 Ubuntu sets `maximize` and `unmaximize` to empty in the Ubuntu session, so on Ubuntu Windows+Up and Windows+Down are free. Ubuntu also adds Windows+D for `show-desktop`, which GNOME leaves empty. The other defaults (Hyper+Comma, Hyper+Return, Hyper+Plus, Hyper+Minus, Hyper+Apostrophe, Hyper+Shift+Apostrophe, Hyper+Backspace and Hyper+W) have no GNOME 46 shortcut. IBus is not a part of GNOME Shell, but in a window with a text input, for example GNOME Terminal, the IBus emoji hotkey gets Windows+Period before Rektangel does (see Keys with a non-ASCII character below). IBus also has Windows+Semicolon for emoji and Ctrl+Shift+U for Unicode input. Other extensions can also use these keys, for example Tiling Assistant uses Windows+Up and Windows+Down.
 

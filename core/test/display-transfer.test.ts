@@ -65,7 +65,9 @@ describe('transferredRect (Rectangle DisplayTransferTests)', () => {
     const transferred = transfer(window, laptop, external);
 
     const midX = (r: Rect) => r.x + r.width / 2;
-    assert.ok(Math.abs((midX(transferred) - external.x) / external.width - (midX(window) - laptop.x) / laptop.width) <= 0.001);
+    assert.ok(
+      Math.abs((midX(transferred) - external.x) / external.width - (midX(window) - laptop.x) / laptop.width) <= 0.001,
+    );
     assert.equal(transferred.width, window.width);
     assert.equal(transferred.height, window.height);
   });
@@ -112,11 +114,17 @@ describe('transferredRect (Rectangle DisplayTransferTests)', () => {
   });
 
   test('testIssue1723RightThirdStaysAgainstTheRightEdge', () => {
-    assertRect(transfer(rect(2000, 0, 1000, 2000), rect(0, 0, 3000, 2000), rect(0, 0, 1500, 1000)), rect(500, 0, 1000, 1000));
+    assertRect(
+      transfer(rect(2000, 0, 1000, 2000), rect(0, 0, 3000, 2000), rect(0, 0, 1500, 1000)),
+      rect(500, 0, 1000, 1000),
+    );
   });
 
   test('testIssue1723CenteredQuarterKeepsItsSize', () => {
-    assertRect(transfer(rect(960, 360, 640, 720), rect(0, 0, 2560, 1440), rect(0, 0, 1280, 720)), rect(320, 0, 640, 720));
+    assertRect(
+      transfer(rect(960, 360, 640, 720), rect(0, 0, 2560, 1440), rect(0, 0, 1280, 720)),
+      rect(320, 0, 640, 720),
+    );
   });
 
   test('testIssue1723OverflowIsCutDownToFit', () => {

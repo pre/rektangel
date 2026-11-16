@@ -7,7 +7,12 @@ import { press } from './run.js';
 // Work area 0,27 3008x1665. Fractions floor like Rectangle HalfSplitFrameCalculation.
 const cycles: Record<string, ReturnType<typeof rect>[]> = {
   'left-half': [rect(0, 27, 1504, 1665), rect(0, 27, 2005, 1665), rect(0, 27, 1002, 1665), rect(0, 27, 1504, 1665)],
-  'right-half': [rect(1504, 27, 1504, 1665), rect(1003, 27, 2005, 1665), rect(2006, 27, 1002, 1665), rect(1504, 27, 1504, 1665)],
+  'right-half': [
+    rect(1504, 27, 1504, 1665),
+    rect(1003, 27, 2005, 1665),
+    rect(2006, 27, 1002, 1665),
+    rect(1504, 27, 1504, 1665),
+  ],
   'top-half': [rect(0, 27, 3008, 832), rect(0, 27, 3008, 1110), rect(0, 27, 3008, 555), rect(0, 27, 3008, 832)],
   'bottom-half': [rect(0, 860, 3008, 832), rect(0, 582, 3008, 1110), rect(0, 1137, 3008, 555), rect(0, 860, 3008, 832)],
 };

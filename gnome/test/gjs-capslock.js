@@ -49,7 +49,10 @@ check('capslock: restore without Hyper', translated.settings.get_strv('restore')
 stored.set_strv('restore', ['<Super>BackSpace']);
 check('capslock: restore with the Windows key', translated.settings.get_strv('restore'), ['<Super>BackSpace']);
 stored.set_strv('left-half', ['<Hyper><Alt>Left', '<Control><Hyper>h']);
-check('capslock: changed left-half', translated.settings.get_strv('left-half'), ['<Mod3><Alt>Left', '<Control><Mod3>h']);
+check('capslock: changed left-half', translated.settings.get_strv('left-half'), [
+  '<Mod3><Alt>Left',
+  '<Control><Mod3>h',
+]);
 translated.setSuperKey('super');
 check('super again: left-half', translated.settings.get_strv('left-half'), ['<Super><Alt>Left', '<Control><Super>h']);
 translated.destroy();
@@ -63,7 +66,9 @@ shared.set_strv('restore', ['<Mod3>1']);
 const sharedCopy = new TranslatedSettings(shared, allKeys, 'capslock', (line) => logLines.push(line));
 check('same key: restore keeps it', sharedCopy.settings.get_strv('restore'), ['<Mod3>1']);
 check('same key: first-third empty', sharedCopy.settings.get_strv('first-third'), []);
-check('same key: log', logLines, ['Rektangel: first-third and restore are both <Mod3>1, first-third is not registered']);
+check('same key: log', logLines, [
+  'Rektangel: first-third and restore are both <Mod3>1, first-third is not registered',
+]);
 sharedCopy.setSuperKey('super');
 check('same key, super: first-third', sharedCopy.settings.get_strv('first-third'), ['<Super>1']);
 sharedCopy.setSuperKey('capslock');
@@ -96,7 +101,10 @@ try {
   check('install: option', inputSources.get_strv('xkb-options'), ['compose:ralt', 'rektangel:caps_hyper_both_shifts']);
   check('install: rules', readFile(`${xkbDir}/rules/evdev`), readFile(`${gnomeDir}/hyper/xkb/rules/evdev`));
   installXkbOption(gnomeDir, 'both-shifts', context);
-  check('install two times: option', inputSources.get_strv('xkb-options'), ['compose:ralt', 'rektangel:caps_hyper_both_shifts']);
+  check('install two times: option', inputSources.get_strv('xkb-options'), [
+    'compose:ralt',
+    'rektangel:caps_hyper_both_shifts',
+  ]);
 
   check('default caps-lock-behavior', stored.get_string('caps-lock-behavior'), 'both-shifts');
   stored.set_string('super-key', 'capslock');
@@ -105,22 +113,39 @@ try {
   stored.set_boolean('xkb-option-installed', false);
   Gio.File.new_for_path(`${xkbDir}/symbols/rektangel`).delete(null);
   check('ensure: missing file', ensureXkbOption(stored, gnomeDir, context), true);
-  check('ensure: file again', readFile(`${xkbDir}/symbols/rektangel`), readFile(`${gnomeDir}/hyper/xkb/symbols/rektangel`));
+  check(
+    'ensure: file again',
+    readFile(`${xkbDir}/symbols/rektangel`),
+    readFile(`${gnomeDir}/hyper/xkb/symbols/rektangel`),
+  );
 
   stored.set_string('caps-lock-behavior', 'shift-caps');
   check('behavior: replaces the option', ensureXkbOption(stored, gnomeDir, context), true);
   check('behavior: shift-caps option', inputSources.get_strv('xkb-options'), ['compose:ralt', 'rektangel:caps_hyper']);
   stored.set_string('caps-lock-behavior', 'hyper-only');
   ensureXkbOption(stored, gnomeDir, context);
-  check('behavior: hyper-only option', inputSources.get_strv('xkb-options'), ['compose:ralt', 'rektangel:caps_hyper_only']);
+  check('behavior: hyper-only option', inputSources.get_strv('xkb-options'), [
+    'compose:ralt',
+    'rektangel:caps_hyper_only',
+  ]);
   stored.reset('caps-lock-behavior');
 
-  writeFile(`${xkbDir}/rules/evdev`, '! include %S/evdev\n\n! option = symbols\n  rektangel:caps_hyper = +rektangel(caps_hyper)\n');
+  writeFile(
+    `${xkbDir}/rules/evdev`,
+    '! include %S/evdev\n\n! option = symbols\n  rektangel:caps_hyper = +rektangel(caps_hyper)\n',
+  );
   writeFile(`${xkbDir}/symbols/rektangel`, '// Rektangel symbols of an older version\n');
   check('older version: ensure updates', ensureXkbOption(stored, gnomeDir, context), true);
   check('older version: rules', readFile(`${xkbDir}/rules/evdev`), readFile(`${gnomeDir}/hyper/xkb/rules/evdev`));
-  check('older version: symbols', readFile(`${xkbDir}/symbols/rektangel`), readFile(`${gnomeDir}/hyper/xkb/symbols/rektangel`));
-  check('older version: option', inputSources.get_strv('xkb-options'), ['compose:ralt', 'rektangel:caps_hyper_both_shifts']);
+  check(
+    'older version: symbols',
+    readFile(`${xkbDir}/symbols/rektangel`),
+    readFile(`${gnomeDir}/hyper/xkb/symbols/rektangel`),
+  );
+  check('older version: option', inputSources.get_strv('xkb-options'), [
+    'compose:ralt',
+    'rektangel:caps_hyper_both_shifts',
+  ]);
 
   removeXkbOption(context);
   check('remove: option', inputSources.get_strv('xkb-options'), ['compose:ralt']);
@@ -186,4 +211,6 @@ try {
   GLib.spawn_command_line_sync(`rm -rf ${GLib.shell_quote(configDir)}`);
 }
 
-print('gjs capslock test passed: Hyper translation, one owner per shortcut, migration, XKB option install, behavior change, update and remove');
+print(
+  'gjs capslock test passed: Hyper translation, one owner per shortcut, migration, XKB option install, behavior change, update and remove',
+);

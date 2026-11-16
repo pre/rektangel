@@ -48,7 +48,8 @@ describe('addXkbLines', () => {
   });
 
   test('replaces the shipped file of an older version', () => {
-    const older = '// Rektangel rules\n! include %S/evdev\n\n! option = symbols\n  rektangel:caps_hyper = +rektangel(caps_hyper)\n';
+    const older =
+      '// Rektangel rules\n! include %S/evdev\n\n! option = symbols\n  rektangel:caps_hyper = +rektangel(caps_hyper)\n';
     assert.equal(addXkbLines(older, shippedRules), shippedRules);
   });
 
@@ -65,7 +66,8 @@ describe('removeXkbLines', () => {
   });
 
   test('gives null for a rules file of an older version with other comments', () => {
-    const older = '// Rektangel rules, version 0\n! include %S/evdev\n\n! option = symbols\n  rektangel:caps_hyper = +rektangel(caps_hyper)\n';
+    const older =
+      '// Rektangel rules, version 0\n! include %S/evdev\n\n! option = symbols\n  rektangel:caps_hyper = +rektangel(caps_hyper)\n';
     assert.equal(removeXkbLines(older), null);
   });
 

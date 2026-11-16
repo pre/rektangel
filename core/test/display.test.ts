@@ -53,7 +53,9 @@ describe('next and previous display', () => {
   });
 
   test('a floating window keeps its size and its relative position', () => {
-    const result = execute(input({ action: 'previous-display', frame: rect(1104, 560, 800, 600), monitors: twoMonitors }));
+    const result = execute(
+      input({ action: 'previous-display', frame: rect(1104, 560, 800, 600), monitors: twoMonitors }),
+    );
 
     assert.deepEqual(result.change, { frame: rect(3568, 240, 800, 600), monitorIndex: 1 });
   });

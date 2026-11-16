@@ -109,7 +109,10 @@ describe('checkCapture', () => {
   const free = (): string | null => null;
 
   test('stores the captured accelerator without a change', () => {
-    assert.deepEqual(checkCapture('<Shift><Mod3>Up', 'capslock', free), { accelerator: '<Shift><Mod3>Up', problem: null });
+    assert.deepEqual(checkCapture('<Shift><Mod3>Up', 'capslock', free), {
+      accelerator: '<Shift><Mod3>Up',
+      problem: null,
+    });
     assert.deepEqual(checkCapture('<Super>Left', 'capslock', free), { accelerator: '<Super>Left', problem: null });
   });
 
@@ -234,7 +237,10 @@ describe('acceleratorLabelParts', () => {
       modifiers: ['Shift', 'Ctrl', 'Alt', 'Meta'],
       key: 'a',
     });
-    assert.deepEqual(acceleratorLabelParts('<Primary><Mod1>BackSpace'), { modifiers: ['Ctrl', 'Alt'], key: 'BackSpace' });
+    assert.deepEqual(acceleratorLabelParts('<Primary><Mod1>BackSpace'), {
+      modifiers: ['Ctrl', 'Alt'],
+      key: 'BackSpace',
+    });
   });
 
   test('ignores the case of the token', () => {
@@ -242,7 +248,10 @@ describe('acceleratorLabelParts', () => {
   });
 
   test('keeps the order of the tokens and names each modifier once', () => {
-    assert.deepEqual(acceleratorLabelParts('<Mod3><Control><Primary>1'), { modifiers: ['Caps Lock', 'Ctrl'], key: '1' });
+    assert.deepEqual(acceleratorLabelParts('<Mod3><Control><Primary>1'), {
+      modifiers: ['Caps Lock', 'Ctrl'],
+      key: '1',
+    });
   });
 
   test('gives no modifiers for a bare key', () => {

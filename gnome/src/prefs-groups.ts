@@ -239,7 +239,8 @@ export function gnomeNoteGroup(): Adw.PreferencesGroup {
   const group = new Adw.PreferencesGroup({ title: 'Keyboard Shortcuts in Use by GNOME' });
   group.add(
     new Gtk.Label({
-      label: 'GNOME has its own shortcuts. To see the GNOME shortcuts, open Settings > Keyboard > View and Customize Shortcuts.',
+      label:
+        'GNOME has its own shortcuts. To see the GNOME shortcuts, open Settings > Keyboard > View and Customize Shortcuts.',
       wrap: true,
       xalign: 0,
     }),
@@ -295,7 +296,9 @@ export function versionWarningGroup(dir: Gio.File, uuid: string): Adw.Preference
   content.append(
     new Gtk.Image({ icon_name: 'dialog-warning-symbolic', valign: Gtk.Align.START, css_classes: ['warning'] }),
   );
-  content.append(new Gtk.Label({ label: warning ?? '', wrap: true, xalign: 0, hexpand: true, css_classes: ['warning'] }));
+  content.append(
+    new Gtk.Label({ label: warning ?? '', wrap: true, xalign: 0, hexpand: true, css_classes: ['warning'] }),
+  );
   card.append(content);
   group.add(card);
   return group;

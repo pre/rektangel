@@ -23,7 +23,13 @@ export function moveInside(rect: Rect, bounds: Rect): Rect {
 
 const alignmentTolerance = 1;
 
-function alignedStart(zoneStart: number, zoneLength: number, length: number, boundsStart: number, boundsLength: number): number {
+function alignedStart(
+  zoneStart: number,
+  zoneLength: number,
+  length: number,
+  boundsStart: number,
+  boundsLength: number,
+): number {
   if (Math.abs(length - zoneLength) <= alignmentTolerance) {
     return zoneStart;
   }
