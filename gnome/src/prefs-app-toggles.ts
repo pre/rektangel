@@ -158,12 +158,20 @@ function appRow(
     valign: Gtk.Align.CENTER,
     css_classes: ['flat'],
   });
+  const isEmpty = entry.accelerator === '';
+  const unsetWarning = new Gtk.Image({
+    icon_name: 'dialog-warning-symbolic',
+    valign: Gtk.Align.CENTER,
+    css_classes: ['warning'],
+    tooltip_text: 'The shortcut is not set, so this item does nothing now.',
+    visible: isEmpty,
+  });
   const { badge, show } = context.conflictBadge();
+  row.add_suffix(unsetWarning);
   row.add_suffix(badge);
   row.add_suffix(shortcut);
   row.add_suffix(remove);
 
-  const isEmpty = entry.accelerator === '';
   label.label = isEmpty ? 'Set shortcut…' : acceleratorLabel(entry.accelerator);
   label.css_classes = isEmpty ? ['dim-label'] : ['keycap'];
 
