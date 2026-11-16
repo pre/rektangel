@@ -126,6 +126,21 @@ export function topWindowAt<T>(windows: readonly { id: T; frame: Rect }[], x: nu
   return null;
 }
 
+/**
+ * The list indexes of the entries in the order of the rows in the
+ * preferences window. The entries without a shortcut come first, in list
+ * order, so that the user sees a new entry. The other entries follow in
+ * the order of the app names. The list itself keeps its order, because
+ * the list order sets the owner of a shortcut that two entries have.
+ */
+export function appRowOrder(entries: readonly AppToggle[], nameOf: (app: string) => string): number[] {
+  const unset = entries.flatMap((entry, index) => (entry.accelerator === '' ? [index] : []));
+  const set = entries
+    .flatMap((entry, index) => (entry.accelerator === '' ? [] : [{ index, name: nameOf(entry.app) }]))
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+  return [...unset, ...set.map(({ index }) => index)];
+}
+
 /** The accelerators to give Mutter, and one journal line for each entry that does not get its shortcut. */
 export interface GrabPlan {
   readonly grabs: readonly { readonly index: number; readonly accelerator: string }[];

@@ -44,6 +44,7 @@ The gsettings key `app-toggles` (`a(ss)`) has the entries: an app identifier and
 - `isValidAppId`, `isValidAccelerator`: the checks before a value from gsettings is used. The identifier is never part of a command line.
 - `windowMatchesApp(app, window)`: true when the identifier is equal to one of the identifiers of the window, without case and without a `.desktop` suffix.
 - `planGrabs(entries, actions, superKey)`: the accelerators to grab, with `<Hyper>` translated, and one journal line for each entry that does not get its shortcut. The actions own their shortcuts first, then the entries in list order.
+- `appRowOrder(entries, nameOf)`: the order of the rows in the preferences window. The entries without a shortcut come first, then the other entries in the order of the app names. The order of the list does not change, because it sets the owner of a shortcut that two entries have.
 - `toggleDecision(input)`: start, hide or show, and which windows to minimize, unminimize, raise and focus.
 - `pickedIdentifier`, `topWindowAt`: the identifier of a clicked window and the window at a point.
 
@@ -55,7 +56,7 @@ The gsettings key `app-toggles` (`a(ss)`) has the entries: an app identifier and
 gdbus call --session --dest org.gnome.Shell --object-path /pet/repo/Rektangel --method pet.repo.Rektangel.PickWindow
 ```
 
-`src/prefs-app-toggles.ts` (preferences process): the group of the entries and the add dialog.
+`src/prefs-app-toggles.ts` (preferences process): the group of the entries and the add dialog. Add App is not available while an entry has no shortcut.
 
 ## Tests
 

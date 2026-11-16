@@ -1,8 +1,10 @@
 import Adw from 'gi://Adw';
+import Gdk from 'gi://Gdk?version=4.0';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk?version=4.0';
 import {
+  appRowOrder,
   appTogglesSetting,
   desktopIdCandidates,
   isValidAppId,
@@ -112,7 +114,7 @@ export function appTogglesGroup(
       refreshers.delete(id);
     }
     const entries = readAppToggles(settings);
-    rows = entries.map((entry, index) => {
+    rows = appRowOrder(entries, appName).map((index) => {
       const { row, refresh } = appRow(context, entries, index);
       refreshers.set(appRowId(index), refresh);
       group.add(row);
@@ -121,6 +123,10 @@ export function appTogglesGroup(
     if (entries.length === 0) {
       group.add(empty);
     }
+    // One entry without a shortcut at a time, so that the new entry is easy to see.
+    const unset = entries.find((entry) => entry.accelerator === '');
+    add.sensitive = unset === undefined;
+    add.tooltip_text = unset === undefined ? '' : `Set the shortcut of ${appName(unset.app)} first`;
   };
   rebuild();
   watch(settings, `changed::${appTogglesSetting}`, () => {
@@ -128,6 +134,20 @@ export function appTogglesGroup(
     refreshAll();
   });
   return group;
+}
+
+const needsShortcutClass = 'rektangel-needs-shortcut';
+let needsShortcutCssAdded = false;
+
+/** Adds the yellow background of a row without a shortcut to the display one time. */
+function addNeedsShortcutCss(display: Gdk.Display): void {
+  if (needsShortcutCssAdded) {
+    return;
+  }
+  const provider = new Gtk.CssProvider();
+  provider.load_from_string(`row.${needsShortcutClass} { background-color: alpha(@warning_bg_color, 0.15); }`);
+  Gtk.StyleContext.add_provider_for_display(display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+  needsShortcutCssAdded = true;
 }
 
 function appRow(
@@ -173,7 +193,12 @@ function appRow(
   row.add_suffix(remove);
 
   label.label = isEmpty ? 'Set shortcut…' : acceleratorLabel(entry.accelerator);
-  label.css_classes = isEmpty ? ['dim-label'] : ['keycap'];
+  label.css_classes = isEmpty ? [] : ['keycap'];
+  if (isEmpty) {
+    addNeedsShortcutCss(row.get_display());
+    row.add_css_class(needsShortcutClass);
+    shortcut.add_css_class('suggested-action');
+  }
 
   const title = `Show or hide ${info?.get_name() ?? entry.app}`;
   shortcut.connect('clicked', () =>

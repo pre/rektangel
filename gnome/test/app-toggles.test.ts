@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import {
   appKey,
+  appRowOrder,
   desktopIdCandidates,
   isValidAccelerator,
   isValidAppId,
@@ -338,5 +339,38 @@ describe('toggleDecision', () => {
     const windows = [window(1, { minimized: true }), window(2, { minimized: true, onActiveWorkspace: false })];
     const decision = toggleDecision({ windows, focusId: null, remembered: { windows: [1, 2], focusId: 2 } });
     assert.equal(decision.kind === 'show' ? decision.focusId : null, 1);
+  });
+});
+
+describe('appRowOrder', () => {
+  const names: Record<string, string> = { 'org.gnome.Nautilus': 'Files', firefox: 'Firefox', kitty: 'kitty' };
+  const nameOf = (app: string): string => names[app] ?? app;
+
+  test('puts the entries with a shortcut in the order of the app names, without case', () => {
+    const entries = [
+      { app: 'kitty', accelerator: 'F1' },
+      { app: 'firefox', accelerator: 'F2' },
+      { app: 'org.gnome.Nautilus', accelerator: 'F3' },
+    ];
+    assert.deepEqual(appRowOrder(entries, nameOf), [2, 1, 0]);
+  });
+
+  test('puts the entries without a shortcut first, in list order', () => {
+    const entries = [
+      { app: 'firefox', accelerator: 'F2' },
+      { app: 'kitty', accelerator: '' },
+      { app: 'org.gnome.Nautilus', accelerator: 'F3' },
+      { app: 'firefox', accelerator: '' },
+    ];
+    assert.deepEqual(appRowOrder(entries, nameOf), [1, 3, 2, 0]);
+  });
+
+  test('keeps the list order of the entries of one app', () => {
+    const entries = [
+      { app: 'kitty', accelerator: 'F9' },
+      { app: 'firefox', accelerator: 'F2' },
+      { app: 'kitty', accelerator: 'F1' },
+    ];
+    assert.deepEqual(appRowOrder(entries, nameOf), [1, 0, 2]);
   });
 });
