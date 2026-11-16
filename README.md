@@ -158,7 +158,7 @@ schemas=~/.local/share/gnome-shell/extensions/rektangel@repo.pet/schemas
 
 ## Cycle sizes
 
-When you press a half or corner shortcut again, the window gets the next size of the cycle. The first press always gives 1/2 of the work area. The Cycle Sizes group of the preferences window has a check button for each size: 1/4, 1/3, 1/2, 2/3 and 3/4. The 1/2 button is always on. The default is 1/3 and 2/3. A change has an effect at the next press.
+When you press a half or corner shortcut again, the window gets the next size of the cycle. The first press always gives 1/2 of the work area. The Cycle Sizes group of the preferences window has a check button for each size: 1/4, 1/3, 1/2, 2/3 and 3/4. The 1/2 button is always on. The default is 1/3 and 2/3. A change has an effect at the next press. "Reset to defaults" at the bottom of the shortcuts also resets the cycle sizes.
 
 The order does not come from the buttons. It is 1/2, then the larger sizes going up, then the smaller sizes going up, as in Rectangle. The subtitle of the row shows the order. With all sizes on, the order is 1/2, 2/3, 3/4, 1/4, 1/3, then 1/2 again. With no size on, each press gives 1/2. A corner changes only the width or only the height (`corner_axis`).
 

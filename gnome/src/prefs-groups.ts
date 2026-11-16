@@ -265,7 +265,7 @@ export function resetAllButton(window: Adw.PreferencesWindow, settings: Gio.Sett
   resetAll.connect('clicked', () => {
     const dialog = new Adw.AlertDialog({
       heading: 'Reset All Shortcuts?',
-      body: 'All Rektangel shortcuts get their default values again.',
+      body: 'All Rektangel shortcuts and the cycle sizes get their default values again.',
       close_response: 'cancel',
     });
     dialog.add_response('cancel', 'Cancel');
@@ -274,6 +274,7 @@ export function resetAllButton(window: Adw.PreferencesWindow, settings: Gio.Sett
     dialog.connect('response', (_dialog, response) => {
       if (response === 'reset') {
         allActions.forEach((action) => settings.reset(keyName(action)));
+        settings.reset(cycleSizesSetting);
       }
     });
     dialog.present(window);
