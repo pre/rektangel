@@ -17,6 +17,7 @@ import { capsLockBehaviorSetting, superKeySetting, type SuperKey } from './accel
 import { AppToggles } from './app-toggle-shell.ts';
 import { ensureXkbOption } from './capslock-mode.ts';
 import { loadConfig } from './config-file.ts';
+import { cycleSizesFromSetting, cycleSizesSetting } from './cycle-sizes.ts';
 import { HistoryStore } from './history-store.ts';
 import { keyName } from './key-names.ts';
 import { migrateStoredShortcuts } from './migrate.ts';
@@ -35,14 +36,19 @@ export default class RektangelExtension extends Extension {
   private superKeyHandlerId = 0;
   private behaviorHandlerId = 0;
   private xkbOptionsHandlerId = 0;
+  private cycleSizesHandlerId = 0;
   private loggedProblem: string | null = null;
   private config: Readonly<CoreConfig> = defaultConfig;
   private readonly history = new HistoryStore();
 
   override enable(): void {
-    this.config = loadConfig();
     this.history.enable(global.display);
     const stored = this.getSettings();
+    const readCycleSizes = (): number[] => cycleSizesFromSetting(stored.get_strv(cycleSizesSetting));
+    this.config = { ...loadConfig(), cycleSizes: readCycleSizes() };
+    this.cycleSizesHandlerId = stored.connect(`changed::${cycleSizesSetting}`, () => {
+      this.config = { ...this.config, cycleSizes: readCycleSizes() };
+    });
     const inputSources = new Gio.Settings({ schema_id: 'org.gnome.desktop.input-sources' });
     this.stored = stored;
     this.inputSources = inputSources;
@@ -87,12 +93,14 @@ export default class RektangelExtension extends Extension {
     this.keybindings = null;
     this.stored?.disconnect(this.superKeyHandlerId);
     this.stored?.disconnect(this.behaviorHandlerId);
+    this.stored?.disconnect(this.cycleSizesHandlerId);
     this.inputSources?.disconnect(this.xkbOptionsHandlerId);
     this.stored = null;
     this.inputSources = null;
     this.superKeyHandlerId = 0;
     this.behaviorHandlerId = 0;
     this.xkbOptionsHandlerId = 0;
+    this.cycleSizesHandlerId = 0;
     this.loggedProblem = null;
     this.history.disable();
     this.config = defaultConfig;

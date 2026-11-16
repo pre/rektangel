@@ -156,15 +156,24 @@ schemas=~/.local/share/gnome-shell/extensions/rektangel@repo.pet/schemas
 /usr/bin/gsettings --schemadir "$schemas" set org.gnome.shell.extensions.rektangel app-toggles "[('dev.kukka.Kukka', 'section')]"
 ```
 
+## Cycle sizes
+
+When you press a half or corner shortcut again, the window gets the next size of the cycle. The first press always gives 1/2 of the work area. The Cycle Sizes group of the preferences window has a check button for each size: 1/4, 1/3, 1/2, 2/3 and 3/4. The 1/2 button is always on. The default is 1/3 and 2/3. A change has an effect at the next press.
+
+The order does not come from the buttons. It is 1/2, then the larger sizes going up, then the smaller sizes going up, as in Rectangle. The subtitle of the row shows the order. With all sizes on, the order is 1/2, 2/3, 3/4, 1/4, 1/3, then 1/2 again. With no size on, each press gives 1/2. A corner changes only the width or only the height (`corner_axis`).
+
+The setting is the gsettings key `cycle-sizes`, a list of the selected sizes without 1/2:
+
+```sh
+schemas=~/.local/share/gnome-shell/extensions/rektangel@repo.pet/schemas
+/usr/bin/gsettings --schemadir "$schemas" set org.gnome.shell.extensions.rektangel cycle-sizes "['1/4', '3/4']"
+```
+
 ## Settings file
 
-Rektangel reads `~/.config/rektangel/config.toml` when the extension is enabled. If you change the file, disable and enable the extension, or log out and in. All keys are optional. A missing file gives the defaults. If the file has an error, Rektangel uses the defaults for all keys and writes one warning to the journal (`journalctl --user -o cat /usr/bin/gnome-shell | grep Rektangel`).
+Rektangel reads `~/.config/rektangel/config.toml` when the extension is enabled. If you change the file, disable and enable the extension, or log out and in. All keys are optional. A missing file gives the defaults. If the file has an error, Rektangel uses the defaults for all keys and writes one warning to the journal (`journalctl --user -o cat /usr/bin/gnome-shell | grep Rektangel`). The file does not have the cycle sizes (see Cycle sizes). A file with `cycle_sizes` is an error.
 
 ```toml
-# Fractions of the work area that halves and corners cycle through when
-# you press the same shortcut again.
-cycle_sizes = [0.5, 0.6667, 0.3333]
-
 # Pixels that larger and smaller add or remove on each side.
 step_size = 30
 

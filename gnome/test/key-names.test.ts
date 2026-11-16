@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { describe, test } from 'node:test';
 import { Action, allActions } from '@rektangel/core';
+import { cycleSizesSetting } from '../src/cycle-sizes.ts';
 import { keyName } from '../src/key-names.ts';
 import { normalizeAccelerator } from '../src/shortcuts.ts';
 
@@ -9,7 +10,9 @@ const schema = readFileSync(
   new URL('../schemas/org.gnome.shell.extensions.rektangel.gschema.xml', import.meta.url),
   'utf8',
 );
-const schemaKeys = [...schema.matchAll(/<key name="([^"]+)" type="as"/g)].map((match) => match[1]);
+const schemaKeys = [...schema.matchAll(/<key name="([^"]+)" type="as"/g)]
+  .map((match) => match[1])
+  .filter((name) => name !== cycleSizesSetting);
 const schemaDefaults = [...schema.matchAll(/<default><!\[CDATA\[(\[.*\])\]\]><\/default>/g)].flatMap(
   (match) => JSON.parse((match[1] ?? '[]').replaceAll("'", '"')) as string[],
 );

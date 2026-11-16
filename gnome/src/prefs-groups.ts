@@ -6,6 +6,7 @@ import { allActions } from '@rektangel/core';
 import { capsLockBehaviorSetting, superKeySetting, xkbOptionInstalledSetting, type SuperKey } from './accelerator.ts';
 import { capsLockBehavior, installXkbOption, removeXkbOption } from './capslock-mode.ts';
 import { acceleratorLabel, presentCaptureDialog } from './capture-dialog.ts';
+import { alwaysInCycle, cycleOrderLabel, cycleSizeChoices, cycleSizesSetting } from './cycle-sizes.ts';
 import type { GnomeBinding, RowConflict } from './gnome-conflicts.ts';
 import { keyName } from './key-names.ts';
 import { findConflict } from './shortcuts.ts';
@@ -211,6 +212,51 @@ export function capsLockGroup(settings: Gio.Settings, watch: Watch): Adw.Prefere
       settings.set_string(capsLockBehaviorSetting, value);
     }
   });
+  return group;
+}
+
+/**
+ * One check button for each cycle size. The 1/2 button is always on and
+ * not active, because the first press always gives 1/2.
+ */
+export function cycleSizesGroup(settings: Gio.Settings, watch: Watch): Adw.PreferencesGroup {
+  const group = new Adw.PreferencesGroup({
+    title: 'Cycle Sizes',
+    description:
+      'Press a half or corner shortcut again to change the size of the window. The first press always gives 1/2.',
+  });
+  const row = new Adw.ActionRow({ title: 'Sizes', activatable: false });
+  group.add(row);
+  const buttons = cycleSizeChoices.map(({ label }) => {
+    const isFixed = label === alwaysInCycle;
+    const button = new Gtk.CheckButton({ label, valign: Gtk.Align.CENTER, active: isFixed, sensitive: !isFixed });
+    row.add_suffix(button);
+    return { label, button, isFixed };
+  });
+  const optional = buttons.filter(({ isFixed }) => !isFixed);
+
+  // sync sets the buttons one at a time. Without this flag, each toggled
+  // signal would save a mix of the old and the new value.
+  let syncing = false;
+  const sync = (): void => {
+    syncing = true;
+    const selected = settings.get_strv(cycleSizesSetting);
+    optional.forEach(({ label, button }) => (button.active = selected.includes(label)));
+    row.subtitle = `Order: ${cycleOrderLabel(selected)}`;
+    syncing = false;
+  };
+  sync();
+  watch(settings, `changed::${cycleSizesSetting}`, sync);
+  optional.forEach(({ button }) =>
+    button.connect('toggled', () => {
+      if (!syncing) {
+        settings.set_strv(
+          cycleSizesSetting,
+          optional.filter((choice) => choice.button.active).map(({ label }) => label),
+        );
+      }
+    }),
+  );
   return group;
 }
 

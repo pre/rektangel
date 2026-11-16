@@ -129,6 +129,7 @@ normalize_jq='
 # The current Rektangel shortcuts that GNOME can take, normalized, as a
 # JSON array. <Hyper> becomes <Mod3> with super-key capslock, else <Super>.
 # The shortcuts with <Mod3> are left out, because no GNOME key uses Mod3.
+# cycle-sizes is a list of strings, but it has no shortcuts.
 rektangel_accelerators() {
   if [[ ! -e "$schema_dir/gschemas.compiled" ]]; then
     echo "No compiled Rektangel schema in $schema_dir. Install the extension, or use --schemadir." >&2
@@ -140,7 +141,7 @@ rektangel_accelerators() {
   fi
   "$gsettings" --schemadir "$schema_dir" list-recursively "$rektangel_schema" |
     jq -R -n -c --arg hyper "$hyper" "$normalize_jq$string_lists_jq"'
-      | [.[].value[] | gsub("<hyper>"; $hyper; "i") | normalize | select(contains("<Mod3>") | not)] | unique'
+      | [.[] | select(.key != "cycle-sizes") | .value[] | gsub("<hyper>"; $hyper; "i") | normalize | select(contains("<Mod3>") | not)] | unique'
 }
 
 # Prints {schema, key, value, updated} for each GNOME key with an entry

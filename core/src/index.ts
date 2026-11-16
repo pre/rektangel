@@ -12,4 +12,5 @@ export {
   type Rect,
 } from './geometry.js';
 export type { LastAction, SubAction, WindowHistory } from './history.js';
+export { sortedCycleSizes } from './cycle.js';
 export { execute, type ExecuteInput, type ExecuteResult, type WindowChange } from './execute.js';

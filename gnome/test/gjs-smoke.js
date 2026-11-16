@@ -20,7 +20,7 @@ if (!configHome.endsWith('test/fixtures/config')) {
 
 const config = loadConfig();
 check(`config from ${configPath()}`, config, {
-  cycleSizes: [0.5, 0.75],
+  cycleSizes: [0.5, 2 / 3, 1 / 3],
   stepSize: 40,
   cornerAxis: 'vertical',
   almostMaximizeRatio: 0.8,

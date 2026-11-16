@@ -31,6 +31,7 @@ import { keyName } from './key-names.ts';
 import { appBindings, appRowTitle, appTogglesGroup } from './prefs-app-toggles.ts';
 import {
   capsLockGroup,
+  cycleSizesGroup,
   gnomeNoteGroup,
   presentRowCaptureDialog,
   resetAllButton,
@@ -150,6 +151,7 @@ export default class RektangelPreferences extends ExtensionPreferences {
     const gridGroup = new Adw.PreferencesGroup();
     gridGroup.add(grid);
     page.add(gridGroup);
+    page.add(cycleSizesGroup(settings, watch));
     page.add(appTogglesGroup(context, watch, refreshers, refreshAll));
     page.add(gnomeNoteGroup());
     page.add(versionGroup(window, this.dir));

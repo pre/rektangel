@@ -11,18 +11,13 @@ describe('parseConfig', () => {
   });
 
   test('reads all keys', () => {
-    const text = [
-      'cycle_sizes = [0.5, 0.25]',
-      'step_size = 50',
-      'corner_axis = "vertical"',
-      'almost_maximize_ratio = 0.8',
-    ].join('\n');
+    const text = ['step_size = 50', 'corner_axis = "vertical"', 'almost_maximize_ratio = 0.8'].join('\n');
 
     const result = parseConfig(text);
 
     assert.equal(result.error, undefined);
     assert.deepEqual(result.config, {
-      cycleSizes: [0.5, 0.25],
+      cycleSizes: defaultConfig.cycleSizes,
       stepSize: 50,
       cornerAxis: 'vertical',
       almostMaximizeRatio: 0.8,
@@ -36,7 +31,7 @@ describe('parseConfig', () => {
   });
 
   test('does not change the default config', () => {
-    parseConfig('step_size = 10\ncycle_sizes = [1]');
+    parseConfig('step_size = 10');
 
     assert.equal(defaultConfig.stepSize, 30);
     assert.deepEqual(defaultConfig.cycleSizes, [1 / 2, 2 / 3, 1 / 3]);
@@ -47,10 +42,7 @@ describe('parseConfig', () => {
     ['an unknown key', 'step-size = 10', /unknown key "step-size"/],
     ['an Object.prototype key', 'toString = 1', /unknown key "toString"/],
     ['a key in a section', 'step_size = 10\n[core]\nstep_size = 10', /unknown key "core.step_size"/],
-    ['an empty cycle', 'cycle_sizes = []', /cycle_sizes must be/],
-    ['a cycle size above 1', 'cycle_sizes = [0.5, 1.5]', /cycle_sizes must be/],
-    ['a cycle size of 0', 'cycle_sizes = [0]', /cycle_sizes must be/],
-    ['a cycle size that is not a list', 'cycle_sizes = 0.5', /cycle_sizes must be/],
+    ['cycle_sizes, which is now in the preferences window', 'cycle_sizes = [0.5]', /preferences window/],
     ['a fractional step', 'step_size = 2.5', /step_size must be/],
     ['a negative step', 'step_size = -30', /step_size must be/],
     ['a string step', 'step_size = "30"', /step_size must be/],

@@ -11,11 +11,8 @@ type Setter = (config: CoreConfig, value: TomlValue) => void;
 
 /** The config.toml keys. Each key sets one CoreConfig field. */
 const keys: Record<string, Setter> = {
-  cycle_sizes(config, value) {
-    if (!Array.isArray(value) || value.length === 0 || !value.every(isFraction)) {
-      throw new Error('cycle_sizes must be a list of fractions larger than 0 and not larger than 1');
-    }
-    config.cycleSizes = [...value];
+  cycle_sizes() {
+    throw new Error('cycle_sizes is not in config.toml now. Set the cycle sizes in the preferences window');
   },
   step_size(config, value) {
     if (typeof value !== 'number' || !Number.isInteger(value) || value <= 0) {
