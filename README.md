@@ -205,11 +205,15 @@ You need Node.js >22, npm, `glib-compile-schemas`, `gjs` and `zip`.
 npm install
 npm run build   # core with tsc, extension with esbuild, to gnome/dist/
 npm test        # unit tests, and the GJS smoke and Caps Lock tests
+npm run lint    # prettier --check and eslint
+npm run format  # prettier --write
 npm run pack    # writes rektangel@repo.pet.zip
 npm run reload  # packs, installs the zip, disables and enables the extension
 ```
 
 To check the Caps Lock mode XKB files offline, run `npm run test:xkb --workspace gnome`. It needs `xkbcomp`.
+
+`.github/workflows/ci.yml` runs the lint, the build and the tests for each push and each pull request.
 
 A local build writes `git-<commit>` to `version-name` in `dist/metadata.json`, and the release workflow writes the release version (see Publish a release). The preferences window reads the version from the installed `metadata.json`, so it shows a new install at once. GNOME Shell reads `metadata.json` at login, so the Extensions app shows the new version after the next login.
 
@@ -232,7 +236,7 @@ The script `gnome/prefs-dev.sh` builds `gnome/dist` and opens `gnome/dist/prefs.
 bin/release-github v1.2.3    # or major, minor or patch
 ```
 
-The script makes a draft GitHub release at HEAD, with notes from the conventional commits since the previous `v*` tag. Then it starts `.github/workflows/release.yml`. The workflow runs the tests, writes the version to `version-name` in `metadata.json`, packs `rektangel@repo.pet.zip` and attaches the zip to the draft. When the build is done, the script opens the draft. Examine the draft and press **Publish release**. Publishing creates the git tag. Then upload the same zip at https://extensions.gnome.org/upload/.
+The script makes a draft GitHub release at HEAD, with notes from the conventional commits since the previous `v*` tag. Then it starts `.github/workflows/release.yml`. The workflow runs the lint and the tests, writes the version to `version-name` in `metadata.json`, packs `rektangel@repo.pet.zip` and attaches the zip to the draft. When the build is done, the script opens the draft. Examine the draft and press **Publish release**. Publishing creates the git tag. Then upload the same zip at https://extensions.gnome.org/upload/.
 
 ## Repository layout
 
