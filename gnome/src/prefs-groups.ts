@@ -104,9 +104,7 @@ export function superKeyGroup(settings: Gio.Settings, extensionPath: string, wat
     model: Gtk.StringList.new(superKeyChoices.map((choice) => choice.label)),
   });
   const storedNote = new Gtk.Label({
-    label:
-      'The default shortcuts use Hyper. Changing the Hyper key changes all of them at once. ' +
-      'A shortcut that you set keeps the key that you pressed.',
+    label: 'The default shortcuts use Hyper. A shortcut can also use Ctrl, Alt and Shift.',
     wrap: true,
     xalign: 0,
     margin_top: 12,
