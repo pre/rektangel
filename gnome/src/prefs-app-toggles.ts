@@ -97,11 +97,27 @@ export function appTogglesGroup(
     css_classes: ['flat'],
   });
   group.header_suffix = add;
+  // The list index of the entry that was added last in this window. Its row
+  // keeps the highlight after it gets a shortcut, so that the user can find it.
+  let newIndex: number | null = null;
   add.connect('clicked', () =>
-    presentAddDialog(context.window, (app) =>
-      writeAppToggles(settings, [...readAppToggles(settings), { app, accelerator: '' }]),
-    ),
+    presentAddDialog(context.window, (app) => {
+      const entries = readAppToggles(settings);
+      newIndex = entries.length;
+      writeAppToggles(settings, [...entries, { app, accelerator: '' }]);
+    }),
   );
+  const remove = (entries: readonly AppToggle[], index: number): void => {
+    if (newIndex === index) {
+      newIndex = null;
+    } else if (newIndex !== null && newIndex > index) {
+      newIndex -= 1;
+    }
+    writeAppToggles(
+      settings,
+      entries.filter((_, otherIndex) => otherIndex !== index),
+    );
+  };
 
   let rows: Adw.ActionRow[] = [];
   const empty = new Adw.ActionRow({ title: 'No apps', subtitle: 'Click Add App to add one.', activatable: false });
@@ -115,7 +131,7 @@ export function appTogglesGroup(
     }
     const entries = readAppToggles(settings);
     rows = appRowOrder(entries, appName).map((index) => {
-      const { row, refresh } = appRow(context, entries, index);
+      const { row, refresh } = appRow(context, entries, index, index === newIndex, () => remove(entries, index));
       refreshers.set(appRowId(index), refresh);
       group.add(row);
       return row;
@@ -136,24 +152,26 @@ export function appTogglesGroup(
   return group;
 }
 
-const needsShortcutClass = 'rektangel-needs-shortcut';
-let needsShortcutCssAdded = false;
+const highlightClass = 'rektangel-highlight';
+let highlightCssAdded = false;
 
-/** Adds the yellow background of a row without a shortcut to the display one time. */
-function addNeedsShortcutCss(display: Gdk.Display): void {
-  if (needsShortcutCssAdded) {
+/** Adds the yellow background of a highlighted row to the display one time. */
+function addHighlightCss(display: Gdk.Display): void {
+  if (highlightCssAdded) {
     return;
   }
   const provider = new Gtk.CssProvider();
-  provider.load_from_string(`row.${needsShortcutClass} { background-color: alpha(@warning_bg_color, 0.15); }`);
+  provider.load_from_string(`row.${highlightClass} { background-color: alpha(@warning_bg_color, 0.15); }`);
   Gtk.StyleContext.add_provider_for_display(display, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
-  needsShortcutCssAdded = true;
+  highlightCssAdded = true;
 }
 
 function appRow(
   context: RowContext,
   entries: readonly AppToggle[],
   index: number,
+  isNew: boolean,
+  onRemove: () => void,
 ): { row: Adw.ActionRow; refresh: (conflicts: readonly RowConflict[]) => void } {
   const { settings } = context;
   const entry = entries[index]!;
@@ -172,13 +190,19 @@ function appRow(
   );
   const label = new Gtk.Label();
   const shortcut = new Gtk.Button({ child: label, valign: Gtk.Align.CENTER, tooltip_text: 'Set Shortcut' });
-  const remove = new Gtk.Button({
+  const isEmpty = entry.accelerator === '';
+  const name = info?.get_name() ?? entry.app;
+  const confirmRemove = removePopover(
+    isEmpty ? `Remove ${name}?` : `Remove the shortcut ${acceleratorLabel(entry.accelerator)} of ${name}?`,
+    onRemove,
+  );
+  const remove = new Gtk.MenuButton({
     icon_name: 'user-trash-symbolic',
     tooltip_text: 'Remove',
     valign: Gtk.Align.CENTER,
     css_classes: ['flat'],
+    popover: confirmRemove,
   });
-  const isEmpty = entry.accelerator === '';
   const unsetWarning = new Gtk.Image({
     icon_name: 'dialog-warning-symbolic',
     valign: Gtk.Align.CENTER,
@@ -194,13 +218,15 @@ function appRow(
 
   label.label = isEmpty ? 'Set shortcut…' : acceleratorLabel(entry.accelerator);
   label.css_classes = isEmpty ? [] : ['keycap'];
+  if (isEmpty || isNew) {
+    addHighlightCss(row.get_display());
+    row.add_css_class(highlightClass);
+  }
   if (isEmpty) {
-    addNeedsShortcutCss(row.get_display());
-    row.add_css_class(needsShortcutClass);
     shortcut.add_css_class('suggested-action');
   }
 
-  const title = `Show or hide ${info?.get_name() ?? entry.app}`;
+  const title = `Show or hide ${name}`;
   shortcut.connect('clicked', () =>
     presentRowCaptureDialog(context, {
       id: appRowId(index),
@@ -214,13 +240,32 @@ function appRow(
         ),
     }),
   );
-  remove.connect('clicked', () =>
-    writeAppToggles(
-      settings,
-      entries.filter((_, otherIndex) => otherIndex !== index),
-    ),
-  );
   return { row, refresh: show };
+}
+
+/**
+ * The popover of the trash button: a question and a red Remove button.
+ * A click outside the popover or Escape closes it and removes nothing.
+ */
+function removePopover(question: string, onRemove: () => void): Gtk.Popover {
+  const confirm = new Gtk.Button({ label: 'Remove', css_classes: ['destructive-action'] });
+  const content = new Gtk.Box({
+    orientation: Gtk.Orientation.VERTICAL,
+    spacing: 12,
+    margin_top: 6,
+    margin_bottom: 6,
+    margin_start: 6,
+    margin_end: 6,
+  });
+  content.append(new Gtk.Label({ label: question, wrap: true, max_width_chars: 40, xalign: 0 }));
+  content.append(confirm);
+  const popover = new Gtk.Popover({ child: content });
+  confirm.connect('clicked', () => {
+    // Close first: the write makes the rows again and removes this button.
+    popover.popdown();
+    onRemove();
+  });
+  return popover;
 }
 
 /** Asks GNOME Shell for the app of the window that the user clicks next. */

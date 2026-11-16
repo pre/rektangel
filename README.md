@@ -135,7 +135,7 @@ When you press the shortcut:
 
 The windows stay on their workspaces and keep their size and position. When the app has a window on the current workspace, the workspace does not change.
 
-To add an app, open the preferences window and go to Show or Hide App Windows at the bottom. Click Add App, then click Pick a Window and click a window of the app, or type the identifier of the app. Then click the shortcut button of the new row and press the key. The new row stays at the top of the list with a yellow background until it has a shortcut, and you cannot add another app before then. The rows that have a shortcut are in the order of the app names. An app can have more than one row, each with a different shortcut.
+To add an app, open the preferences window and go to Show or Hide App Windows at the bottom. Click Add App, then click Pick a Window and click a window of the app, or type the identifier of the app. Then click the shortcut button of the new row and press the key. The new row stays at the top of the list with a yellow background until it has a shortcut, and you cannot add another app before then. The rows that have a shortcut are in the order of the app names. When the new row gets its shortcut, it moves to its place in that order and keeps the yellow background until you add another app or close the preferences window. An app can have more than one row, each with a different shortcut. The trash button of a row asks before it removes the row: click Remove to remove it, or click outside to keep it.
 
 The identifier is the name of the `.desktop` file of the app without `.desktop`, for example `dev.kukka.Kukka`, `org.gnome.Nautilus` or `firefox_firefox` (a snap). To find it:
 
