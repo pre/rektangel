@@ -162,13 +162,12 @@ export function superKeyGroup(settings: Gio.Settings, extensionPath: string, wat
       if (value === 'capslock') {
         installXkbOption(extensionPath, capsLockBehavior(settings));
         settings.set_boolean(xkbOptionInstalledSetting, true);
-        showNote('Caps Lock is Hyper now, usually at once, at the latest after you log out and in.', false);
       } else {
         removeXkbOption();
         settings.set_boolean(xkbOptionInstalledSetting, false);
-        showNote('Caps Lock is a normal key again, usually at once, at the latest after you log out and in.', false);
       }
       settings.set_string('super-key', value);
+      showNote('The Hyper key change is applied, at the latest, after you log out and log in.', false);
     } catch (error) {
       showNote(`Cannot change the Hyper key: ${error}`, true);
       sync();
