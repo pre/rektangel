@@ -127,7 +127,7 @@ export function superKeyGroup(settings: Gio.Settings, extensionPath: string, wat
     const isCapsLock = superKey === 'capslock';
     group.description = isCapsLock
       ? 'Hyper is Caps Lock. Hold it like a modifier.'
-      : 'Hyper is the Windows key (GNOME calls it Super; Cmd on a Mac keyboard).';
+      : 'Hyper is the Windows key (GNOME calls it Super).';
     row.selected = superKeyChoices.findIndex((choice) => choice.value === superKey);
     const problem = isCapsLock
       ? capsLockModeProblem({ xkbOptions: inputSources.get_strv('xkb-options'), sessionType })
