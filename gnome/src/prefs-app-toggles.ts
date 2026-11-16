@@ -86,8 +86,8 @@ export function appTogglesGroup(
     title: 'Show or Hide App Windows',
     description:
       'A shortcut hides all windows of the app when the app has the focus, and brings them to the front when it ' +
-      'does not. It starts the app when the app has no window. The shortcut can be one key without a modifier, ' +
-      'for example §.',
+      'does not. It starts the app when the app has no window. The shortcut can be one key with or without a ' +
+      'modifier, for example §, Shift ° or Windows F.',
   });
   const add = new Gtk.Button({
     child: new Adw.ButtonContent({ icon_name: 'list-add-symbolic', label: 'Add App' }),
