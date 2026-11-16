@@ -153,23 +153,15 @@ export function appTogglesGroup(
 }
 
 const highlightClass = 'rektangel-highlight';
-const newTagClass = 'rektangel-new-tag';
 // A bar in the accent color on the left edge, and a tinted background. The
 // bar is easy to see also in a dark theme, where a light tint is not.
-const highlightCss = `
-row.${highlightClass} { background-color: alpha(@accent_bg_color, 0.2); box-shadow: inset 5px 0 @accent_bg_color; }
-label.${newTagClass} {
-  background-color: @accent_bg_color;
-  color: @accent_fg_color;
-  border-radius: 9999px;
-  padding: 2px 8px;
-  font-size: smaller;
-  font-weight: bold;
-}
-`;
+const highlightCss = `row.${highlightClass} {
+  background-color: alpha(@accent_bg_color, 0.2);
+  box-shadow: inset 5px 0 @accent_bg_color;
+}`;
 let highlightCssAdded = false;
 
-/** Adds the style of a highlighted row and of the New tag to the display one time. */
+/** Adds the style of a highlighted row to the display one time. */
 function addHighlightCss(display: Gdk.Display): void {
   if (highlightCssAdded) {
     return;
@@ -224,16 +216,7 @@ function appRow(
     tooltip_text: 'The shortcut is not set, so this item does nothing now.',
     visible: isEmpty,
   });
-  const newTag = new Gtk.Label({
-    label: 'New',
-    valign: Gtk.Align.CENTER,
-    css_classes: [newTagClass],
-    tooltip_text:
-      'You added this app in this window. It moves to its place in name order when you open the preferences again.',
-    visible: isNew,
-  });
   const { badge, show } = context.conflictBadge();
-  row.add_suffix(newTag);
   row.add_suffix(unsetWarning);
   row.add_suffix(badge);
   row.add_suffix(shortcut);
