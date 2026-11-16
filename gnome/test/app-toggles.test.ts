@@ -374,14 +374,14 @@ describe('appRowOrder', () => {
     assert.deepEqual(appRowOrder(entries, nameOf, []), [1, 0, 2]);
   });
 
-  test('keeps the new entries first, in the order of the add, also after they get a shortcut', () => {
+  test('keeps the new entries first, the newest first, also after they get a shortcut', () => {
     const entries = [
       { app: 'org.gnome.Nautilus', accelerator: 'F3' },
       { app: 'kitty', accelerator: 'F1' },
       { app: 'firefox', accelerator: 'F2' },
       { app: 'org.gnome.Nautilus', accelerator: '' },
     ];
-    assert.deepEqual(appRowOrder(entries, nameOf, [1, 2, 3]), [1, 2, 3, 0]);
+    assert.deepEqual(appRowOrder(entries, nameOf, [1, 2, 3]), [3, 2, 1, 0]);
   });
 
   test('puts the new entries before the other entries without a shortcut', () => {

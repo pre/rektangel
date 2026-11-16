@@ -98,8 +98,8 @@ export function appTogglesGroup(
   });
   group.header_suffix = add;
   // The list indexes of the entries that the user added in this window, in
-  // the order of the add. Their rows stay first and highlighted until the
-  // window closes.
+  // the order of the add. Their rows stay first, the newest at the top, and
+  // highlighted until the window closes.
   let newIndexes: number[] = [];
   add.connect('clicked', () =>
     presentAddDialog(context.window, (app) => {
