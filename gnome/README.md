@@ -44,7 +44,7 @@ The gsettings key `app-toggles` (`a(ss)`) has the entries: an app identifier and
 - `isValidAppId`, `isValidAccelerator`: the checks before a value from gsettings is used. The identifier is never part of a command line.
 - `windowMatchesApp(app, window)`: true when the identifier is equal to one of the identifiers of the window, without case and without a `.desktop` suffix.
 - `planGrabs(entries, actions, superKey)`: the accelerators to grab, with `<Hyper>` translated, and one journal line for each entry that does not get its shortcut. The actions own their shortcuts first, then the entries in list order.
-- `appRowOrder(entries, nameOf, newIndex)`: the order of the rows in the preferences window. The entry that the user added last comes first, also after it gets a shortcut. Then come the entries without a shortcut, then the other entries in the order of the app names. The order of the list does not change, because it sets the owner of a shortcut that two entries have.
+- `appRowOrder(entries, nameOf, newIndexes)`: the order of the rows in the preferences window. The entries that the user added in this window come first, in the order of the add, also after they get a shortcut. Then come the entries without a shortcut, then the other entries in the order of the app names. The order of the list does not change, because it sets the owner of a shortcut that two entries have.
 - `toggleDecision(input)`: start, hide or show, and which windows to minimize, unminimize, raise and focus.
 - `pickedIdentifier`, `topWindowAt`: the identifier of a clicked window and the window at a point.
 

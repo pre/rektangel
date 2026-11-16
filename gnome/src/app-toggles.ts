@@ -128,25 +128,25 @@ export function topWindowAt<T>(windows: readonly { id: T; frame: Rect }[], x: nu
 
 /**
  * The list indexes of the entries in the order of the rows in the
- * preferences window, so that the user sees a new entry. First comes
- * `newIndex`, the entry that the user added last, also after it gets a
- * shortcut. Then the entries without a shortcut, in list order. Then the
- * other entries, in the order of the app names. The list itself keeps its
- * order, because the list order sets the owner of a shortcut that two
- * entries have.
+ * preferences window, so that the user sees the new entries. First come
+ * `newIndexes`, the entries that the user added in this window, in the
+ * order of the add, also after they get a shortcut. Then the entries
+ * without a shortcut, in list order. Then the other entries, in the order
+ * of the app names. The list itself keeps its order, because the list
+ * order sets the owner of a shortcut that two entries have.
  */
 export function appRowOrder(
   entries: readonly AppToggle[],
   nameOf: (app: string) => string,
-  newIndex: number | null,
+  newIndexes: readonly number[],
 ): number[] {
-  const others = entries.flatMap((entry, index) => (index === newIndex ? [] : [{ index, entry }]));
+  const others = entries.flatMap((entry, index) => (newIndexes.includes(index) ? [] : [{ index, entry }]));
   const unset = others.filter(({ entry }) => entry.accelerator === '');
   const set = others
     .filter(({ entry }) => entry.accelerator !== '')
     .map(({ index, entry }) => ({ index, name: nameOf(entry.app) }))
     .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
-  const first = newIndex !== null && newIndex < entries.length ? [newIndex] : [];
+  const first = newIndexes.filter((index) => index < entries.length);
   return [...first, ...unset.map(({ index }) => index), ...set.map(({ index }) => index)];
 }
 

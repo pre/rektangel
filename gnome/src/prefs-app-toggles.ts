@@ -97,22 +97,21 @@ export function appTogglesGroup(
     css_classes: ['flat'],
   });
   group.header_suffix = add;
-  // The list index of the entry that the user added last in this window. Its
-  // row stays first and highlighted until the next add or until the window closes.
-  let newIndex: number | null = null;
+  // The list indexes of the entries that the user added in this window, in
+  // the order of the add. Their rows stay first and highlighted until the
+  // window closes.
+  let newIndexes: number[] = [];
   add.connect('clicked', () =>
     presentAddDialog(context.window, (app) => {
       const entries = readAppToggles(settings);
-      newIndex = entries.length;
+      newIndexes = [...newIndexes, entries.length];
       writeAppToggles(settings, [...entries, { app, accelerator: '' }]);
     }),
   );
   const remove = (entries: readonly AppToggle[], index: number): void => {
-    if (newIndex === index) {
-      newIndex = null;
-    } else if (newIndex !== null && newIndex > index) {
-      newIndex -= 1;
-    }
+    newIndexes = newIndexes
+      .filter((newIndex) => newIndex !== index)
+      .map((newIndex) => (newIndex > index ? newIndex - 1 : newIndex));
     writeAppToggles(
       settings,
       entries.filter((_, otherIndex) => otherIndex !== index),
@@ -130,8 +129,9 @@ export function appTogglesGroup(
       refreshers.delete(id);
     }
     const entries = readAppToggles(settings);
-    rows = appRowOrder(entries, appName, newIndex).map((index) => {
-      const { row, refresh } = appRow(context, entries, index, index === newIndex, () => remove(entries, index));
+    rows = appRowOrder(entries, appName, newIndexes).map((index) => {
+      const isNew = newIndexes.includes(index);
+      const { row, refresh } = appRow(context, entries, index, isNew, () => remove(entries, index));
       refreshers.set(appRowId(index), refresh);
       group.add(row);
       return row;
@@ -228,7 +228,8 @@ function appRow(
     label: 'New',
     valign: Gtk.Align.CENTER,
     css_classes: [newTagClass],
-    tooltip_text: 'You added this app now. It moves to its place in name order when you add another app.',
+    tooltip_text:
+      'You added this app in this window. It moves to its place in name order when you open the preferences again.',
     visible: isNew,
   });
   const { badge, show } = context.conflictBadge();

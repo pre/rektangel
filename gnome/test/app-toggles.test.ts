@@ -352,7 +352,7 @@ describe('appRowOrder', () => {
       { app: 'firefox', accelerator: 'F2' },
       { app: 'org.gnome.Nautilus', accelerator: 'F3' },
     ];
-    assert.deepEqual(appRowOrder(entries, nameOf, null), [2, 1, 0]);
+    assert.deepEqual(appRowOrder(entries, nameOf, []), [2, 1, 0]);
   });
 
   test('puts the entries without a shortcut first, in list order', () => {
@@ -362,7 +362,7 @@ describe('appRowOrder', () => {
       { app: 'org.gnome.Nautilus', accelerator: 'F3' },
       { app: 'firefox', accelerator: '' },
     ];
-    assert.deepEqual(appRowOrder(entries, nameOf, null), [1, 3, 2, 0]);
+    assert.deepEqual(appRowOrder(entries, nameOf, []), [1, 3, 2, 0]);
   });
 
   test('keeps the list order of the entries of one app', () => {
@@ -371,24 +371,25 @@ describe('appRowOrder', () => {
       { app: 'firefox', accelerator: 'F2' },
       { app: 'kitty', accelerator: 'F1' },
     ];
-    assert.deepEqual(appRowOrder(entries, nameOf, null), [1, 0, 2]);
+    assert.deepEqual(appRowOrder(entries, nameOf, []), [1, 0, 2]);
   });
 
-  test('keeps the new entry first after it gets a shortcut', () => {
+  test('keeps the new entries first, in the order of the add, also after they get a shortcut', () => {
     const entries = [
-      { app: 'firefox', accelerator: 'F2' },
-      { app: 'kitty', accelerator: 'F1' },
       { app: 'org.gnome.Nautilus', accelerator: 'F3' },
+      { app: 'kitty', accelerator: 'F1' },
+      { app: 'firefox', accelerator: 'F2' },
+      { app: 'org.gnome.Nautilus', accelerator: '' },
     ];
-    assert.deepEqual(appRowOrder(entries, nameOf, 1), [1, 2, 0]);
+    assert.deepEqual(appRowOrder(entries, nameOf, [1, 2, 3]), [1, 2, 3, 0]);
   });
 
-  test('puts the new entry before the other entries without a shortcut', () => {
+  test('puts the new entries before the other entries without a shortcut', () => {
     const entries = [
       { app: 'kitty', accelerator: '' },
-      { app: 'firefox', accelerator: '' },
+      { app: 'firefox', accelerator: 'F2' },
     ];
-    assert.deepEqual(appRowOrder(entries, nameOf, 1), [1, 0]);
+    assert.deepEqual(appRowOrder(entries, nameOf, [1]), [1, 0]);
   });
 
   test('ignores a new index that is not in the list', () => {
@@ -396,6 +397,6 @@ describe('appRowOrder', () => {
       { app: 'kitty', accelerator: 'F1' },
       { app: 'firefox', accelerator: 'F2' },
     ];
-    assert.deepEqual(appRowOrder(entries, nameOf, 2), [1, 0]);
+    assert.deepEqual(appRowOrder(entries, nameOf, [2]), [1, 0]);
   });
 });
