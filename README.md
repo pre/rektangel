@@ -135,6 +135,8 @@ When you press the shortcut:
 
 The windows stay on their workspaces and keep their size and position. When the app has a window on the current workspace, the workspace does not change.
 
+The default list has one app: Characters (`org.gnome.Characters`) with Ctrl+Windows+Space. GNOME 46 has no shortcut on Ctrl+Windows+Space.
+
 To add an app, open the preferences window and go to Show or Hide App Windows at the bottom. Click Add App, then click Pick a Window and click a window of the app, or type the identifier of the app. Then click the shortcut button of the new row and press the key. The new row is at the top of the list with a blue bar on its left edge. You cannot add another app before the new row has a shortcut. All rows that you add stay at the top, the newest first, with the bar, until you close the preferences window. When you open the window again, all rows are in the order of the app names. An app can have more than one row, each with a different shortcut. The trash button of a row asks before it removes the row: click Remove to remove it, or click outside to keep it.
 
 The identifier is the name of the `.desktop` file of the app without `.desktop`, for example `dev.kukka.Kukka`, `org.gnome.Nautilus` or `firefox_firefox` (a snap). To find it:
